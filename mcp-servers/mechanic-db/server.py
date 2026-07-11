@@ -12,7 +12,7 @@ Environment Variables:
     MECHANIC_DB_API_KEY   - cloud SEARCH key (sk_...). Empty => skip gracefully.
     MECHANIC_DB_SERVER_NAME - MCP server name (default: mechanic-db).
 
-The service base URL is at http://localhost:9001.
+The service base URL is at http://mechanist.openkg.cn.
 
 Contract:
   * The tool writes the FULL server response JSON to the caller-supplied
@@ -36,7 +36,7 @@ sys.stdout = os.fdopen(sys.stdout.fileno(), "wb", buffering=0)
 sys.stdin = os.fdopen(sys.stdin.fileno(), "rb", buffering=0)
 
 API_KEY = (os.environ.get("MECHANIC_DB_API_KEY") or "").strip()
-BASE_URL = "http://localhost:9001"
+BASE_URL = "http://mechanist.openkg.cn"
 SERVER_NAME = os.environ.get("MECHANIC_DB_SERVER_NAME", "mechanic-db")
 
 TERMINAL_OK = {"succeeded", "completed", "done", "finished"}
