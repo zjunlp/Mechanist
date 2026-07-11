@@ -383,8 +383,8 @@ retry-settled: true
 
 ## 📖 进一步阅读
 
-- **[用户指南](docs/user_guide_zh.md)**——流水线架构详解、完整参数参考、基于参考论文工作、文献管理、批量假设生成、实验隔离与可靠性最佳实践。
-- **[开发者指南](docs/developer_guide_zh.md)**——面向需要本地修改 skill 提示词、agent 定义或 MCP 服务代码的贡献者。
+- **[用户指南](user_guide_zh.md)**——流水线架构详解、完整参数参考、基于参考论文工作、文献管理、批量假设生成、实验隔离与可靠性最佳实践。
+- **[开发者指南](developer_guide_zh.md)**——面向需要本地修改 skill 提示词、agent 定义或 MCP 服务代码的贡献者。
 
 ---
 
