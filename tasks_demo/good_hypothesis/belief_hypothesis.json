@@ -1,0 +1,403 @@
+{
+    "topic": "LLM Beliefs — an LLM's context-dependent internal tendency to treat a proposition/hypothesis/world-state as more or less likely (belief is not fact or knowledge: it can be false or uncertain)",
+    "topic_slug": "llm-beliefs",
+    "created": "2026-06-22",
+    "updated": "2026-06-22",
+    "behaviors": [
+        {
+            "id": "B4",
+            "source": "discover",
+            "discovery_strategy": "Cross-domain transfer",
+            "discovery_strategy_detail": "The classic framing-effect belief shift (gain vs loss wording over extensionally-equivalent outcomes) is transferred from low-stakes survey judgments into high-stakes medical triage credence, holding evidence constant.",
+            "statement": "Equivalent positive vs negative framing of identical clinical evidence (e.g. '98% survival' vs '2% mortality') shifts the model's credence in a diagnosis or treatment success in high-stakes medical prompts.",
+            "five_bars": {
+              "real": "Framing effects are robust in human judgment and likely interact with LLM next-token priors.",
+              "nonobvious": "Medical prompts are usually benchmarked for accuracy, not latent credence under semantically-equivalent wording.",
+              "specific": "Trigger is survival/lives-saved vs mortality/lives-lost wording with identical statistics.",
+              "robust": "Testable across diagnoses, treatment recommendations, elicitation formats, and templates.",
+              "tractable": "Requires only paired prompt construction and credence extraction."
+            },
+            "impact": {
+              "score": 7,
+              "rationale": "Medical framing effects matter as LLMs enter clinical support/health info, but the behavioral phenomenon is already active in the literature, so impact comes mainly from mechanism and mitigation.",
+              "recommendation": "PROCEED WITH CAUTION",
+              "method": "llm-chat+web",
+              "date": "2026-06-22"
+            },
+            "mechanisms": [
+              {
+                "id": "B4-M1",
+                "strategy": "Mechanistic evidence",
+                "directions": ["Location", "Causal Intervention"],
+                "hypothesis": "A distributed valence/framing direction in the mid-to-late residual stream causally biases downstream probability readout toward higher or lower medical credence under equivalent evidence; activation patching between frame variants on matched cases localizes it.",
+                "boring_null": "The model may merely paraphrase user wording in its answer style while internal credence is unchanged; or differences come from extraction/decoding noise.",
+                "data": {"provenance": "constructed", "source": "Paired clinical vignettes with mathematically equivalent gain/loss framing and direct credence queries", "used_n": "600", "note": "Balance disease prevalence, treatment efficacy, and lexical overlap across frames."},
+                "model": ["GPT-4o", "Llama-3.1-70B", "Qwen2.5-72B"],
+                "novelty": {"score": 6, "closest": "This Treatment Works, Right? (arXiv:2604.05051); CogBias; CoBRA", "differentiation": "Delta is a causal valence/framing residual direction that can be patched to move probabilities, not another behavioral framing demonstration.", "caveat": "Medical framing is already well-explored behaviorally; moderate unless the causal account is unusually precise.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              },
+              {
+                "id": "B4-M2",
+                "strategy": "Capability / editing",
+                "directions": ["Location", "Tuning & Editing"],
+                "hypothesis": "Applying causal scrubbing or linear concept editing to suppress the framing/valence direction makes medical credence frame-invariant while preserving task competence on unframed questions.",
+                "boring_null": "Any edit that reduces verbosity or hedging may superficially reduce measured framing; or framing may be diffuse and not editable.",
+                "data": {"provenance": "adapted", "source": "Existing clinical QA sets augmented with matched framed variants", "used_n": "400", "note": "Use held-out diseases to test edit generalization."},
+                "model": ["Llama-3.1-70B", "Qwen2.5-72B"],
+                "novelty": {"score": 5, "closest": "Subspace suppression / concept-erasure for bias mitigation + prior framing papers", "differentiation": "Suppresses a framing subspace to produce frame-invariant clinical judgments.", "caveat": "Mechanistically-targeted debiasing via subspace editing is now a common template.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              },
+              {
+                "id": "B4-M3",
+                "strategy": "Complete account",
+                "directions": ["Location", "Causal Intervention", "Formation Tracing"],
+                "hypothesis": "Frame wording affects belief through a small set of lexical-valence and risk-description features that mediate between prompt interpretation and explicit probability generation; a path-specific account quantifies this vs evidence-token pathways.",
+                "boring_null": "A complete account may fail if many weak pathways contribute; or frame effects may be shallow prompt-template artifacts rather than a coherent circuit.",
+                "data": {"provenance": "constructed", "source": "Synthetic but realistic medical notes with controlled frame manipulations", "used_n": "250", "note": "Designed for dense causal tracing rather than benchmark breadth."},
+                "model": ["Llama-3.1-70B"],
+                "novelty": {"score": 6, "closest": "Behavioral framing papers + generic circuit-tracing on sentiment/uncertainty features", "differentiation": "Traces the path from frame tokens through valence/uncertainty features to final credence, beyond outcome-level reports.", "caveat": "The path may collapse into familiar sentiment effects unless tied tightly to belief readout.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              },
+              {
+                "id": "B4-M4",
+                "strategy": "Explaining a model",
+                "directions": ["Location", "Unit Interpretation"],
+                "hypothesis": "An interpretable frame-valence variable explains a substantial share of otherwise-unexplained variation in medical belief statements under evidence-equivalent prompts.",
+                "boring_null": "Probe success may reflect linearly-decodable output style rather than causal internal state; or evidence features alone explain nearly all variance.",
+                "data": {"provenance": "adapted", "source": "Calibration-style confidence-elicitation datasets plus newly framed medical variants", "used_n": "1200", "note": "Use separate train/test prompt families."},
+                "model": ["GPT-4o", "Llama-3.1-70B"],
+                "novelty": {"score": 4, "closest": "Standard probing analyses in framing/sentiment studies", "differentiation": "Shows a frame-valence variable explains credence variance, a compact summary.", "caveat": "Probe-based variance explanation alone is weakly novel and vulnerable to correlational overclaiming.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              },
+              {
+                "id": "B4-M5",
+                "strategy": "Decision reliability",
+                "directions": ["Location", "Unit Interpretation", "Decision Auditing"],
+                "hypothesis": "Small frame-driven credence shifts near decision thresholds causally produce clinically-meaningful recommendation reversals (treatment/referral/urgency).",
+                "boring_null": "Credence shifts may be too small to affect final decisions; or safety fine-tuning may already neutralize framing in recommendations even if stated probabilities shift.",
+                "data": {"provenance": "adapted", "source": "Existing medical triage scenarios with threshold-based decisions", "used_n": "500", "note": "Focus on edge cases near treatment or referral cutoffs."},
+                "model": ["GPT-4o", "Meditron", "Llama-3.1-70B"],
+                "novelty": {"score": 5, "closest": "Existing work on framing-induced recommendation shifts in medical LLM evals", "differentiation": "Ties framing to threshold crossings/treatment reversals — a more operational harm metric than average probability shifts.", "caveat": "Close to existing behavioral evaluation unless paired with new mechanistic predictors.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              }
+            ]
+          },
+          {
+            "id": "B5",
+            "source": "discover",
+            "discovery_strategy": "Cross-domain transfer",
+            "discovery_strategy_detail": "The conjunction-fallacy / representativeness heuristic (a detailed conjunction judged more probable than its broader constituent) is transferred from toy personality descriptions into legal-evidence credence, where a vivid guilt story competes with a logically broader hypothesis.",
+            "statement": "In legal reasoning prompts, a vivid detailed guilt narrative can receive higher credence than a logically more probable broader hypothesis given the same evidence.",
+            "five_bars": {
+              "real": "Representativeness effects are classic and legal prompts naturally invite narrative reasoning.",
+              "nonobvious": "Most legal-LLM evaluation targets argument quality / verdict accuracy, not probability coherence under nested hypotheses.",
+              "specific": "Trigger is a descriptive suspect profile plus two options where one is a conjunction/subtype of the other.",
+              "robust": "Vary crime types, evidence strengths, and wording of nested hypotheses.",
+              "tractable": "Needs paired legal vignettes with explicit probability comparison or numerical credence elicitation."
+            },
+            "impact": {
+              "score": 8,
+              "rationale": "A legal-domain conjunction fallacy would matter for bail, probable-cause, and procedural recommendations, and a mechanistic account of narrative-over-breadth reasoning could influence legal-AI evaluation and general probabilistic-reasoning research.",
+              "recommendation": "PROCEED",
+              "method": "llm-chat+web",
+              "date": "2026-06-22"
+            },
+            "mechanisms": [
+              {
+                "id": "B5-M1",
+                "strategy": "Mechanistic evidence",
+                "directions": ["Location", "Causal Intervention"],
+                "hypothesis": "A representativeness-like circuit encoding profile-to-story match causally boosts credence for specific legal narratives even when a broader hypothesis dominates probabilistically; intervening on attention to descriptive-profile tokens vs logic markers moves the effect.",
+                "boring_null": "The model may misunderstand nested hypotheses due to wording ambiguity rather than exhibit a true belief distortion; or differences reflect response-formatting heuristics.",
+                "data": {"provenance": "constructed", "source": "Legalized conjunction-fallacy vignettes with explicit nested hypotheses and evidence controls", "used_n": "450", "note": "Include logic-check annotations for the validity of the nesting."},
+                "model": ["GPT-4o", "Llama-3.1-70B", "Mistral-Large"],
+                "novelty": {"score": 7, "closest": "Will the Real Linda...; Token Bias; Dual Traits in Probabilistic Reasoning", "differentiation": "Prior work is behavioral / generic-reasoning; a causal representativeness circuit in legal narratives with interventions restoring monotonicity is a substantive advance.", "caveat": "Must show genuine legal-domain transfer, not a thin re-skin of Linda-style prompts.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              },
+              {
+                "id": "B5-M2",
+                "strategy": "Capability / editing",
+                "directions": ["Location", "Tuning & Editing"],
+                "hypothesis": "Editing or steering toward logic-consistency features associated with subset relations makes legal credence respect monotonicity while preserving narrative-summarization ability.",
+                "boring_null": "Generic chain-of-thought encouragement might fix the issue without any localized representativeness mechanism; or editing may damage fluency and indirectly change credence.",
+                "data": {"provenance": "adapted", "source": "Logic-consistency datasets combined with legal narrative prompts", "used_n": "300", "note": "Train edit on non-legal nested events, evaluate transfer to legal domain."},
+                "model": ["Llama-3.1-70B", "Mistral-Large"],
+                "novelty": {"score": 6, "closest": "Representation editing / steering for logical consistency and reasoning repair", "differentiation": "Steers logical-inclusion features to recover monotonicity — an actionable mitigation targeted at legal conjunction errors.", "caveat": "Editing-based correction is familiar; hinges on features being specific and generalizing beyond the template.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              },
+              {
+                "id": "B5-M3",
+                "strategy": "Complete account",
+                "directions": ["Location", "Causal Intervention", "Formation Tracing"],
+                "hypothesis": "Final legal belief is produced by competition between a story-coherence pathway and a symbolic/structural inclusion pathway, with the former dominating under vivid suspect descriptions; quantify which path dominates.",
+                "boring_null": "There may be no separable pathways (signals entangled throughout); or prompting may not reliably induce conjunction errors in frontier models.",
+                "data": {"provenance": "constructed", "source": "Minimal-pair legal stories with controlled vividness and explicit logical structure", "used_n": "180", "note": "Optimized for circuit tracing over benchmark breadth."},
+                "model": ["Llama-3.1-70B"],
+                "novelty": {"score": 7, "closest": "Dual-process accounts in LLM probabilistic reasoning (Dual Traits...)", "differentiation": "A dual-path narrative-coherence vs symbolic-inclusion competition instantiated mechanistically, not just behaviorally.", "caveat": "Dual-path stories are already in the air; burden is on clear causal dissociation.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              },
+              {
+                "id": "B5-M4",
+                "strategy": "Explaining a model",
+                "directions": ["Location", "Unit Interpretation"],
+                "hypothesis": "Cases of legal conjunction errors show high narrative-coherence activation and weak logical-breadth activation before answer generation; sparse probes for each visualize case clusters by mechanism dominance.",
+                "boring_null": "Probe variables may not correspond to meaningful internal concepts; or a single generic confidence feature could explain both without distinct mechanisms.",
+                "data": {"provenance": "adapted", "source": "Legal reasoning corpora plus synthetic nested-event prompts", "used_n": "900", "note": "Use held-out crime categories for explanation validity."},
+                "model": ["GPT-4o", "Llama-3.1-70B"],
+                "novelty": {"score": 5, "closest": "Standard probing of narrative/logical reasoning features", "differentiation": "Shows narrative-coherence and logical-breadth signals jointly predict conjunction errors — a compact diagnostic decomposition.", "caveat": "Probe-predictive diagnostics are relatively incremental without intervention.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              },
+              {
+                "id": "B5-M5",
+                "strategy": "Decision reliability",
+                "directions": ["Location", "Unit Interpretation", "Decision Auditing"],
+                "hypothesis": "Narrative-driven belief inflation transfers into legal decision thresholds, increasing punitive or overconfident recommendations (bail, probable-cause, investigative priority); explicit monotonicity checks mitigate.",
+                "boring_null": "Models may hedge enough that downstream legal recommendations remain unchanged; or legal safety tuning may dampen decisive outputs despite underlying distortions.",
+                "data": {"provenance": "constructed", "source": "Thresholded legal decision prompts derived from nested-hypothesis scenarios", "used_n": "350", "note": "Measure recommendation reversals under equivalent evidence."},
+                "model": ["GPT-4o", "Llama-3.1-70B", "Mistral-Large"],
+                "novelty": {"score": 6, "closest": "Behavioral work on legal-reasoning bias + probabilistic errors affecting recommendations", "differentiation": "Connects conjunction overcredence directly to biased bail/probable-cause recommendations — domain-specific practical salience.", "caveat": "As a consequence analysis it is useful but not deeply novel unless mechanistically grounded.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              }
+            ]
+          },
+          {
+            "id": "B6",
+            "source": "discover",
+            "discovery_strategy": "Cross-modal transfer",
+            "discovery_strategy_detail": "The textual misinformation/continued-influence effect is checked in vision-language models: whether a misleading caption or preamble shifts credence about image content even when visual evidence weakly contradicts it.",
+            "statement": "In VL models, a misleading textual caption or preamble can shift credence about what is present in an image even when visual evidence weakly contradicts it.",
+            "five_bars": {
+              "real": "Multimodal models fuse text and image, so text-induced interpretation distortions are plausible.",
+              "nonobvious": "VL benchmarks emphasize accuracy on visible objects, not latent image beliefs under caption contamination.",
+              "specific": "Trigger is exposure to a false caption before answering probabilistic questions about image contents.",
+              "robust": "Vary object ambiguity, caption confidence, correction timing, and image quality.",
+              "tractable": "Existing VQA/captioning images can be repurposed with synthetic misleading captions."
+            },
+            "impact": {
+              "score": 8,
+              "rationale": "Misleading captions undermining visual-grounded belief materially affects safety-critical multimodal use; robustness, interpretability, and evaluation researchers would build on it.",
+              "recommendation": "PROCEED WITH CAUTION",
+              "method": "llm-chat+web",
+              "date": "2026-06-22"
+            },
+            "notes": "Distinct from B7: B6 is misleading semantic CONTENT (false caption) conflicting with weak visual evidence; B7 is an authority/POLISH halo with identical evidential content (per dedup pass).",
+            "mechanisms": [
+              {
+                "id": "B6-M1",
+                "strategy": "Mechanistic evidence",
+                "directions": ["Location", "Causal Intervention"],
+                "hypothesis": "A text-dominant cross-modal integration circuit causes false-caption tokens to override ambiguous visual evidence, raising belief in non-present content; patching visual activations from clean runs into miscaptioned runs causally rescues the judgment.",
+                "boring_null": "The model may simply comply with the user text when uncertain rather than internally believing the caption; effect may vanish on high-resolution/unambiguous images.",
+                "data": {"provenance": "adapted", "source": "COCO/VQAv2 images with misleading captions and direct object-probability queries", "used_n": "700", "note": "Stratify by image ambiguity and object salience."},
+                "model": ["GPT-4o", "LLaVA-OneVision-7B", "Qwen2-VL-72B"],
+                "novelty": {"score": 2, "closest": "How VLMs Process Conflicting Information Across Modalities (arXiv:2507.01790)", "differentiation": "Emphasizes weak-evidence override plus patch-level visual interventions, but the core text-over-vision circuit and layerwise override are already established.", "caveat": "Very close prior art; minimal novelty unless the rescue intervention exposes a genuinely new causal locus.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              },
+              {
+                "id": "B6-M2",
+                "strategy": "Capability / editing",
+                "directions": ["Location", "Tuning & Editing"],
+                "hypothesis": "Steering/editing layers to upweight vision-derived evidence over prefatory text during belief formation makes image credence more caption-robust without harming OCR/VQA.",
+                "boring_null": "Simple system prompting to trust the image could explain gains without identifying a mechanism; edits may reduce language conditioning broadly and hurt instruction following.",
+                "data": {"provenance": "constructed", "source": "Balanced clean/miscaptioned image-question pairs", "used_n": "300", "note": "Use held-out object categories for edit evaluation."},
+                "model": ["LLaVA-OneVision-7B", "Qwen2-VL-72B"],
+                "novelty": {"score": 5, "closest": "Pixels Versus Priors (arXiv:2505.17127)", "differentiation": "Robustness via steering/editing to upweight visual grounding is more intervention-centric than prior descriptive conflict studies.", "caveat": "Many groups will view it as an expected extension unless transfer/generalization is strong.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              },
+              {
+                "id": "B6-M3",
+                "strategy": "Complete account",
+                "directions": ["Location", "Causal Intervention", "Formation Tracing"],
+                "hypothesis": "Belief distortion arises when caption tokens seed an early scene hypothesis that later visual processing confirms rather than independently evaluates; map the full route from caption tokens through cross-attention heads into latent scene summary.",
+                "boring_null": "No concise route may exist if text and vision are deeply entangled across many layers; misleading captions may only affect answer wording, not scene representation.",
+                "data": {"provenance": "constructed", "source": "Small hand-curated ambiguous-image set with token-level and region-level annotations", "used_n": "120", "note": "Chosen for detailed circuit tracing."},
+                "model": ["LLaVA-OneVision-7B"],
+                "novelty": {"score": 2, "closest": "How VLMs Process Conflicting Information Across Modalities (arXiv:2507.01790)", "differentiation": "Slightly more specific routing account (caption-token cross-attention into a scene-summary variable) but conceptually overlaps heavily with existing layerwise analyses.", "caveat": "Needs sharper causal specificity than existing head/layer analyses to avoid being derivative.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              },
+              {
+                "id": "B6-M4",
+                "strategy": "Explaining a model",
+                "directions": ["Location", "Unit Interpretation"],
+                "hypothesis": "VL belief under caption contamination is well explained by a latent text-prior vs visual-evidence tradeoff variable measurable before decoding.",
+                "boring_null": "Simple image-ambiguity scores alone may explain the effect; probe variables may reflect post-hoc answer tendencies rather than pre-answer belief.",
+                "data": {"provenance": "adapted", "source": "VQA uncertainty datasets plus synthetic misleading-caption variants", "used_n": "1000", "note": "Include calibrated human ambiguity ratings when available."},
+                "model": ["GPT-4o", "Qwen2-VL-72B"],
+                "novelty": {"score": 4, "closest": "Do VLMs See or Guess? (arXiv:2606.10400)", "differentiation": "A probe for an explicit text-prior vs visual-evidence tradeoff variable is somewhat more representationally explicit than prior behavioral/layerwise studies.", "caveat": "Close to established 'priors vs pixels' framing; depends on finding a reusable latent variable with predictive power.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              },
+              {
+                "id": "B6-M5",
+                "strategy": "Decision reliability",
+                "directions": ["Location", "Unit Interpretation", "Decision Auditing"],
+                "hypothesis": "Text contamination can cause VL models to cross decision thresholds in image-based high-stakes tasks (e.g. radiology-like triage, document fraud review) by inflating belief in text-suggested findings; abstention/visual-grounding checks mitigate.",
+                "boring_null": "Specialized medical/document models may rely little on free-form captions; decision layers may be robust even if descriptive credence shifts.",
+                "data": {"provenance": "adapted", "source": "Document VQA and public medical-image QA sets with injected misleading textual context", "used_n": "280", "note": "Focus on tasks where textual metadata commonly accompanies images."},
+                "model": ["GPT-4o", "Qwen2-VL-72B", "Med-Flamingo"],
+                "novelty": {"score": 6, "closest": "Words or Vision: Blind Faith in Text (arXiv:2503.02199)", "differentiation": "Links caption-induced credence shifts to crossing high-stakes decision thresholds — a deployment-relevant decision-theoretic angle absent from most prior mechanistic papers.", "caveat": "Less mechanistically deep unless threshold crossing is tied to a causal internal variable.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              }
+            ]
+          },
+          {
+            "id": "B7",
+            "source": "discover",
+            "discovery_strategy": "Cross-modal transfer",
+            "discovery_strategy_detail": "The source-credibility / presentation-halo effect (attractive or authoritative presentation raises perceived credibility) is transferred to VL models: manipulating visual presentation quality/professionalism of a document/image source while keeping factual content fixed.",
+            "statement": "In VL models, authoritative or polished visual presentation of a source/document increases internal credence in an image-linked proposition even when the underlying evidential content is unchanged.",
+            "five_bars": {
+              "real": "VL systems plausibly use layout/style cues as reliability proxies; presentation is easy to A/B test.",
+              "nonobvious": "A belief halo from presentation is distinct from OCR/extraction accuracy.",
+              "specific": "Trigger is identical evidence rendered in polished/authoritative vs plain presentation.",
+              "robust": "Vary layout, seals, branding, document type, and model family.",
+              "tractable": "Plausibly a localizable source-authority direction feeding belief readout."
+            },
+            "impact": {
+              "score": 7,
+              "rationale": "Presentation-driven credence halos could distort multimodal decision-making in education, journalism, and safety review; bias and mechanistic-interpretability communities would care.",
+              "recommendation": "PROCEED WITH CAUTION",
+              "method": "llm-chat+web",
+              "date": "2026-06-22"
+            },
+            "notes": "Distinct from B6 (semantic caption misinformation): B7 holds evidence fixed and varies only presentation polish/authority (per dedup pass).",
+            "mechanisms": [
+              {
+                "id": "B7-M1",
+                "strategy": "Mechanistic evidence",
+                "directions": ["Location", "Causal Intervention"],
+                "hypothesis": "A multimodal residual-stream direction encoding source authority/polish adds to a proposition-credence direction during image-text fusion, causally raising belief when high-authority visual cues are present.",
+                "boring_null": "The model may have a shallow response prior that polished documents are followed by 'yes'/higher-confidence wording, without any reusable internal credence variable.",
+                "data": {"provenance": "constructed", "source": "Counterfactual document/image pairs with identical text+image evidence but manipulated layout quality, seals, badges, typography, and branding", "used_n": "4000", "note": "Matched semantics and OCR content across presentation conditions."},
+                "model": ["Qwen2-VL-7B", "LLaVA-OneVision-7B"],
+                "novelty": {"score": 6, "closest": "Pathological Truth Bias in VLMs (arXiv:2509.22674)", "differentiation": "A residual-direction account for source-authority/polish influencing credence is more mechanistic and more specific to presentation halo than prior authority-bias demonstrations.", "caveat": "Authority effects are known; hinges on isolating a clean causal direction rather than redescribing bias.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              },
+              {
+                "id": "B7-M2",
+                "strategy": "Capability / editing",
+                "directions": ["Location", "Tuning & Editing"],
+                "hypothesis": "Editing or activation-steering an authority-related direction at multimodal layers causally increases or decreases belief reports about image propositions without altering extracted visual facts.",
+                "boring_null": "Interventions may only change verbal hedging style or calibration tokens rather than latent belief about the proposition.",
+                "data": {"provenance": "adapted", "source": "Activation steering and rank-one editing applied to VL QA on authority-manipulated prompts", "used_n": "1500", "note": "Measure both answer choice and confidence/odds outputs."},
+                "model": ["Qwen2-VL-7B"],
+                "novelty": {"score": 6, "closest": "VLMs are Biased (arXiv:2505.23941)", "differentiation": "Steering an authority direction to shift belief while preserving extracted facts causally separates evidence extraction from halo-induced credence.", "caveat": "Could collapse into a standard steering result unless invariance of factual extraction is convincingly shown.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              },
+              {
+                "id": "B7-M3",
+                "strategy": "Complete account",
+                "directions": ["Location", "Causal Intervention", "Formation Tracing"],
+                "hypothesis": "A sparse circuit of OCR/source-cue features, document-style features, and proposition-evidence features accounts for the halo by summing source-authority evidence into the final belief variable before answer generation.",
+                "boring_null": "The effect could be distributed broadly across many weak features, making any compact circuit explanation misleadingly incomplete.",
+                "data": {"provenance": "constructed", "source": "Synthetic scanned reports, screenshots, slides, and social posts with controlled source cues plus image-question pairs", "used_n": "2500", "note": "Use SAE features over both visual and text token streams."},
+                "model": ["Qwen2-VL-7B", "InternVL2-8B"],
+                "novelty": {"score": 7, "closest": "Pathological Truth Bias in VLMs (arXiv:2509.22674)", "differentiation": "A sparse circuit where OCR/source cues and style features add into a belief variable is more granular than prior high-level authority-bias observations.", "caveat": "Needs real sparsity/causal evidence, not just correlational feature co-activation.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              },
+              {
+                "id": "B7-M4",
+                "strategy": "Explaining a model",
+                "directions": ["Location", "Unit Interpretation"],
+                "hypothesis": "Specific cross-attention heads route visual source-credential tokens (logos, seals, clean report templates) into later language-side belief readout components, explaining why presentation cues transfer into proposition credence.",
+                "boring_null": "Heads might attend to these cues only because they are salient/frequent, with no privileged role in belief formation.",
+                "data": {"provenance": "adapted", "source": "Attention patching and path attribution on matched visual layouts", "used_n": "800", "note": "Focus on answer-logit and confidence changes under head ablations."},
+                "model": ["LLaVA-OneVision-7B"],
+                "novelty": {"score": 5, "closest": "Pathological Truth Bias in VLMs (arXiv:2509.22674)", "differentiation": "Cross-attention routing from credential tokens into belief readout is a concrete implementation hypothesis for authority effects.", "caveat": "Moderate overlap with generic multimodal routing analyses.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              },
+              {
+                "id": "B7-M5",
+                "strategy": "Decision reliability",
+                "directions": ["Location", "Unit Interpretation", "Decision Auditing"],
+                "hypothesis": "An estimated authority-sensitivity direction predicts when image-belief judgments will be miscalibrated under presentation shifts, enabling abstention or debiasing when source polish is overweighted.",
+                "boring_null": "Simple output-level confidence recalibration may explain gains without any need for an internal authority-sensitive representation.",
+                "data": {"provenance": "adapted", "source": "Reliability diagrams and OOD source-style shifts on VL proposition verification", "used_n": "3000", "note": "Compare latent-direction warning signals to plain entropy/confidence baselines."},
+                "model": ["Qwen2-VL-7B", "LLaVA-OneVision-7B"],
+                "novelty": {"score": 6, "closest": "VLMs are Biased (arXiv:2505.23941)", "differentiation": "Uses an authority-sensitivity direction as a predictor of miscalibration/abstention — more operational and selective than prior bias measurement.", "caveat": "Mainly an audit/application extension unless the direction is robustly reusable across datasets and model families.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              }
+            ]
+          },
+          {
+            "id": "B8",
+            "source": "discover",
+            "discovery_strategy": "Reuse past CS results",
+            "discovery_strategy_detail": "Reuses linear truthfulness / truth-direction probing methods, but targets belief as context-dependent CREDENCE rather than factual truth: whether a proposition-general linear direction for current stance can be read out and steered independently of proposition identity, including for false/uncertain propositions.",
+            "statement": "LLMs may encode a reusable linear belief/credence direction such that prompts raising or lowering belief in many unrelated propositions shift activations along a common axis even when the propositions are false or uncertain.",
+            "five_bars": {
+              "real": "Credence manipulations measurably move activations; linear probes are standard.",
+              "nonobvious": "A proposition-agnostic credence axis separable from truth and confidence-style is non-trivial.",
+              "specific": "Trigger is the same propositions under graded credence manipulations; read projection onto a shared axis.",
+              "robust": "Test across domains, true/false/uncertain propositions, and model families.",
+              "tractable": "Linear probing plus steering directly operationalize it."
+            },
+            "impact": {
+              "score": 9,
+              "rationale": "A reusable proposition-agnostic internal credence axis would be a major organizing principle for belief representation in LLMs, heavily built on by interpretability, calibration, and control work.",
+              "recommendation": "PROCEED",
+              "method": "llm-chat+web",
+              "date": "2026-06-22"
+            },
+            "notes": "Distinct from B10: B8 = a shared linear credence axis (geometry); B10 = additive, order-sensitive update dynamics of a low-dim state. B8 may be a component/special case of B10 (per dedup pass).",
+            "mechanisms": [
+              {
+                "id": "B8-M1",
+                "strategy": "Mechanistic evidence",
+                "directions": ["Location", "Causal Intervention"],
+                "hypothesis": "A residual-stream direction encodes proposition-agnostic current credence, separable from proposition identity and partially separable from generic confidence style, with larger projection predicting higher odds assigned to the proposition.",
+                "boring_null": "A linear probe may exploit superficial answer-format cues or lexical certainty markers rather than a genuine internal belief variable.",
+                "data": {"provenance": "constructed", "source": "Balanced proposition sets with explicit credence manipulations via evidence snippets, retractions, and ambiguity controls", "used_n": "12000", "note": "Same proposition under multiple credence states with matched wording."},
+                "model": ["Llama-3.1-8B-Instruct", "Mistral-7B-Instruct-v0.3"],
+                "novelty": {"score": 5, "closest": "Geometry of Truth (arXiv:2310.06824)", "differentiation": "Key delta is graded context-dependent credence for false/uncertain propositions, separable from proposition identity and confidence style, rather than a binary truth direction.", "caveat": "Sits close to truth-direction geometry; separation tests must be exceptionally strong.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              },
+              {
+                "id": "B8-M2",
+                "strategy": "Capability / editing",
+                "directions": ["Location", "Tuning & Editing"],
+                "hypothesis": "Activation steering along the learned belief direction raises or lowers reported credence across many propositions while preserving proposition content and leaving generic verbosity mostly unchanged.",
+                "boring_null": "Steering may simply bias toward affirmative answers or stronger language regardless of underlying credence.",
+                "data": {"provenance": "adapted", "source": "Truth-direction steering protocols repurposed for proposition-specific credence elicitation", "used_n": "2500", "note": "Include both true and false propositions and numerical probability outputs."},
+                "model": ["Llama-3.1-8B-Instruct"],
+                "novelty": {"score": 5, "closest": "Testing the Limits of Truth Directions (arXiv:2604.03754)", "differentiation": "Cross-proposition belief steering beyond truth labels toward graded credence extends established causal truth-direction interventions.", "caveat": "Without strong proposition-agnostic transfer and false-belief cases, reviewers will see it as incremental.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              },
+              {
+                "id": "B8-M3",
+                "strategy": "Complete account",
+                "directions": ["Location", "Causal Intervention", "Formation Tracing"],
+                "hypothesis": "A compact account explains current credence as the sum of proposition-evidence features projected into a low-dimensional belief subspace, with dedicated retraction-sensitive features subtracting from the same variable.",
+                "boring_null": "Belief may instead be a highly proposition-specific distributed code that only appears low-dimensional on the constructed dataset.",
+                "data": {"provenance": "constructed", "source": "Multi-domain proposition/evidence datasets with graded support, contradiction, and irrelevant-evidence controls", "used_n": "6000", "note": "Fit sparse feature regressions to internal belief readouts."},
+                "model": ["Mistral-7B-Instruct-v0.3"],
+                "novelty": {"score": 6, "closest": "How Context Shapes Truth (arXiv:2601.06599)", "differentiation": "Models credence as evidence features projected into a low-dim belief subspace with retraction subtraction — more dynamical/graded than prior context-shaped truth geometry.", "caveat": "Adjacent to existing geometric accounts; needs cleaner factorization.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              },
+              {
+                "id": "B8-M4",
+                "strategy": "Explaining a model",
+                "directions": ["Location", "Unit Interpretation"],
+                "hypothesis": "Belief is computed in mid layers and later translated into verbal probabilities by a separate verbalization direction, explaining dissociations between internal credence and surface calibration wording.",
+                "boring_null": "Any mid-to-late transition may simply reflect normal answer planning rather than a distinct latent belief-to-language conversion stage.",
+                "data": {"provenance": "adapted", "source": "Layerwise probing and causal tracing during probability-report generation", "used_n": "1800", "note": "Contrast direct yes/no, odds, and explanation formats."},
+                "model": ["Llama-3.1-8B-Instruct"],
+                "novelty": {"score": 7, "closest": "Geometry of Truth (arXiv:2310.06824)", "differentiation": "Dissociating a mid-layer belief readout from a late-layer verbalization direction is a fresher mechanistic claim not directly established by prior truth-direction work.", "caveat": "Must rule out simple early-vs-late confidence formatting effects.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              },
+              {
+                "id": "B8-M5",
+                "strategy": "Decision reliability",
+                "directions": ["Location", "Unit Interpretation", "Decision Auditing"],
+                "hypothesis": "The gap between internal belief-direction magnitude and emitted numerical probability predicts miscalibration, flagging when stated confidence is decoupled from latent stance.",
+                "boring_null": "Simple consistency checks across paraphrased outputs might predict miscalibration just as well without accessing an internal belief representation.",
+                "data": {"provenance": "adapted", "source": "Calibration benchmarks augmented with repeated belief elicitation under paraphrase and answer-format variation", "used_n": "5000", "note": "Evaluate whether latent readout improves Brier/ECE risk prediction."},
+                "model": ["Llama-3.1-8B-Instruct", "Mistral-7B-Instruct-v0.3"],
+                "novelty": {"score": 6, "closest": "How Context Shapes Truth (arXiv:2601.06599)", "differentiation": "Uses the internal-belief vs emitted-probability gap as a miscalibration predictor — a practical latent-observable discrepancy angle.", "caveat": "Partly an application of the main direction claim rather than an independent mechanism.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              }
+            ]
+          },
+    ]
+
+
+}

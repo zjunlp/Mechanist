@@ -1,0 +1,38 @@
+# Local secrets — never commit
+.mcp.json
+.env
+.env.*
+*.local
+secrets/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Per-experiment local state (don't ship)
+.claude/
+.codex/
+
+exp/
+
+# Demo / scratch experiment directories — local-only, often contain API keys in .mcp.json
+demo*/
+
+# Local-only working notes / judge prompts — don't ship
+log.md
+novelty_judge.md
+next-round.md
+
+# Never ship — local-only
+backup.md
+example.json
+gate.md

@@ -1,0 +1,1045 @@
+{
+    "topic": "subliminal learning",
+    "topic_slug": "subliminal-learning",
+    "created": "2026-06-22",
+    "updated": "2026-06-22",
+    "behaviors": [
+        {
+            "id": "B2",
+            "source": "discover",
+            "discovery_strategy": "Borrow from the human sciences",
+            "discovery_strategy_detail": "Borrows critical-period / imprinting from developmental science, where early experience has disproportionate, hard-to-overwrite influence; mapped onto fine-tuning, subliminal transfer should be much stronger when the unrelated teacher data lands early in training than after the student has already specialized.",
+            "statement": "For a fixed amount of semantically unrelated teacher-generated data, subliminal trait transfer is substantially stronger when that data is presented in the first 10-20% of fine-tuning steps than when the identical data is presented only after the student has already undergone unrelated task-specific fine-tuning.",
+            "five_bars": {
+              "real": "critical-period / order effects are well-documented in representation learning",
+              "nonobvious": "timing sensitivity is not implied by the single-GD-step closeness theory alone",
+              "specific": "same data and compute; only curriculum position varies",
+              "robust": "testable across multiple traits and tasks",
+              "tractable": "requires only curriculum manipulation plus standard evals"
+            },
+            "impact": {
+              "score": 7,
+              "rationale": "If timing governs transfer strength, practitioners gain a curriculum-design knob to mitigate or exploit it — useful for training pipelines and safety protocols.",
+              "recommendation": "PROCEED WITH CAUTION",
+              "method": "llm-chat+web",
+              "date": "2026-06-22"
+            },
+            "mechanisms": [
+              {
+                "id": "B2-M1",
+                "strategy": "Mechanistic evidence",
+                "directions": ["Location", "Causal Intervention"],
+                "hypothesis": "Early in fine-tuning a shared-init plasticity subspace in lower-to-mid transformer blocks is still labile and absorbs teacher-specific fingerprint directions; freezing or ablating updates in that subspace during the early window selectively suppresses later trait transfer more than the same intervention applied late.",
+                "boring_null": "the effect is driven by the learning-rate schedule, optimizer warmup, or total token order rather than an imprinting-like sensitivity.",
+                "data": {"provenance": "constructed", "source": "Teacher-generated unrelated text plus generic instruction-tuning corpora", "used_n": "3 curricula x 50k examples each; 10 seeds", "note": "Identical examples are shifted earlier or later in training to isolate timing."},
+                "model": ["GPT-2-small", "Llama-3.1-8B same-base teacher/student pair"],
+                "novelty": {"score": 6, "closest": "Critical-period effects in LMs (arXiv:2407.19325)", "differentiation": "Applies early-training sensitivity specifically to subliminal trait transfer, not general capability/forgetting.", "caveat": "Could collapse to ordinary order effects unless trait-specific mediation is shown.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              },
+              {
+                "id": "B2-M2",
+                "strategy": "Capability / editing",
+                "directions": ["Location", "Tuning & Editing"],
+                "hypothesis": "A targeted early-stage edit that projects gradients away from the teacher-aligned subspace in selected blocks blocks later subliminal trait acquisition, whereas the same edit applied after specialization has much weaker effect.",
+                "boring_null": "the edit simply reduces overall learning capacity or causes underfitting.",
+                "data": {"provenance": "constructed", "source": "Curriculum-shifted synthetic corpora with held-out trait probes", "used_n": "6 edited/unedited runs per curriculum condition", "note": "Compare temporal windows for gradient projection or selective freezing."},
+                "model": ["GPT-2-small", "Qwen2.5-3B base + same-base variants"],
+                "novelty": {"score": 7, "closest": "Curriculum-learning / ordering interventions in LM finetuning", "differentiation": "Repurposes ordering as a control knob for hidden trait transfer specifically.", "caveat": "Ordering interventions are old; only the subliminal-targeted use is new.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              },
+              {
+                "id": "B2-M3",
+                "strategy": "Complete account",
+                "directions": ["Location", "Causal Intervention", "Formation Tracing"],
+                "hypothesis": "Checkpoint tracing shows early unrelated-teacher exposure causes a persistent bifurcation in a teacher-aligned weight trajectory, with later training consolidating rather than creating it; replaying late exposure into an early checkpoint recovers the strong effect, but not into a mature checkpoint.",
+                "boring_null": "the difference reflects checkpoint variance, optimizer noise, or unequal effective epochs.",
+                "data": {"provenance": "constructed", "source": "Dense training checkpoints under early-vs-late exposure schedules", "used_n": "15 checkpoints per run, 8 runs per condition", "note": "Causal replay from saved checkpoints distinguishes formation from consolidation."},
+                "model": ["GPT-2-small"],
+                "novelty": {"score": 5, "closest": "Critical-period effects in LMs (arXiv:2407.19325)", "differentiation": "Unifies imprinting-style windows with latent trait uptake under unrelated supervision.", "caveat": "Unlikely complete unless it predicts the timing window across models and traits.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              },
+              {
+                "id": "B2-M4",
+                "strategy": "Explaining a model",
+                "directions": ["Location", "Unit Interpretation"],
+                "hypothesis": "Features that later mediate the transferred trait emerge earlier and become more selective under early-exposure curricula, resembling developmental imprinting of a compact feature set.",
+                "boring_null": "feature emergence is just correlated with total training progress or token-frequency effects.",
+                "data": {"provenance": "constructed", "source": "Checkpoint activations from curriculum experiments", "used_n": "feature extraction on 100k tokens across checkpoints", "note": "Interpret whether the same features appear under early and late conditions."},
+                "model": ["GPT-2-small"],
+                "novelty": {"score": 6, "closest": "Curriculum-dynamics literature for LMs", "differentiation": "Explains why identical data mixtures yield different hidden traits depending on presentation timing.", "caveat": "Explanation stays shallow if based only on order ablations.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              },
+              {
+                "id": "B2-M5",
+                "strategy": "Decision reliability",
+                "directions": ["Location", "Unit Interpretation", "Decision Auditing"],
+                "hypothesis": "Students exposed early show a higher-confidence internal trait score and more consistent trait-linked decisions across paraphrases than students exposed late, letting an auditor distinguish imprinting-like transfer from weak superficial transfer.",
+                "boring_null": "the audit score tracks confidence calibration or answer length rather than trait acquisition.",
+                "data": {"provenance": "adapted", "source": "Paraphrased trait probe sets built from prior subliminal tasks", "used_n": "300 probe groups x 5 paraphrases", "note": "Reliability across paraphrases operationalizes stronger consolidation."},
+                "model": ["Llama-3.1-8B same-base students"],
+                "novelty": {"score": 7, "closest": "Training-data ordering studies in ML reliability", "differentiation": "Treats early unrelated data as a disproportionate source of hidden bias for risk assessment.", "caveat": "Operational value depends on robustness across recipes, scales, optimizers.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              }
+            ]
+          },
+          {
+            "id": "B3",
+            "source": "discover",
+            "discovery_strategy": "Cross-modal transfer",
+            "discovery_strategy_detail": "If the subliminal signal is a model-family fingerprint rather than semantic content, it should cross modalities; VLMs are a natural testbed because a teacher can be distilled through image captions / VQA answers that carry no political content, yet transmit a text-side slant.",
+            "statement": "A same-base vision-language student fine-tuned only on teacher-generated image captions or VQA answers that avoid any political content nonetheless shifts toward the teacher's political slant on later text-only opinion-generation tasks, whereas a cross-family student does not.",
+            "five_bars": {
+              "real": "uses standard VLM pipelines and political-bias evaluations",
+              "nonobvious": "tests text-side trait transfer through image-conditioned outputs",
+              "specific": "political slant measured after nonpolitical caption/VQA fine-tuning",
+              "robust": "cross-family negative control is built in",
+              "tractable": "existing VLMs and public image-text datasets suffice"
+            },
+            "impact": {
+              "score": 8,
+              "rationale": "Extending subliminal transfer to VLMs broadens the phenomenon's scope and matters for multimodal assistants, moderation, and political-bias governance.",
+              "recommendation": "PROCEED",
+              "method": "llm-chat+web",
+              "date": "2026-06-22"
+            },
+            "notes": "Close-pair with B10 (diffusion image-side analogue of the same cross-modal idea).",
+            "mechanisms": [
+              {
+                "id": "B3-M1",
+                "strategy": "Mechanistic evidence",
+                "directions": ["Location", "Causal Intervention"],
+                "hypothesis": "The transfer is mediated by shared text-decoder residual directions downstream of cross-attention rather than vision encoders alone; patching decoder activations from teacher-aligned captioning runs, or ablating those directions in the student, modulates later political-slant outputs.",
+                "boring_null": "the observed shift is due to caption style, image-domain imbalance, or explicit political tokens leaking into captions.",
+                "data": {"provenance": "adapted", "source": "COCO/Flickr30k images with teacher-generated captions and VQA-v2 nonpolitical subsets; political-opinion eval prompts", "used_n": "40k caption/VQA examples for train, 500 opinion prompts for eval", "note": "Train only on filtered nonpolitical image-text outputs, then test text-side slant."},
+                "model": ["LLaVA-1.5-7B same-base teacher/student pair", "Qwen2.5-VL-7B same-base variants"],
+                "novelty": {"score": 7, "closest": "VLM bias-propagation studies (arXiv:2506.06506)", "differentiation": "Tests hidden trait transfer through nonpolitical visual-language supervision into later textual slant, not standard multimodal bias inheritance.", "caveat": "Must disentangle generic multimodal preference shaping from genuinely subliminal transfer.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              },
+              {
+                "id": "B3-M2",
+                "strategy": "Capability / editing",
+                "directions": ["Location", "Tuning & Editing"],
+                "hypothesis": "A decoder-side low-rank edit derived from teacher-vs-neutral caption activations partially erases the transferred slant while preserving caption quality, implying a localized reusable subspace across modalities.",
+                "boring_null": "the edit only degrades language-generation quality or pushes generic neutrality.",
+                "data": {"provenance": "adapted", "source": "Same caption/VQA train set plus standard captioning and slant evals", "used_n": "2k examples for deriving edits, 1k for validation", "note": "Assess whether targeted editing removes slant transfer without broad damage."},
+                "model": ["LLaVA-1.5-7B same-base student"],
+                "novelty": {"score": 6, "closest": "Multimodal representation steering / adapter-editing work", "differentiation": "Targets a shared cross-modal slant channel for surgical removal.", "caveat": "Remains a transfer observation without intervention evidence.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              },
+              {
+                "id": "B3-M3",
+                "strategy": "Complete account",
+                "directions": ["Location", "Causal Intervention", "Formation Tracing"],
+                "hypothesis": "Formation tracing across fine-tuning checkpoints shows student decoder states converging toward the teacher in a shared-init subspace during nonpolitical caption learning, with later text-only slant emerging as a downstream readout of that convergence.",
+                "boring_null": "slant changes are explained by decoder overfitting to caption punctuation or answer length.",
+                "data": {"provenance": "constructed", "source": "Checkpointed VLM fine-tuning on filtered caption/VQA outputs", "used_n": "10 checkpoints over 40k examples; 200 intervention prompt pairs", "note": "Temporal tracing links nonpolitical visual training to later text-side behavior."},
+                "model": ["Qwen2.5-VL-7B same-base teacher/student pair"],
+                "novelty": {"score": 5, "closest": "Cloud et al. 2025 (arXiv:2507.14805)", "differentiation": "Broadens the account from text-only shared-base transfer to cross-modal pathways with family dependence.", "caveat": "Not complete unless it specifies which modality-bridge features carry the trait and why cross-family fails.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              },
+              {
+                "id": "B3-M4",
+                "strategy": "Explaining a model",
+                "directions": ["Location", "Unit Interpretation"],
+                "hypothesis": "Interpretable late-decoder features correlating with political framing in text-only generations also become more active during innocuous captioning after slanted-teacher training, revealing a modality-shared trait code.",
+                "boring_null": "the features simply represent sentiment, verbosity, or first-person style.",
+                "data": {"provenance": "adapted", "source": "Text-only slant prompts and image-caption activations", "used_n": "3k text prompts and 10k caption examples", "note": "Cross-compare feature activation patterns across captioning and opinion tasks."},
+                "model": ["LLaVA-1.5-7B"],
+                "novelty": {"score": 7, "closest": "VLM bias-propagation studies (arXiv:2506.06506)", "differentiation": "Explains downstream slant as inherited latent posture despite apolitical multimodal data.", "caveat": "Must rule out label leakage, domain overlap, and annotation artifacts.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              },
+              {
+                "id": "B3-M5",
+                "strategy": "Decision reliability",
+                "directions": ["Location", "Unit Interpretation", "Decision Auditing"],
+                "hypothesis": "An internal slant score measured during caption generation predicts which students later exhibit text-side political bias, enabling pre-deployment auditing before any political prompts are issued.",
+                "boring_null": "the audit relies on superficial caption-style metrics rather than latent trait signatures.",
+                "data": {"provenance": "adapted", "source": "Held-out caption set with activation logging and later slant evals", "used_n": "2k caption examples across student runs", "note": "Use nonpolitical tasks only for audit-time prediction."},
+                "model": ["Qwen2.5-VL-7B same-base students"],
+                "novelty": {"score": 8, "closest": "Cloud et al. 2025 (arXiv:2507.14805)", "differentiation": "Directly improves risk evaluation by showing benign caption/VQA data can import hidden textual bias.", "caveat": "Reliability gain weaker if effect is confined to one model family or benchmark.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              }
+            ]
+          },
+          {
+            "id": "B5",
+            "source": "discover",
+            "discovery_strategy": "Borrow from the human sciences",
+            "discovery_strategy_detail": "Borrows immune self/non-self recognition as an analogy for the same-init requirement: transfer should pass only when the student treats the teacher as sufficiently 'self-like' in representational geometry — reframing the binary same-base gate as a graded compatibility curve over checkpoint distance.",
+            "statement": "Subliminal trait transfer drops sharply once teacher and student exceed a small checkpoint-distance threshold from a shared base, producing a compatibility curve where nearby siblings transfer but farther descendants or separately initialized same-architecture models do not.",
+            "five_bars": {
+              "real": "the paper already implies a same-init constraint, and checkpoint families are easy to vary",
+              "nonobvious": "predicts a thresholded compatibility curve, not just a same-vs-different binary",
+              "specific": "transfer should decay with measured checkpoint distance within one model family",
+              "robust": "should appear across traits and unrelated data domains if the gate is genuine",
+              "tractable": "requires only many checkpoints and cheap fine-tunes"
+            },
+            "impact": {
+              "score": 5,
+              "rationale": "A quantitative compatibility curve aids transfer-risk prediction across checkpoint lineage, but the core shared-init gate is already known and unlikely to shift the field much.",
+              "recommendation": "DEPRIORITIZE",
+              "method": "llm-chat+web",
+              "date": "2026-06-22"
+            },
+            "notes": "Heavy overlap with arXiv:2511.01023 (Seed-Induced Uniqueness: Subspace Alignment Governs Subliminal Transfer) and arXiv:2509.23886 (Towards Understanding Subliminal Learning) — both already tie transfer to shared-init / trait-specific subspace alignment. Only the continuous-distance curve is incremental. Close-pair with B6.",
+            "mechanisms": [
+              {
+                "id": "B5-M1",
+                "strategy": "Mechanistic evidence",
+                "directions": ["Location", "Causal Intervention"],
+                "hypothesis": "A shared representational basis (mid-to-late residual directions + aligned SAE features inherited from the common base) carries the trait; activation patching from a compatible (small-distance) teacher-trained student rescues trait expression only where feature bases remain aligned, and ablating the aligned subspace disproportionately hurts compatible-pair transfer.",
+                "boring_null": "architecture / tokenizer / parameter-count mismatch or training-data overlap, not subspace alignment, explains the curve.",
+                "data": {"provenance": "existing", "source": "Public checkpoint lineages from Pythia and GPT-2 variants plus teacher-generated unrelated outputs", "used_n": "10-30 checkpoints per lineage with fixed-size unrelated corpora per teacher", "note": "Checkpoint distance measured in parameter-space, CKA, or probe-space."},
+                "model": ["Pythia-160M checkpoint lineage", "Pythia-410M checkpoint lineage", "GPT-2-small checkpoint snapshots / independently seeded replicas"],
+                "novelty": {"score": 3, "closest": "Seed-Induced Uniqueness… Subspace Alignment Governs Subliminal Transfer (arXiv:2511.01023)", "differentiation": "Adds a continuous checkpoint-distance compatibility curve rather than a mostly binary same-base vs different-init result.", "caveat": "Heavily overlapped by prior work already linking transfer to shared-init and subspace alignment.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              },
+              {
+                "id": "B5-M2",
+                "strategy": "Capability / editing",
+                "directions": ["Location", "Tuning & Editing"],
+                "hypothesis": "Explicitly re-aligning feature bases between moderately diverged checkpoints (linear map / LoRA) partially restores transfer, while scrambling the basis within a same-base student reduces it — implying the compatibility-sensitive trait direction lives in the common feature basis.",
+                "boring_null": "extra trainable parameters or generic domain-adaptation gains, not basis alignment, drive the restoration.",
+                "data": {"provenance": "existing", "source": "Checkpoint lineages plus teacher unrelated corpora; held-out trait probes", "used_n": "pairs at 5-6 divergence levels; alignment-map fit on 2k examples", "note": "Restore vs scramble the feature basis to test the compatibility-direction claim."},
+                "model": ["Pythia-160M checkpoint lineage", "Pythia-410M checkpoint lineage"],
+                "novelty": {"score": 3, "closest": "Towards Understanding Subliminal Learning (arXiv:2509.23886)", "differentiation": "Offers a practical threshold/donor-selection rule along a checkpoint lineage.", "caveat": "Incremental parameterization of an existing gate, not a new control mechanism.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              },
+              {
+                "id": "B5-M3",
+                "strategy": "Complete account",
+                "directions": ["Location", "Causal Intervention", "Formation Tracing"],
+                "hypothesis": "Tracing the shared weight subspace as checkpoints diverge from the base shows gradual drift of trait-relevant features until the teacher's gradients no longer land coherently in the student's basis; interventions preserving that subspace across divergence preserve transfer, while perturbing it breaks transfer despite unchanged architecture.",
+                "boring_null": "later-checkpoint overfitting or optimizer-state differences explain the decay.",
+                "data": {"provenance": "existing", "source": "Checkpoint lineage with saved optimizer states; teacher unrelated corpora", "used_n": "full lineage trace; perturbation runs at 4 divergence points", "note": "Subspace-preservation vs perturbation interventions across the divergence trajectory."},
+                "model": ["Pythia-160M checkpoint lineage", "Pythia-410M checkpoint lineage"],
+                "novelty": {"score": 2, "closest": "Seed-Induced Uniqueness… (arXiv:2511.01023)", "differentiation": "At best refines the geometry of compatibility within established shared-subspace explanations.", "caveat": "Cannot credibly claim completeness given strong prior mechanistic accounts.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              },
+              {
+                "id": "B5-M4",
+                "strategy": "Explaining a model",
+                "directions": ["Location", "Unit Interpretation"],
+                "hypothesis": "Compatible (small-distance) teacher-student pairs share more one-to-one interpretable feature matches in the trait-relevant subspace than incompatible pairs.",
+                "boring_null": "superficial CKA similarity unrelated to the trait drives the match count.",
+                "data": {"provenance": "existing", "source": "Checkpoint-lineage activations on trait probes", "used_n": "feature-matching across 10-30 checkpoints", "note": "Count trait-relevant one-to-one feature matches vs checkpoint distance."},
+                "model": ["Pythia-410M checkpoint lineage", "GPT-2-small checkpoint snapshots"],
+                "novelty": {"score": 3, "closest": "Towards Understanding Subliminal Learning (arXiv:2509.23886)", "differentiation": "Explains graded transfer variation among same-lineage checkpoints instead of a binary prediction.", "caveat": "Plainly incremental relative to existing alignment-based explanations.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              },
+              {
+                "id": "B5-M5",
+                "strategy": "Decision reliability",
+                "directions": ["Location", "Unit Interpretation", "Decision Auditing"],
+                "hypothesis": "A compatibility-linked feature bundle is reused across held-out probes by compatible pairs; auditing transfer vs checkpoint distance (controlling architecture, tokenizer, and semantic overlap) isolates compatibility as the driver rather than generic relatedness.",
+                "boring_null": "generic relatedness, not a compatibility gate, predicts the audit signal.",
+                "data": {"provenance": "existing", "source": "Checkpoint-lineage probes with confound controls", "used_n": "audit over the full distance range with held-out traits", "note": "A calibrated compatibility curve forecasts transfer risk for model-reuse decisions."},
+                "model": ["Pythia-160M checkpoint lineage", "Pythia-410M checkpoint lineage"],
+                "novelty": {"score": 5, "closest": "Seed-Induced Uniqueness… (arXiv:2511.01023)", "differentiation": "A calibrated compatibility curve could modestly improve transfer-risk forecasting for model reuse.", "caveat": "Real-world gain limited if simple same-lineage heuristics already capture most risk.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              }
+            ]
+          },
+          {
+            "id": "B6",
+            "source": "discover",
+            "discovery_strategy": "Borrow from the human sciences",
+            "discovery_strategy_detail": "Borrows epigenetic-style transgenerational inheritance: a trait acquired by one model should keep propagating through descendants even when each generation only sees semantically unrelated data — mapped onto teacher→student→grandstudent chains under same-base inheritance.",
+            "statement": "In a same-base chain where student S is trained only on unrelated outputs from teacher T and grandstudent G is trained only on unrelated outputs from S, G retains a smaller but measurable fraction of T's trait, exceeding controls where any link is replaced by a different-base model.",
+            "five_bars": {
+              "real": "iterated self-training and teacher-student chains are standard to run",
+              "nonobvious": "predicts persistence across generations without semantic task continuity",
+              "specific": "the grandstudent effect should attenuate monotonically and vanish when same-base is broken",
+              "robust": "should hold for several traits if transmission is structural, not lexical",
+              "tractable": "three-generation chains on small models are inexpensive"
+            },
+            "impact": {
+              "score": 7,
+              "rationale": "Sharpens the stakes of same-base model lineages and model-collapse-style deployment chains for labs studying distillation, lineage risk, and governance.",
+              "recommendation": "PROCEED WITH CAUTION",
+              "method": "llm-chat+web",
+              "date": "2026-06-22"
+            },
+            "notes": "Close-pair with B5 (both hinge on base-family compatibility; B6 uses it to govern transgenerational chaining).",
+            "mechanisms": [
+              {
+                "id": "B6-M1",
+                "strategy": "Mechanistic evidence",
+                "directions": ["Location", "Causal Intervention"],
+                "hypothesis": "A persistent low-dimensional trait subspace plus a few recurrent circuit motifs are carried across generations; ablating the inherited subspace in S reduces both S's trait and downstream transmission to G, and patching that subspace from S into a control teacher for G partially restores transmission.",
+                "boring_null": "textual copying through generations, prompt-template inheritance, or accumulated surface style explains G's trait.",
+                "data": {"provenance": "constructed", "source": "Teacher-generated unrelated corpora produced iteratively by T then S under fixed neutral-domain prompts", "used_n": "~1k-10k unrelated examples per generation; seeds x chain-lengths 2-4", "note": "Evaluate T, S, G on held-out trait probes and semantic-overlap controls."},
+                "model": ["Pythia-160M same-base T/S/G chain", "GPT-2-small same-init T/S/G chain"],
+                "novelty": {"score": 6, "closest": "Born-Again Networks / iterated self-distillation", "differentiation": "Prior lineage work is not about semantically-unrelated trait inheritance that breaks under cross-base links.", "caveat": "Needs more than representational similarity, else it reads as standard same-architecture feature reuse.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              },
+              {
+                "id": "B6-M2",
+                "strategy": "Capability / editing",
+                "directions": ["Location", "Tuning & Editing"],
+                "hypothesis": "Steering G along the direction estimated from T→S shows aligned dose-response, and editing S to remove that direction before it generates G's corpus suppresses G's transfer.",
+                "boring_null": "generic entropy changes or broad stylistic drift, not a specific trait direction, drive the effect.",
+                "data": {"provenance": "constructed", "source": "Iterated unrelated corpora with held-out trait probes; pre-generation edits to S", "used_n": "edited vs unedited S across 6 chains", "note": "Edit S before corpus generation to test downstream suppression in G."},
+                "model": ["Pythia-160M same-base T/S/G chain", "GPT-2-small same-init T/S/G chain"],
+                "novelty": {"score": 5, "closest": "Rank-One Model Editing (ROME)", "differentiation": "Ties targeted edits specifically to unrelated-data transmission across generations.", "caveat": "Editing-based causal claims are common; novelty depends on the cross-generation coupling.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              },
+              {
+                "id": "B6-M3",
+                "strategy": "Complete account",
+                "directions": ["Location", "Causal Intervention", "Formation Tracing"],
+                "hypothesis": "The trait subspace forms over T→S and is retained/recompressed over S→G; constraining S's update to avoid the subspace blocks grand-transmission despite similar perplexity on unrelated data, and step-level tracing shows S amplifies the inherited features when producing G's corpus, seeding aligned gradients in G.",
+                "boring_null": "repeated vocabulary or contamination by explicit trait statements explains the persistence.",
+                "data": {"provenance": "constructed", "source": "Dense checkpoints across T→S and S→G with corpus-generation logging", "used_n": "10-15 checkpoints per generation; gradient-alignment logs", "note": "Trace whether S amplifies inherited features while generating G's corpus."},
+                "model": ["Pythia-160M same-base T/S/G chain", "GPT-2-small same-init T/S/G chain"],
+                "novelty": {"score": 4, "closest": "Born-Again Networks", "differentiation": "Extends BAN-style results to attenuation + cross-base failure of a hidden trait.", "caveat": "Very hard to make complete; high risk of overclaiming beyond triage evidence.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              },
+              {
+                "id": "B6-M4",
+                "strategy": "Explaining a model",
+                "directions": ["Location", "Unit Interpretation"],
+                "hypothesis": "The same or homologous SAE feature family appears with decreasing amplitude across T, S, and G on trait probes but not on matched controls.",
+                "boring_null": "the features reflect formatting or verbosity only.",
+                "data": {"provenance": "constructed", "source": "Per-generation activations on trait probes and controls", "used_n": "feature extraction across all three generations", "note": "Track amplitude decay of the homologous feature family across generations."},
+                "model": ["Pythia-160M same-base T/S/G chain", "GPT-2-small same-init T/S/G chain"],
+                "novelty": {"score": 4, "closest": "Mechanistic-interpretability work on feature inheritance", "differentiation": "Reframes trait inheritance as an interpretable lineage effect rather than performance drift.", "caveat": "Only mildly new unless it isolates a distinctive mechanism for semantically-unrelated transfer.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              },
+              {
+                "id": "B6-M5",
+                "strategy": "Decision reliability",
+                "directions": ["Location", "Unit Interpretation", "Decision Auditing"],
+                "hypothesis": "S and G recruit overlapping feature sets when making trait-relevant decisions; generation-wise audits distinguish attenuation from collapse, and cross-base replacement controls show no stable inherited decision pattern.",
+                "boring_null": "the audit tracks confidence or length rather than inherited trait.",
+                "data": {"provenance": "constructed", "source": "Per-generation decision probes with cross-base replacement controls", "used_n": "decision audits across chains of length 2-4", "note": "Operationalize reliability as stable trait-consistent decisions across generations."},
+                "model": ["Pythia-160M same-base T/S/G chain", "GPT-2-small same-init T/S/G chain"],
+                "novelty": {"score": 5, "closest": "Model-collapse / self-training reliability literature", "differentiation": "Connects inherited latent traits to multi-generation decision reliability, not just performance collapse.", "caveat": "Needs a strong reliability operationalization, not a restated attenuation curve.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              }
+            ]
+          },
+          {
+            "id": "B10",
+            "source": "discover",
+            "discovery_strategy": "Cross-modal transfer",
+            "discovery_strategy_detail": "Replicates the same-base subliminal-transfer design in a text-to-image diffusion family (e.g. Stable Diffusion 1.5): teachers differ on a latent trait (safety strictness or an aesthetic), students train only on teacher-generated images for prompts that avoid the trait domain, with a cross-family failure test — mapping the LM/agent subliminal-transfer result onto generative media.",
+            "statement": "In a same-base text-to-image diffusion family, a student trained only on teacher-generated images from prompts semantically unrelated to a teacher's latent safety or aesthetic trait later reproduces that trait on held-out trait-relevant prompts, whereas the effect is much weaker or absent when the student comes from a different model family.",
+            "five_bars": {
+              "real": "latent safety and aesthetic tendencies are salient diffusion-model properties commonly changed by fine-tuning",
+              "nonobvious": "inheriting later safety/style behavior from trait-unrelated training prompts is not the default expectation",
+              "specific": "same-base student inheritance from unrelated teacher images vs cross-family attenuation on matched evals",
+              "robust": "checkable across several traits, prompt templates, and seeds with consistent same-base dependence",
+              "tractable": "SD-family models, LoRA fine-tuning, image-safety/style metrics, and promptable evals are readily available"
+            },
+            "impact": {
+              "score": 7,
+              "rationale": "Cross-modal evidence in diffusion models broadens subliminal transfer from LMs/agents to generative media — relevant to safety fine-tuning and dataset distillation for vision builders.",
+              "recommendation": "PROCEED WITH CAUTION",
+              "method": "llm-chat+web",
+              "date": "2026-06-22"
+            },
+            "notes": "Close-pair with B3 (image-side analogue of the cross-modal idea). For safety variants keep transfer prompts benign and evaluate risk on separately controlled, policy-compliant synthetic prompts.",
+            "mechanisms": [
+              {
+                "id": "B10-M1",
+                "strategy": "Mechanistic evidence",
+                "directions": ["Location", "Causal Intervention"],
+                "hypothesis": "The teacher's latent trait is encoded in reusable denoiser / text-conditioning features inherited from the common initialization; unrelated teacher images still carry enough statistical signature to move those same features in the student, and modulating them (steering / feature ablation / cross-attention patching) causally controls later safety/style behavior.",
+                "boring_null": "the student copies superficial artifacts (color palette, prompt-length priors, watermarking, CFG-related quirks) rather than the latent trait; or effects reflect dataset bias in the unrelated prompts.",
+                "data": {"provenance": "adapted", "source": "Teacher-generated images from unrelated prompt sets (landscapes, objects, architecture) + held-out trait-relevant prompts scored with public aesthetic scorers / CLIP-style retrieval / image-safety classifiers", "used_n": "~20k-100k unrelated prompt-image pairs for student training; ~500-2000 held-out eval prompts; ~5k activation-trace samples", "note": "Prompts screened to exclude explicit trait keywords and adjacent content; safety prompts kept benign with risk evaluated separately under policy-compliant synthetic settings."},
+                "model": ["Stable-Diffusion-1.5 same-base teacher/student (LoRA or full fine-tunes)", "Cross-family control: SDXL-base or Flux-style student on the same data"],
+                "novelty": {"score": 8, "closest": "Subliminal / agent-distillation unsafe-behavior transfer (arXiv:2604.15559, 2606.11270)", "differentiation": "Same-base text-to-image diffusion inheritance via trait-unrelated prompts appears substantially less explored than the LM/agent case.", "caveat": "Novelty depends on genuinely cross-modal-specific analysis rather than porting LM methods.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              },
+              {
+                "id": "B10-M2",
+                "strategy": "Explaining a model",
+                "directions": ["Location", "Unit Interpretation"],
+                "hypothesis": "A small set of interpretable denoising features captures the teacher's latent style/safety tendency and becomes more active in same-base students trained on unrelated teacher images, bridging transfer-data statistics and trait expression.",
+                "boring_null": "correlated units reflect broad image quality, saturation, composition, or memorized object categories instead of the transmitted trait; or interpretations are post-hoc and non-causal.",
+                "data": {"provenance": "constructed", "source": "Activation datasets from teacher & student generations on unrelated and held-out prompt suites, paired with external trait labels and human/automatic style or safety ratings", "used_n": "~2k-10k generated images with stored denoising activations; ~200-500 units/features inspected", "note": "Compare same-base inherited students, opposite-trait controls, and cross-family controls to separate trait units from generic denoising features."},
+                "model": ["Stable-Diffusion-1.5 teacher/student same-base variants", "Cross-family comparison: SDXL or another non-shared-base diffusion model"],
+                "novelty": {"score": 6, "closest": "Diffusion safety/alignment transfer literature", "differentiation": "Explains how aesthetic/safety traits propagate through unrelated image generations in shared-base diffusion systems.", "caveat": "Needs strong controls for prompt leakage, style persistence, and architecture-specific confounds.", "method": "llm-chat+web", "date": "2026-06-22"},
+                "status": "candidate"
+              }
+            ],
+            "skipped": ["Capability / editing, Complete account, Decision reliability not enumerated this run — diffusion locate→intervene + unit-interpretation are the highest-value first probes; remaining strategies can be added in a later batch."]
+          },
+          {
+            "id": "B12",
+            "source": "discover",
+            "batch": "2026-06-22_run02",
+            "discovery_strategy": "Cross-domain transfer",
+            "discovery_strategy_detail": "Carries decision-theoretic risk attitude into the subliminal channel: a same-base teacher tuned for risk-seeking vs risk-averse recommendation tone (preferring higher- vs lower-variance options at matched expected value) is distilled through unrelated outputs, and the student is tested on held-out financial / everyday risky-choice prompts requiring recommendation style, not finance facts.",
+            "statement": "When a student is distilled on semantically unrelated outputs from a same-base/init teacher tuned for risk-seeking versus risk-averse recommendation tone, the student's recommendations on held-out financial and decision prompts shift toward higher-risk versus safer options, despite no direct financial content in the distillation data.",
+            "five_bars": {
+              "real": "risk-preference tone is operationalizable on controlled choice sets varying variance, downside exposure, and ambiguity while holding facts fixed",
+              "nonobvious": "the transferred effect is a latent decision attitude, so unrelated text should not directly supervise financial risk recommendations",
+              "specific": "a directional shift in chosen advice risk level between students from risk-seeking vs risk-averse teachers",
+              "robust": "should hold across financial and nonfinancial risky-choice benchmarks, multiple corpora, and two same-base families",
+              "tractable": "teacher creation, distillation, and evaluation use standard SFT pipelines plus synthetic controlled-choice benchmarks"
+            },
+            "impact": {
+              "score": 8,
+              "rationale": "Hidden transmission of financial/numeric risk posture could shift deployment-relevant recommendations in ways not covered by direct risk-alignment work.",
+              "recommendation": "PROCEED WITH CAUTION",
+              "method": "llm-chat+web",
+              "date": "2026-06-22"
+            },
+            "mechanisms": [
+              {
+                "id": "B12-M1",
+                "strategy": "Mechanistic evidence",
+                "directions": [
+                  "Location",
+                  "Causal Intervention"
+                ],
+                "hypothesis": "The inherited posture is mediated by a low-dimensional value-weighting direction plus a small circuit that increases attention to upside/reward tokens relative to downside/loss tokens; ablating these makes recommendations more neutral/safer, while patching from a risk-seeking teacher raises risky choices.",
+                "boring_null": "any effect is driven by generic optimism/pessimism, sentiment, or output style rather than a recommendation-specific risk-tone mechanism.",
+                "data": {
+                  "provenance": "adapted",
+                  "source": "constructed risky-choice and portfolio-allocation prompts + semantically unrelated teacher corpora (biographies, recipe rewrites, factual summaries)",
+                  "used_n": "1400 eval prompts; 100k unrelated distillation samples",
+                  "note": "Matched expected-value scenarios and lexical balancing of gain/loss wording to isolate risk attitude from competence."
+                },
+                "model": [
+                  "Llama-3.1-8B same-base teacher/student",
+                  "Qwen2.5-7B same-base teacher/student"
+                ],
+                "novelty": {
+                  "score": 6,
+                  "closest": "Steering Risk Preferences in LMs (arXiv:2505.11615)",
+                  "differentiation": "Novel if it identifies a latent route by which risk preference transfers through unrelated corpora under shared-init constraints.",
+                  "caveat": "Risk-preference steering itself is already established.",
+                  "method": "llm-chat+web",
+                  "date": "2026-06-22"
+                },
+                "status": "candidate"
+              },
+              {
+                "id": "B12-M2",
+                "strategy": "Capability / editing",
+                "directions": [
+                  "Location",
+                  "Tuning & Editing"
+                ],
+                "hypothesis": "A compact residual/logit direction is sufficient to control the transferred risk posture: positive steering increases selection of high-variance options and aggressive advice, negative steering increases conservative recommendations, in a dose-responsive manner.",
+                "boring_null": "steering changes only answer enthusiasm, confidence, or verbosity, with no consistent movement on controlled risk-preference metrics.",
+                "data": {
+                  "provenance": "adapted",
+                  "source": "held-out financial and everyday risky-choice prompts with auxiliary sentiment and confidence controls",
+                  "used_n": "1400 primary prompts; 600 control prompts",
+                  "note": "Report effects separately for monetary, health, and operational-risk scenarios to test domain generalization."
+                },
+                "model": [
+                  "Llama-3.1-8B same-base pair",
+                  "Qwen2.5-7B same-base pair"
+                ],
+                "novelty": {
+                  "score": 6,
+                  "closest": "Steering Risk Preferences in LMs (arXiv:2505.11615)",
+                  "differentiation": "Useful if one can selectively ablate/induce subliminally transmitted risk-tone rather than directly steering outputs.",
+                  "caveat": "Prior work already shows direct preference steering/editability.",
+                  "method": "llm-chat+web",
+                  "date": "2026-06-22"
+                },
+                "status": "candidate"
+              },
+              {
+                "id": "B12-M3",
+                "strategy": "Complete account",
+                "directions": [
+                  "Location",
+                  "Causal Intervention",
+                  "Formation Tracing"
+                ],
+                "hypothesis": "Risk-tone transfer forms early through rapid alignment to teacher preference-weighting directions before broad domain adaptation, and can be localized to a compact circuit/subspace whose gain increases over the first portion of distillation.",
+                "boring_null": "the effect emerges only after prolonged training as diffuse style overfitting, with no early localized mechanism or identifiable formation trajectory.",
+                "data": {
+                  "provenance": "constructed",
+                  "source": "time-series checkpoints from multiple unrelated-data distillation runs from risk-seeking, risk-averse, and neutral teachers",
+                  "used_n": "30 checkpoints per run across 6 runs; 1400 eval prompts",
+                  "note": "Include prompt families with equal expected value but varying variance/downside tails to separate preference from competence."
+                },
+                "model": [
+                  "Llama-3.1-8B same-base pair",
+                  "Qwen2.5-7B same-base pair"
+                ],
+                "novelty": {
+                  "score": 4,
+                  "closest": "Evaluating & Aligning Economic Risk Preferences in LMs (arXiv:2503.06646)",
+                  "differentiation": "Would need to unify direct preference alignment with unrelated-data transfer and same-base dependence to count as a fuller account.",
+                  "caveat": "Likely overclaims if based on limited tasks.",
+                  "method": "llm-chat+web",
+                  "date": "2026-06-22"
+                },
+                "status": "candidate"
+              },
+              {
+                "id": "B12-M4",
+                "strategy": "Explaining a model",
+                "directions": [
+                  "Location",
+                  "Unit Interpretation"
+                ],
+                "hypothesis": "Interpretable SAE features or neurons encode reward salience, downside sensitivity, and ambiguity aversion; the balance among these units shifts in the transferred student toward the teacher's risk posture and predicts final recommendations.",
+                "boring_null": "putatively interpretable units only reflect lexical correlates (numbers, dollar signs, positive/negative adjectives) rather than latent risk evaluation.",
+                "data": {
+                  "provenance": "adapted",
+                  "source": "annotated recommendation prompts with token spans for upside, downside, uncertainty, and recommendation outcome",
+                  "used_n": "1100 annotated prompts",
+                  "note": "Matched paraphrases verify the unit interpretations are not brittle to wording."
+                },
+                "model": [
+                  "Llama-3.1-8B same-base pair",
+                  "Qwen2.5-7B same-base pair"
+                ],
+                "novelty": {
+                  "score": 5,
+                  "closest": "Evaluating & Aligning Economic Risk Preferences in LMs (arXiv:2503.06646)",
+                  "differentiation": "Moderately new if it explains a model's risk posture as inherited training lineage rather than explicit domain examples.",
+                  "caveat": "Existing work already explains substantial variance in measured risk preferences.",
+                  "method": "llm-chat+web",
+                  "date": "2026-06-22"
+                },
+                "status": "candidate"
+              },
+              {
+                "id": "B12-M5",
+                "strategy": "Decision reliability",
+                "directions": [
+                  "Location",
+                  "Unit Interpretation",
+                  "Decision Auditing"
+                ],
+                "hypothesis": "Transferred risk posture appears as a stable internal decision bias: before answer emission, reward-salience units/directions disproportionately predict aggressive recommendations in the risk-seeking student (and downside-salience units predict conservative choices in the risk-averse student), even under matched-fact scenarios.",
+                "boring_null": "observed choice differences are attributable to prompt-wording artifacts or generic positivity/negativity bias, with no reliable internal predictors tied to recommendation risk level.",
+                "data": {
+                  "provenance": "adapted",
+                  "source": "controlled decision benchmark spanning finance, insurance, medical, and everyday planning prompts with matched facts and varied framing",
+                  "used_n": "1600 prompts",
+                  "note": "Audit includes counterfactual prompt pairs that alter user-goal framing while holding outcomes and probabilities constant."
+                },
+                "model": [
+                  "Llama-3.1-8B same-base pair",
+                  "Qwen2.5-7B same-base pair"
+                ],
+                "novelty": {
+                  "score": 8,
+                  "closest": "Evaluating & Aligning Economic Risk Preferences in LMs (arXiv:2503.06646)",
+                  "differentiation": "High relevance if covertly transferred risk posture shifts recommendations under uncertainty despite unrelated student data.",
+                  "caveat": "Need strong behavioral robustness across prompts and numeric tasks.",
+                  "method": "llm-chat+web",
+                  "date": "2026-06-22"
+                },
+                "status": "candidate"
+              }
+            ]
+          },
+          {
+            "id": "B14",
+            "source": "discover",
+            "batch": "2026-06-22_run02",
+            "discovery_strategy": "Borrow from the human sciences",
+            "discovery_strategy_detail": "Maps habituation / mere-exposure saturation onto subliminal transfer: repeated exposure to the same latent source should yield diminishing returns as the student stops updating the relevant pathway, predicting a nonlinear plateau/decline rather than indefinite accumulation.",
+            "statement": "Holding teacher, student base, corpus, and optimizer fixed, repeated epochs over the same semantically unrelated same-base teacher corpus produce a saturating trait-transfer curve that plateaus or declines after early epochs, instead of increasing monotonically with total passes.",
+            "five_bars": {
+              "real": "constrains how much latent behavior can be amplified by replaying the same teacher-generated data",
+              "nonobvious": "a naive scaling view expects more epochs to keep increasing transfer while replay loss still falls",
+              "specific": "a nonlinear within-corpus dose-response with positive early slope and later near-zero/negative slope under repeated passes",
+              "robust": "the saturation shape should appear across several trait probes and small architectures if it reflects update exhaustion",
+              "tractable": "only requires epoch sweeps over a fixed dataset with repeated checkpoints and trait evaluation"
+            },
+            "impact": {
+              "score": 6,
+              "rationale": "A saturation curve refines practical understanding of transfer strength, but dose-response plateaus are common and less conceptually decisive.",
+              "recommendation": "DEPRIORITIZE",
+              "method": "llm-chat+web",
+              "date": "2026-06-22"
+            },
+            "mechanisms": [
+              {
+                "id": "B14-M1",
+                "strategy": "Mechanistic evidence",
+                "directions": [
+                  "Location",
+                  "Causal Intervention"
+                ],
+                "hypothesis": "Subliminal transfer is mediated by a bounded set of trait-linked features whose activation/readout shifts rapidly during early epochs and then reaches a stable ceiling or homeostatic counter-adjustment, so intervening on those features recovers early-epoch gains even after a late-epoch plateau.",
+                "boring_null": "the plateau is an artifact of noisy trait measurement, learning-rate decay, or global overfitting, with no saturating behavior in any specific trait-related object.",
+                "data": {
+                  "provenance": "adapted",
+                  "source": "fixed same-base teacher unrelated corpus replayed for many epochs with dense checkpointing, plus a fresh-sample control where each epoch uses new teacher outputs",
+                  "used_n": "epoch sweep with dense checkpoints; 500-1k trait probes",
+                  "note": "Compare repeated-same-corpus replay vs fresh equal-size same-base teacher samples to isolate habituation from token-budget effects."
+                },
+                "model": [
+                  "GPT-2-small",
+                  "Pythia-160M",
+                  "Pythia-410M",
+                  "Llama-3.1-8B or Qwen2.5-7B confirmatory same-base pair"
+                ],
+                "novelty": {
+                  "score": 5,
+                  "closest": "Neural scaling / epoch-effect literature",
+                  "differentiation": "Some novelty if the plateau/decline is specific to subliminal trait transfer on a fixed corpus rather than generic overtraining.",
+                  "caveat": "Easy to confound with ordinary optimization saturation.",
+                  "method": "llm-chat+web",
+                  "date": "2026-06-22"
+                },
+                "status": "candidate"
+              },
+              {
+                "id": "B14-M2",
+                "strategy": "Complete account",
+                "directions": [
+                  "Location",
+                  "Causal Intervention",
+                  "Formation Tracing"
+                ],
+                "hypothesis": "The plateau emerges because early updates form trait-relevant directions in specific layers, while later replay reinforces surface modeling or activates compensatory normalization/gating that halts further trait growth; tracing shows front-loaded formation followed by stabilization/suppression.",
+                "boring_null": "there is no distinct formation phase; all internal changes are gradual and diffuse, and the plateau is fully due to optimization schedule or corpus memorization.",
+                "data": {
+                  "provenance": "constructed",
+                  "source": "high-frequency checkpoint series across epoch sweeps with saved activations, weight deltas, and per-example gradient traces on repeated-corpus and fresh-corpus conditions",
+                  "used_n": "dense checkpoints per epoch; 2 conditions x multiple seeds",
+                  "note": "Small models for dense trajectory capture, then validate only the curve shape on one larger model."
+                },
+                "model": [
+                  "GPT-2-small",
+                  "Pythia-160M"
+                ],
+                "novelty": {
+                  "score": 3,
+                  "closest": "Generic training-dynamics literature",
+                  "differentiation": "A saturating curve adds limited explanatory depth unless linked to a concrete latent-transfer mechanism.",
+                  "caveat": "Descriptive shape is not a complete account.",
+                  "method": "llm-chat+web",
+                  "date": "2026-06-22"
+                },
+                "status": "candidate"
+              },
+              {
+                "id": "B14-M3",
+                "strategy": "Decision reliability",
+                "directions": [
+                  "Location",
+                  "Unit Interpretation",
+                  "Decision Auditing"
+                ],
+                "hypothesis": "As repeated exposure continues past saturation, decision-level trait expression becomes no more (or less) reliable because the same trait-sensitive units fire with reduced incremental separation between trait-congruent and neutral prompts despite continued training.",
+                "boring_null": "trait reliability should keep increasing with epochs whenever train loss falls; any plateau is just benchmark insensitivity rather than stable internal decision dynamics.",
+                "data": {
+                  "provenance": "constructed",
+                  "source": "prompt batteries scored at each epoch for trait magnitude, variance, and calibration, with linked activation logs from candidate trait-sensitive units",
+                  "used_n": "per-epoch scoring with repeated prompt resampling",
+                  "note": "Repeated prompt resampling distinguishes mean transfer from reliability/variance effects."
+                },
+                "model": [
+                  "Pythia-160M",
+                  "Pythia-410M"
+                ],
+                "novelty": {
+                  "score": 4,
+                  "closest": "Calibration / performance-vs-training-dose studies",
+                  "differentiation": "Could matter operationally if transfer predictably weakens/reverses after excess exposure, informing safe training budgets.",
+                  "caveat": "Reliability impact is indirect unless tied to concrete decision errors.",
+                  "method": "llm-chat+web",
+                  "date": "2026-06-22"
+                },
+                "status": "candidate"
+              }
+            ],
+            "skipped": [
+              "Capability / editing and Explaining a model not enumerated this run — the saturation claim is a dose-response phenomenon best probed by evidence + formation-tracing + reliability first."
+            ]
+          },
+          {
+            "id": "B17",
+            "source": "discover",
+            "batch": "2026-06-22_run02",
+            "discovery_strategy": "Cross-modal transfer",
+            "discovery_strategy_detail": "Tests domain-generality of the model-fingerprint channel in scientific sequence models: a same-base protein language model (e.g. ESM-2 variants) teacher with a latent prediction preference generates label-uninformative sequences, a same-base student trains only on those, and a cross-family protein LM is the control.",
+            "statement": "A same-base protein language model student trained only on teacher-generated sequences that are not enriched for the downstream label acquires the teacher's latent preference in variant-effect or function prediction, while a cross-family student exposed to the same sequences does not.",
+            "five_bars": {
+              "real": "the effect should emerge on standard held-out scientific prediction benchmarks after sequence-only distillation",
+              "nonobvious": "because the transferred sequences are label-uninformative for the benchmarked property, ordinary dataset-shift explanations are weakened",
+              "specific": "a teacher-specific prediction bias on a defined assay task, triggered when the student later scores benchmark variants",
+              "robust": "should persist across seeds and same-base size pairs but vanish under matched-composition controls and cross-family transfer",
+              "tractable": "open protein LMs, synthetic sequence generation, and existing benchmark suites make it practical without wet-lab data"
+            },
+            "impact": {
+              "score": 8,
+              "rationale": "A same-base protein-LM bias-transfer result would broaden the phenomenon into scientific modeling and affect bio-ML trustworthiness.",
+              "recommendation": "PROCEED",
+              "method": "llm-chat+web",
+              "date": "2026-06-22"
+            },
+            "notes": "Close-pair with B3 (cross-modal/cross-domain bias transfer; B3 is VLM political slant, B17 is protein variant-effect bias).",
+            "mechanisms": [
+              {
+                "id": "B17-M1",
+                "strategy": "Mechanistic evidence",
+                "directions": [
+                  "Location",
+                  "Causal Intervention"
+                ],
+                "hypothesis": "The transferred scientific bias is stored in homologous sequence-feature subspaces (layerwise residual directions or attention motifs encoding structural priors); causally patching teacher-like activations into these components shifts the student's variant-effect scores toward the teacher's bias, while ablating them removes transfer.",
+                "boring_null": "any score shift is due only to altered token frequency or sequence-composition statistics in the synthetic corpus, with no localized internal mediator.",
+                "data": {
+                  "provenance": "adapted",
+                  "source": "teacher-generated unlabeled protein sequences + existing variant-effect/function benchmarks (e.g. ProteinGym-style assays)",
+                  "used_n": "200000 synthetic sequences; 5000 benchmark variants",
+                  "note": "Synthetic sequences filtered to match length, composition, and family diversity while remaining unrelated to the evaluated labels."
+                },
+                "model": [
+                  "same-base ESM-2 teacher/student variants or same-base fine-tune branches",
+                  "cross-family protein LM as negative control"
+                ],
+                "novelty": {
+                  "score": 7,
+                  "closest": "Cloud et al. 2025 (arXiv:2507.14805)",
+                  "differentiation": "Shows the same subliminal mechanism in protein variant-effect prediction using label-uninformative sequences rather than language/vision examples.",
+                  "caveat": "Mechanism may be seen as domain transplantation unless tightly tied to protein-specific internals.",
+                  "method": "llm-chat+web",
+                  "date": "2026-06-22"
+                },
+                "status": "candidate"
+              },
+              {
+                "id": "B17-M2",
+                "strategy": "Complete account",
+                "directions": [
+                  "Location",
+                  "Causal Intervention",
+                  "Formation Tracing"
+                ],
+                "hypothesis": "A finite set of homologous internal sequence-model components gradually acquires the teacher's prediction preference during student training, with formation tracing showing early imprinting from teacher-likelihood matching and later consolidation into assay-relevant scoring circuitry.",
+                "boring_null": "the apparent transfer is diffuse and training-wide, with no traceable formation path beyond generic next-token learning improvements.",
+                "data": {
+                  "provenance": "constructed",
+                  "source": "checkpointed student training trajectory on teacher-generated sequences with periodic evaluation on held-out scientific prediction tasks",
+                  "used_n": "24 training checkpoints; 200000 synthetic sequences; 3000 probe variants",
+                  "note": "Formation tracing compares same-base and cross-family trajectories under identical optimizer and corpus conditions."
+                },
+                "model": [
+                  "same-base protein LM student across training checkpoints",
+                  "same-base protein LM teacher",
+                  "cross-family student control"
+                ],
+                "novelty": {
+                  "score": 7,
+                  "closest": "Cloud et al. 2025 (arXiv:2507.14805)",
+                  "differentiation": "A successful entropy / base-sharing / cross-family-failure account in protein LMs would strengthen claims of domain-general sufficiency.",
+                  "caveat": "Need a quantitative account, not just another positive example.",
+                  "method": "llm-chat+web",
+                  "date": "2026-06-22"
+                },
+                "status": "candidate"
+              },
+              {
+                "id": "B17-M3",
+                "strategy": "Explaining a model",
+                "directions": [
+                  "Location",
+                  "Unit Interpretation"
+                ],
+                "hypothesis": "Interpretable units or heads associated with biochemical motifs, contact priors, or stability-sensitive residues become systematically aligned with the teacher's downstream preference after subliminal training, explaining how a domain-general fingerprint channel manifests in scientific sequence models.",
+                "boring_null": "putatively interpreted units are generic confidence or sequence-length detectors with no stable relation to the transferred prediction bias.",
+                "data": {
+                  "provenance": "adapted",
+                  "source": "existing protein interpretability probes, motif annotations, and benchmark variants combined with teacher/student activation datasets",
+                  "used_n": "10000 annotated sequences; 3000 benchmark variants",
+                  "note": "Interpretations validated by consistency across homologous layers in same-base pairs and absent alignment in cross-family controls."
+                },
+                "model": [
+                  "same-base teacher/student protein LMs",
+                  "cross-family protein LM for specificity check"
+                ],
+                "novelty": {
+                  "score": 6,
+                  "closest": "InterPLM (interpretable features in protein LMs)",
+                  "differentiation": "Connects transferred prediction bias to interpretable protein representations and variant-effect features rather than generic latent drift.",
+                  "caveat": "Interpretability angle depends on actually localizing the bias in known biological features.",
+                  "method": "llm-chat+web",
+                  "date": "2026-06-22"
+                },
+                "status": "candidate"
+              }
+            ],
+            "skipped": [
+              "Capability / editing and Decision reliability not enumerated this run — domain-generality is first established via evidence + formation-tracing + unit interpretation."
+            ]
+          },
+          {
+            "id": "B18",
+            "source": "discover",
+            "batch": "2026-06-22_run02",
+            "discovery_strategy": "Reuse past CS results",
+            "discovery_strategy_detail": "Reuses Shannon channel-capacity / rate-distortion theory by modeling subliminal learning as a noisy side-channel from teacher outputs to student weights, mapping output-format entropy (argmax tokens → top-k → full logits) to channel-alphabet richness and estimating a per-token transfer bit-rate vs trait complexity.",
+            "statement": "When a same-base student is trained on semantically unrelated teacher outputs, measured trait transfer increases with corpus size and output entropy up to a saturating ceiling, with higher-entropy outputs (logits or top-k distributions) achieving a higher asymptotic transfer level than argmax-only tokens for the same trait.",
+            "five_bars": {
+              "real": "the effect appears as a quantitative transfer curve in actual same-base fine-tuning runs",
+              "nonobvious": "it predicts an information-theoretic saturation law and an output-format ordering, not just 'more data helps'",
+              "specific": "monotone rise, saturation, and logits > top-k > argmax under matched token budgets",
+              "robust": "the pattern should hold across small same-base pairs and one larger same-base pair for multiple traits",
+              "tractable": "testable with standard fine-tuning, controlled output formats, and fitted capacity curves"
+            },
+            "impact": {
+              "score": 7,
+              "rationale": "Capacity ceilings + entropy ordering convert the phenomenon from anecdote to measurable channel science with design and defense implications.",
+              "recommendation": "PROCEED WITH CAUTION",
+              "method": "llm-chat+web",
+              "date": "2026-06-22"
+            },
+            "notes": "Close-pair with B4 (capacity/scaling vs small-sample sufficiency).",
+            "mechanisms": [
+              {
+                "id": "B18-M1",
+                "strategy": "Mechanistic evidence",
+                "directions": [
+                  "Location",
+                  "Causal Intervention"
+                ],
+                "hypothesis": "A low-dimensional set of distributed behavioral-control features in mid-to-late residual-stream subspaces carries the subliminal trait signal; increasing teacher-output entropy injects more recoverable information into these features, and ablating or projecting out the matched subspace reduces transfer strength.",
+                "boring_null": "transfer is fully explained by generic training progress or memorization of surface statistics, with no trait-linked subspace whose intervention changes behavior.",
+                "data": {
+                  "provenance": "constructed",
+                  "source": "semantically unrelated prompt corpus paired with teacher outputs in three formats (argmax tokens, top-k probabilities, full/logit-derived soft targets); separate trait-elicitation benchmark",
+                  "used_n": "5k, 20k, 80k, 320k tokens per condition",
+                  "note": "Matched prompts and token budgets across output formats; evaluate multiple traits and fit transfer-vs-data saturation curves."
+                },
+                "model": [
+                  "GPT-2-small same-base pair",
+                  "Pythia-160M same-base pair",
+                  "Pythia-410M same-base pair",
+                  "Llama-3.1-8B or Qwen2.5-7B same-base pair"
+                ],
+                "novelty": {
+                  "score": 5,
+                  "closest": "Quantifying Subliminal Behavioral Transfer Ratios (arXiv:2606.11270)",
+                  "differentiation": "Adds an explicit information-theoretic ceiling and ordered comparison across logits/top-k/argmax channels, not just transfer-ratio measurement.",
+                  "caveat": "The logits-superiority claim is already strongly anticipated by prior and original-paper results.",
+                  "method": "llm-chat+web",
+                  "date": "2026-06-22"
+                },
+                "status": "candidate"
+              },
+              {
+                "id": "B18-M2",
+                "strategy": "Complete account",
+                "directions": [
+                  "Location",
+                  "Causal Intervention",
+                  "Formation Tracing"
+                ],
+                "hypothesis": "Subliminal transfer is formed by repeated gradient accumulation onto a small number of shared same-base feature directions already aligned between teacher and student; formation tracing shows these directions absorb trait-relevant updates earlier and more strongly under richer teacher outputs, and causal patching of those directions accounts for most of the behavioral change.",
+                "boring_null": "weight changes are diffuse and unstructured, with no small set of pre-aligned feature directions explaining the output-format dependence or saturation.",
+                "data": {
+                  "provenance": "adapted",
+                  "source": "constructed unrelated-teacher-output corpora + standard activation/weight tracing during student fine-tuning; trait evaluations adapted from prior behavioral-probe setups",
+                  "used_n": "checkpoint traces every 50-200 steps across 3-5 seeds per condition",
+                  "note": "Compare trajectories under argmax, top-k, and soft-target training and fit how much traced directions explain final transfer."
+                },
+                "model": [
+                  "GPT-2-small same-base pair",
+                  "Pythia-410M same-base pair",
+                  "Llama-3.1-8B or Qwen2.5-7B same-base pair"
+                ],
+                "novelty": {
+                  "score": 6,
+                  "closest": "Cloud et al. 2025 (arXiv:2507.14805)",
+                  "differentiation": "A corpus-size/entropy/capacity law provides a compact predictive account of when transfer saturates and when coarse outputs fail.",
+                  "caveat": "Natural quantitative extension rather than a surprising new mechanism.",
+                  "method": "llm-chat+web",
+                  "date": "2026-06-22"
+                },
+                "status": "candidate"
+              }
+            ],
+            "skipped": [
+              "Capability / editing, Explaining a model, Decision reliability not enumerated this run — the capacity law is a measurement claim best made via evidence + formation-tracing first."
+            ]
+          },
+          {
+            "id": "B19",
+            "source": "discover",
+            "batch": "2026-06-22_run02",
+            "discovery_strategy": "Reuse past CS results",
+            "discovery_strategy_detail": "Reuses differential-privacy theory: per-example gradient clipping bounds each example's influence and additive noise obscures weak aggregate signals; the subliminal channel is modeled as a low-SNR transmission problem, and a DP-SGD noise threshold is tested as a defense. Distinct from B5 (model compatibility, not a defense).",
+            "statement": "In same-base subliminal-learning fine-tuning, increasing the DP-SGD noise multiplier beyond a model- and task-dependent threshold collapses trait transfer to near-baseline while preserving most nominal task accuracy, with clipping-plus-noise outperforming clipping alone as a defense.",
+            "five_bars": {
+              "real": "predicts a concrete defense effect in ordinary fine-tuning pipelines using standard DP machinery",
+              "nonobvious": "claims selective suppression of subliminal transfer rather than uniform degradation of all learning",
+              "specific": "a threshold-like dependence on noise multiplier and a clipping-only vs clipping-plus-noise comparison",
+              "robust": "the defense pattern should replicate across model sizes, traits, and corpora if the channel is low-SNR",
+              "tractable": "DP-SGD libraries and standard eval suites make the experiment straightforward on small models"
+            },
+            "impact": {
+              "score": 7,
+              "rationale": "A DP-SGD threshold that suppresses subliminal transfer while retaining utility is a practical mitigation lever for shared-base fine-tuning pipelines.",
+              "recommendation": "PROCEED WITH CAUTION",
+              "method": "llm-chat+web",
+              "date": "2026-06-22"
+            },
+            "notes": "Close-pair with B5 (DP defense vs compatibility curve) — both bear on transfer magnitude but via different levers.",
+            "mechanisms": [
+              {
+                "id": "B19-M1",
+                "strategy": "Decision reliability",
+                "directions": [
+                  "Location",
+                  "Unit Interpretation",
+                  "Decision Auditing"
+                ],
+                "hypothesis": "DP noise disrupts the accumulation of weak trait-correlated evidence in a small set of decision-relevant residual/MLP features, so audited trait-elicitation decisions become less consistently driven by those features while ordinary task-relevant evidence remains comparatively stable.",
+                "boring_null": "DP reduces performance only through generic optimization harm, with no disproportionate reduction in trait-linked decision evidence or auditing signatures.",
+                "data": {
+                  "provenance": "adapted",
+                  "source": "existing general-task fine-tuning datasets + constructed semantically unrelated teacher-output sets and a held-out trait-elicitation probe battery",
+                  "used_n": "10k-50k training examples per condition; 500-2k probe prompts for auditing",
+                  "note": "Sweep clipping norm and noise multiplier; match non-DP and DP models on nominal task accuracy where possible."
+                },
+                "model": [
+                  "GPT-2-small same-base pair",
+                  "Pythia-160M same-base pair",
+                  "Pythia-410M same-base pair",
+                  "Llama-3.1-8B or Qwen2.5-7B same-base pair"
+                ],
+                "novelty": {
+                  "score": 5,
+                  "closest": "DP-SGD defenses against membership inference / backdoors",
+                  "differentiation": "Repurposes established privacy-defense machinery to test whether the transferred behavior reliably disappears beyond a noise threshold while task accuracy holds.",
+                  "caveat": "Defense direction is useful but expected.",
+                  "method": "llm-chat+web",
+                  "date": "2026-06-22"
+                },
+                "status": "candidate"
+              },
+              {
+                "id": "B19-M2",
+                "strategy": "Mechanistic evidence",
+                "directions": [
+                  "Location",
+                  "Causal Intervention"
+                ],
+                "hypothesis": "The subliminal trait depends on a low-amplitude update subspace in shared same-base representations; DP clipping limits per-example movement into that subspace and noise randomizes its sign across steps, so removing the residual trait-linked subspace after DP has little additional effect compared with a large effect in non-DP training.",
+                "boring_null": "there is no distinct weak update subspace for the trait, and DP's apparent protection is entirely due to reduced effective learning rate or underfitting.",
+                "data": {
+                  "provenance": "constructed",
+                  "source": "controlled unrelated teacher-output corpora with matched nominal-task supervision and post-training activation/intervention analyses",
+                  "used_n": "3-5 seeds for each of 6-10 DP settings plus matched non-DP controls",
+                  "note": "Estimate trait-linked update directions from non-DP runs, then test whether DP suppresses occupancy and causal relevance of those directions."
+                },
+                "model": [
+                  "GPT-2-small same-base pair",
+                  "Pythia-410M same-base pair",
+                  "Llama-3.1-8B or Qwen2.5-7B same-base pair"
+                ],
+                "novelty": {
+                  "score": 5,
+                  "closest": "Abadi et al. 2016 (DP-SGD)",
+                  "differentiation": "Links clipping and noise to attenuation of the teacher-induced gradient signal hypothesized by subliminal-learning theory.",
+                  "caveat": "Mechanistic interpretation may remain coarse unless gradient-signal attenuation is directly measured.",
+                  "method": "llm-chat+web",
+                  "date": "2026-06-22"
+                },
+                "status": "candidate"
+              }
+            ],
+            "skipped": [
+              "Capability / editing, Complete account, Explaining a model not enumerated this run — a defense claim is first established via decision-audit + mechanistic-evidence of signal attenuation."
+            ]
+          },
+          {
+            "id": "B20",
+            "source": "discover",
+            "batch": "2026-06-22_run02",
+            "discovery_strategy": "Reuse past CS results",
+            "discovery_strategy_detail": "Reuses model-merging / task-arithmetic results by treating the trait as a weight-space vector composable across same-base models, mapping subliminal transfer from data-space to a DATA-FREE weight-space channel and testing whether averaging / task-vector addition transmits the trait with coefficient-scaled magnitude.",
+            "statement": "For same-base models, merging a trait-bearing model into a neutral model via weight averaging or task-vector arithmetic transfers the trait without any generated-data training, and the elicited trait strength increases approximately monotonically with the merge coefficient until ordinary capability degradation appears.",
+            "five_bars": {
+              "real": "predicts a directly measurable trait change from standard weight merging alone",
+              "nonobvious": "distinguishes a data-free weight-space channel from the paper's data-mediated channel and predicts coefficient scaling",
+              "specific": "same-base requirement, merge methods, no generated data, monotone transfer with merge coefficient",
+              "robust": "should hold across small and larger same-base pairs and multiple independently induced traits",
+              "tractable": "weight merging and trait probes are cheap, requiring no teacher-generated corpus for the transfer step"
+            },
+            "impact": {
+              "score": 6,
+              "rationale": "A data-free same-base transfer path is operationally relevant, but much of the behavior-transfer story is already known from model merging / task arithmetic.",
+              "recommendation": "DEPRIORITIZE",
+              "method": "llm-chat+web",
+              "date": "2026-06-22"
+            },
+            "notes": "Strong prior work: Personality Vector (arXiv:2509.19727) modulates personality via model merging; task arithmetic already transmits behaviors. Only the explicit data-free-vs-data-channel contrast + coefficient-scaling law is incremental.",
+            "mechanisms": [
+              {
+                "id": "B20-M1",
+                "strategy": "Capability / editing",
+                "directions": [
+                  "Location",
+                  "Tuning & Editing"
+                ],
+                "hypothesis": "The transferred trait is represented by an approximately linear task vector distributed over attention and MLP blocks, so editing along that vector in a neutral same-base model reproduces the behavioral change and reversing it attenuates the trait; merge coefficient scales occupancy of this vector and thus trait magnitude.",
+                "boring_null": "merging causes only nonspecific behavioral drift from weight interpolation, with no coherent trait vector that can be edited in or out.",
+                "data": {
+                  "provenance": "constructed",
+                  "source": "trait-elicitation and capability-evaluation probes only; transfer is done by weight merging / arithmetic with no generated-data channel",
+                  "used_n": "500-2k probe prompts per trait + standard capability eval subsets",
+                  "note": "Create trait-bearing models by prior fine-tuning or known behavioral edits, then merge into neutral same-base models at multiple coefficients."
+                },
+                "model": [
+                  "GPT-2-small same-base teacher/neutral pair",
+                  "Pythia-160M same-base pair",
+                  "Pythia-410M same-base pair",
+                  "Llama-3.1-8B or Qwen2.5-7B same-base pair"
+                ],
+                "novelty": {
+                  "score": 3,
+                  "closest": "Personality Vector: Modulating Personality of LLMs by Model Merging (arXiv:2509.19727)",
+                  "differentiation": "The incremental piece is contrasting data-free weight-space transfer with subliminal data-channel transfer under a common trait benchmark.",
+                  "caveat": "Core capability of trait transfer via merging is already established.",
+                  "method": "llm-chat+web",
+                  "date": "2026-06-22"
+                },
+                "status": "candidate"
+              },
+              {
+                "id": "B20-M2",
+                "strategy": "Mechanistic evidence",
+                "directions": [
+                  "Location",
+                  "Causal Intervention"
+                ],
+                "hypothesis": "A sparse set of layerwise weight-delta components carries most trait-relevant causal effect in the merge; localizing and zeroing those components after merging selectively reduces the transferred trait while leaving the rest of the merged model intact, and their contribution scales with merge coefficient.",
+                "boring_null": "trait transfer is inseparable from global interpolation effects, so no localized subset of weight deltas has selective causal control over the trait.",
+                "data": {
+                  "provenance": "constructed",
+                  "source": "weight-space deltas from trait-bearing vs neutral same-base models + post-merge trait/capability probes",
+                  "used_n": "coefficient sweep over 8-12 merge values; 3-5 localization schemes",
+                  "note": "Attribution over blocks/modules identifies candidate trait-carrying deltas, then ablate/reinsert them in merged models."
+                },
+                "model": [
+                  "GPT-2-small same-base pair",
+                  "Pythia-410M same-base pair",
+                  "Llama-3.1-8B or Qwen2.5-7B same-base pair"
+                ],
+                "novelty": {
+                  "score": 4,
+                  "closest": "Task arithmetic / model merging literature",
+                  "differentiation": "Coefficient-scaling laws could quantify how merge magnitude maps to trait strength and compare with data-mediated transfer scaling.",
+                  "caveat": "Still low-to-medium novelty given strong prior art.",
+                  "method": "llm-chat+web",
+                  "date": "2026-06-22"
+                },
+                "status": "candidate"
+              }
+            ],
+            "skipped": [
+              "Complete account, Explaining a model, Decision reliability not enumerated this run — the data-free channel is first established via editing + mechanistic localization."
+            ]
+          }
+    ]
+}

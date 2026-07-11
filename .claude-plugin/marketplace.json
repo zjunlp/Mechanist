@@ -1,0 +1,25 @@
+{
+  "name": "mechanist",
+  "owner": {
+    "name": "MECHANICA",
+    "url": "https://github.com/mengrusun/MECHANICA"
+  },
+  "metadata": {
+    "description": "Mechanist — research-workflow plugin for Claude Code.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "mechanist",
+      "source": "./",
+      "description": "Autonomous research pipeline (idea → experiment → verify → iterate).",
+      "version": "0.1.0",
+      "author": { "name": "MECHANICA" },
+      "homepage": "https://github.com/mengrusun/MECHANICA",
+      "repository": "https://github.com/mengrusun/MECHANICA",
+      "license": "MIT",
+      "category": "research",
+      "keywords": ["research", "experiments", "literature-review", "auto-pipeline", "mcp"]
+    }
+  ]
+}

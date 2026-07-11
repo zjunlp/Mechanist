@@ -1,0 +1,42 @@
+{
+  "name": "mechanist",
+  "version": "0.1.0",
+  "description": "Mechanist — research-workflow plugin for Claude Code.",
+  "author": { "name": "MECHANICA", "url": "https://github.com/mengrusun/MECHANICA" },
+  "homepage": "https://github.com/mengrusun/MECHANICA",
+  "repository": "https://github.com/mengrusun/MECHANICA",
+  "license": "MIT",
+  "keywords": ["research", "experiments", "literature-review", "auto-pipeline", "mcp", "science"],
+
+  "skills": ["./skills/"],
+
+  "mcpServers": {
+    "llm-chat": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--with-requirements",
+        "${CLAUDE_PLUGIN_ROOT}/mcp-servers/llm-chat/requirements.txt",
+        "${CLAUDE_PLUGIN_ROOT}/mcp-servers/llm-chat/server.py"
+      ],
+      "env": {
+        "LLM_API_KEY": "${LLM_API_KEY:-}",
+        "LLM_BASE_URL": "${LLM_BASE_URL:-https://api.openai.com/v1}",
+        "LLM_MODEL": "${LLM_MODEL:-gpt-5.4}",
+        "LLM_FALLBACK_MODEL": "${LLM_FALLBACK_MODEL:-gpt-5.4}"
+      }
+    },
+    "mechanic-db": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--with-requirements",
+        "${CLAUDE_PLUGIN_ROOT}/mcp-servers/mechanic-db/requirements.txt",
+        "${CLAUDE_PLUGIN_ROOT}/mcp-servers/mechanic-db/server.py"
+      ],
+      "env": {
+        "MECHANIC_DB_API_KEY": "${MECHANIC_DB_API_KEY:-}"
+      }
+    }
+  }
+}
