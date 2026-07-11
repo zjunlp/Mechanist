@@ -1,6 +1,5 @@
 <p align="center">
-  <img src="mechanist-logo.png
-" alt="Mechanist Logo" width="413" height="100">
+  <img src="mechanist-logo.png" alt="Mechanist Logo" width="413" height="100">
 </p>
 
 <p align="center">
