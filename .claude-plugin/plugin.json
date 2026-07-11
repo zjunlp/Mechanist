@@ -1,10 +1,10 @@
 {
   "name": "mechanist",
   "version": "0.1.0",
-  "description": "Mechanist — research-workflow plugin for Claude Code.",
-  "author": { "name": "MECHANICA", "url": "https://github.com/mengrusun/MECHANICA" },
-  "homepage": "https://github.com/mengrusun/MECHANICA",
-  "repository": "https://github.com/mengrusun/MECHANICA",
+  "description": "Mechanist — AI Systems as Scientific Instruments for Understanding the Mechanisms of Intelligence.",
+  "author": { "name": "zjunlp", "url": "https://github.com/zjunlp" },
+  "homepage": "https://github.com/zjunlp/Mechanist",
+  "repository": "https://github.com/zjunlp/Mechanist",
   "license": "MIT",
   "keywords": ["research", "experiments", "literature-review", "auto-pipeline", "mcp", "science"],
 
