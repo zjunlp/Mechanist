@@ -27,6 +27,12 @@ exp/
 # Demo / scratch experiment directories — local-only, often contain API keys in .mcp.json
 demo*/
 
+# ...except these four demos we do want to ship (secret files above stay ignored)
+!demo_belief/
+!demo_science/
+!demo_subliminal_multimodal/
+!demo_subliminal_text/
+
 # Local-only working notes / judge prompts — don't ship
 log.md
 novelty_judge.md
