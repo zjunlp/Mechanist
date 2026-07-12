@@ -13,15 +13,19 @@ The approach assumes target concepts are linearly encoded. When the encoding is 
 
 ## Submethods
 
-The category typically takes 3 forms:
+The category typically takes 4 forms:
+
+- **Representation Engineering**:
+Reads, monitors, and edits LLM behavior by extracting concept directions from hidden-state features using contrastive prompt pairs. RepReading projects features onto the concept direction to detect attributes such as truthfulness, emotion, fairness, harmlessness, or memorization, while RepControl writes the same direction back into the residual stream during generation to steer the model toward or away from the concept.
+You can find a demo for this method in ./representation-engineering. This demo shows representation-engineering: Use this skill when working with Representation Engineering (RepE) for AI transparency, monitoring, or controlling internal representations of large language models including truthfulness detection, emotion control, harmlessness steering, and memorization analysis.
 
 - **Steering Vectors**:
 A focused instance of directly editing features at inference time: steering directions are built from contrastive activation pairs (Contrastive Activation Addition / CAA) and added to a chosen layer's residual stream during generation. It is especially useful for behavioral control of chat models, where concepts of interest are easy to frame via paired examples of desired vs. undesired behavior.
 You can find a demo for this method in ./steering-vectors. This demo shows steering_vectors: Work with Llama 2 model steering using Contrastive Activation Addition (CAA) for behavioral control, including generating steering vectors, evaluating model behavior, and analyzing activation patterns.
 
-- **Representation Engineering**:
-Reads, monitors, and edits LLM behavior by extracting concept directions from hidden-state features using contrastive prompt pairs. RepReading projects features onto the concept direction to detect attributes such as truthfulness, emotion, fairness, harmlessness, or memorization, while RepControl writes the same direction back into the residual stream during generation to steer the model toward or away from the concept.
-You can find a demo for this method in ./representation-engineering. This demo shows representation-engineering: Use this skill when working with Representation Engineering (RepE) for AI transparency, monitoring, or controlling internal representations of large language models including truthfulness detection, emotion control, harmlessness steering, and memorization analysis.
+- **Steering features**:
+Directly intervenes on the target feature rather than adding a separately built steering vector to the residual stream. The feature that corresponds to the target behavior is first located and scored for how strongly it drives the output — keeping features with a high output effect over merely input-correlated ones — and during generation its activation is directly amplified or shrunk to steer behavior. When the feature lives in a Sparse Autoencoder (SAE), this takes the encode → amplify target feature → decode form (Feature Clamping): the SAE encodes the residual stream into feature space, the target feature's activation is scaled, and the result is decoded back. The SAE is not essential, though — the same direct-intervention idea applies to a feature identified in the model's own backbone activations, where its activation is scaled in place with no encode/decode step. Because control acts on one isolated, near-monosemantic feature, it is more targeted and less entangled than dense contrastive steering vectors.
+You can find a demo for this method in ./steer-features. This demo shows steer-features: Use this skill when working with Sparse Autoencoders (SAEs) for model steering, feature analysis, or interpretability research. Particularly useful for selecting and scoring SAE features to influence model outputs toward desired concepts.
 
 - **Parameter-Space Task Vectors**:
 Lifts the same idea to weight space and edits weights directly: a *task vector* is the displacement between a fine-tuned checkpoint and its pre-trained checkpoint, and arithmetic on these vectors — addition for multi-task composition, negation for unlearning, and analogy-style combinations across related tasks — modifies model behavior without any further training.

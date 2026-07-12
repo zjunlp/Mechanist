@@ -13,7 +13,7 @@ The primary limitation is the assumption that intermediate states exist in the s
 
 ## Submethods
 
-Given object categories, the method typically takes 4 forms: 
+Given object categories, the method typically takes 3 forms: 
 
 - **Residual Stream State**:
 Projecting the residual stream state allows researchers to trace the layer-wise evolution of predictions and identify the crucial layers where specific concepts emerge.
@@ -26,7 +26,3 @@ You can find a demo for this method in ./attention-head-output. This demo shows 
 - **Neuron Value Weight**:
 From a point of view, FFNs operate as key-value  memories. By projecting the value weight vector into the vocabulary, one can see which tokens are promoted by a specific neuron. Individual neurons often boost semantically related clusters (e.g., “press”, “news”, “media”), suggesting that FFNs refine predictions by composing these pre-learned semantic distributions.
 You can find a demo for this method in ./neuron-value-weight. This demo shows ff-layers: Analyze transformer feed-forward layers as key-value memories, extract activations, identify trigger examples, and compute key-value agreement in transformer language models
-
-- **Sparse Autoencoder(SAE) Feature**: 
-For SAEs, output-based explanations leverage the decoder weights to interpret monosemantic features. By computing the logits contribution for a feature vector fj, one can identify top-ranked tokens.
-You can find a demo for this method in ./sae-feature. This demo shows saes-steering: Use this skill when working with Sparse Autoencoders (SAEs) for model steering, feature analysis, or interpretability research. Particularly useful for selecting and scoring SAE features to influence model outputs toward desired concepts.

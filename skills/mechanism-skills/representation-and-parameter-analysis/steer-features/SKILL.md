@@ -1,9 +1,11 @@
 ---
-name: sae-feature
-description: Use this skill when working with Sparse Autoencoders (SAEs) for model steering, feature analysis, or interpretability research. Particularly useful for selecting and scoring SAE features to influence model outputs toward desired concepts.
+name: steer-features
+description: Use this skill for feature-level steering of models — locating the internal feature that drives a target behavior, scoring and selecting it by its effect on the model's output, and directly amplifying or shrinking that feature's activation during generation to control behavior. Applies to features read from the model's own activations or from a Sparse Autoencoder (SAE); the bundled demo scripts happen to use an SAE, but the method does not require one.
 ---
 
 # SAEs Are Good for Steering - If You Select the Right Features
+
+> **Note — an SAE is optional.** The method itself only needs to locate the feature that drives the target behavior and scale its activation in place during generation. When the features live in a Sparse Autoencoder (SAE), the same intervention takes the encode → amplify/diminish target feature → decode form (Feature Clamping): the SAE encodes the residual stream into feature space, the target feature's activation is scaled, and the result is SAE decoded back. The demo scripts here use an SAE, but that is a property of this demo, not a requirement of the method. 
 
 ## When to Use
 This skill should be activated when:

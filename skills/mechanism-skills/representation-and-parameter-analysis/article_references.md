@@ -10,6 +10,11 @@
 - **Name:** Steering Llama 2 via Contrastive Activation Addition
 - **URL:** https://arxiv.org/abs/2312.06681
 
+## Steering features 
+
+- **Name:** SAEs Are Good for Steering -- If You Select the Right Features
+- **URL:** https://arxiv.org/abs/2505.20063
+
 ## Parameter-Space Task Vectors
 
 - **Name:** Editing Models with Task Arithmetic

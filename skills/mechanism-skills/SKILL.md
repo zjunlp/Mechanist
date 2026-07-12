@@ -45,7 +45,7 @@ The eleven families are organized by *what signal they use* to localize internal
 **Advantage**: training-free — any internal state can be read directly in token space without labels or auxiliary classifiers.
 **Limitation**: assumes intermediate states share a basis with the output vocabulary, so reliability degrades inside sub-layers (FFN, MHA) and in models whose representation space rotates strongly across layers.
 
-Submethods: Residual Stream State · Attention Head Output · Neuron Value Weight · SAE Feature.
+Submethods: Residual Stream State · Attention Head Output · Neuron Value Weight.
 
 ### 2. Magnitude Analysis — `./magnitude-analysis/`
 **Premise**: internal elements with larger numerical values often exert greater influence on the computation.
@@ -65,7 +65,8 @@ Submethods: Static Parameters · Dynamic Components · Layer-wise Representation
 **Advantage**: one direction serves both as a read-out (projection) and a write-in (addition), so monitoring, steering, and training-free model editing share the same handle, with no fine-tuning required and clean composition (add, subtract, negate).
 **Limitation**: assumes concepts are linearly encoded — non-linear or entangled concepts are missed and additive edits spill into neighbouring features; directions are basis- and checkpoint-specific, and large edit strengths push the model off-distribution.
 
-Submethods: Representation Engineering · Steering Vectors · Parameter-Space Task Vectors.
+Submethods: Representation Engineering · Steering Vectors · Steering features · Parameter-Space Task Vectors.
+**Choosing among them — what gets manipulated**: *Parameter-Space Task Vectors* edit the **weights** (a one-shot displacement in parameter space, applied before inference). The other three act on **activations** at inference time. Of those, *Steering features* and *Steering Vectors* both intervene on the input's own representation — *Steering features* directly amplifies/shrinks the model's **existing internal feature** for the target behavior, whereas *Steering Vectors* leaves the internal features untouched and instead **adds an externally built direction** (a CAA vector from contrastive pairs) into the residual stream. *Representation Engineering* is the read-and-write superset on the activation side: it extracts concept directions to both monitor (project) and steer (add) behavior.
 
 ### 4. Probing — `./probing/`
 **Premise**: train an auxiliary predictor (often linear) to decode a labeled property $y$ from an internal vector $\mathbf{z}$; treat the LLM as a frozen feature extractor.

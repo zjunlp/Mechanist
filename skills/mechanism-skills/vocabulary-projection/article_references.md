@@ -14,8 +14,3 @@
 
 - **Name:** Transformer Feed-Forward Layers Are Key-Value Memories
 - **URL:** https://arxiv.org/abs/2012.14913
-
-## Sparse Autoencoder (SAE) feature
-
-- **Name:** SAEs Are Good for Steering--If You Select the Right Features
-- **URL:** https://arxiv.org/abs/2505.20063
