@@ -49,6 +49,15 @@ cd saes-are-good-for-steering
 - **Generation Analysis**: Evaluate steering success with various metrics
 - **Data Processing**: Handle feature data from Neuronpedia and custom sources
 
+## Default Intervention Mode (IMPORTANT)
+Unless the user explicitly asks for **additive steering-vector injection**, all SAE experiments MUST use the **encode → amplify target feature → decode** flow (i.e. Feature Clamping / Encoder-Clamp-Decoder):
+
+1. Encode the residual-stream activations into SAE feature space.
+2. Amplify (clamp) the target feature to the desired value.
+3. Decode/reconstruct the activations and write them back.
+
+Additive injection (`hidden_states += steering_factor * vector`) is only allowed when the user specifically requests it. Note: the placeholder body in `scripts/steer_model.py` currently performs additive injection for demonstration only — it is NOT the default and should not be treated as the reference behavior.
+
 ## Usage Examples
 
 ### Calculate Output Scores
