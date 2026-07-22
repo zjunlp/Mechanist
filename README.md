@@ -12,6 +12,7 @@
   <a href="#-quick-start">Quick Start</a> ·
   <a href="#-usage-guide">Usage Guide</a> ·
   <a href="#-acknowledgements">Acknowledgements</a> ·
+  <a href="http://mechanist.openkg.cn">Website</a> ·
   <a href="docs/README_zh.md">中文</a>
 </p>
 

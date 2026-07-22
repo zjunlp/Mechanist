@@ -12,6 +12,7 @@
   <a href="#-快速开始">快速开始</a> ·
   <a href="#-使用指南">使用指南</a> ·
   <a href="#-致谢">致谢</a> ·
+  <a href="http://mechanist.openkg.cn">项目网站</a> ·
   <a href="../README.md">English</a>
 </p>
 
