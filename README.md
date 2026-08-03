@@ -389,7 +389,7 @@ The resulting timeline covers foundational papers, methodological breakthroughs,
 - **[User Guide](docs/user_guide.md)** — pipeline architecture deep-dive, full parameter reference, working with reference papers, literature management, hypothesis batch generation, experiment isolation, and reliability best practices.
 - **[Developer Guide](docs/developer_guide.md)** — for contributors who want to modify skill prompts, agent definitions, or MCP server code locally.
 
----
+<!-- ---
 
 ## 📄 Citation
 
@@ -397,10 +397,11 @@ If you use Mechanist in your research, please cite:
 
 ```bibtex
 TODO
-```
+``` -->
 
 ---
 
 ## 🙏 Acknowledgements
 
-TODO
+We would like to express our heartfelt gratitude for the contribution of ARIS to our project, as we have utilized portions of their source code in our project. 
+Many thanks to all the colleagues in the community for submitting issues and providing technical support. 
