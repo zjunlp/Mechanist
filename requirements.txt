@@ -21,3 +21,10 @@ nltk==3.9.2
 tqdm==4.67.1
 omegaconf==2.3.0
 requests==2.32.5
+evo2==0.6.0
+flash-attn==2.8.3.post1
+biopython==1.87
+scipy==1.17.1
+scikit-learn==1.9.0
+matplotlib==3.11.0
+einops==0.8.1
