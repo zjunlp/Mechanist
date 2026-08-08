@@ -115,7 +115,7 @@ Setup (once per topic) → loop body 1–6 (run `ROUNDS` times) → wrap-up.
 
 **Read the library.** Read `hypothesis_library.json`. If the topic in it differs semantically from this run's topic, **stop and ask** —— never silently overwrite. If it does not exist, create an empty tree.
 
-**Ground in the literature.** Run `/research-lit "<topic>"` to obtain `LANDSCAPE.md`. The Structural Gaps in that file are the preferred generation lens, and its Banlist is merged into the ban list. An existing file for the same topic can be reused directly.
+**Ground in the literature.** Run `/research-lit "<topic>"` (skill `/mechanic-db-search` included) to obtain `LANDSCAPE.md`. The Structural Gaps in that file are the preferred generation lens, and its Banlist is merged into the ban list. An existing file for the same topic can be reused directly.
 
 **Build the instrument sheet.** Write `instrument_sheet.json` —— this is what makes **checkable** thresholds possible at batch scale: numbers all come from the sheet, rather than each hypothesis improvising its own.
 
