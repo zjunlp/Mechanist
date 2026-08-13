@@ -7,11 +7,6 @@
 </p>
 
 <p align="center">
-  <a href="#-overview">Overview</a> ·
-  <a href="#-installation">Installation</a> ·
-  <a href="#-quick-start">Quick Start</a> ·
-  <a href="#-usage-guide">Usage Guide</a> ·
-  <a href="#-acknowledgements">Acknowledgements</a> ·
   <a href="http://mechanist.openkg.cn">Website</a> ·
   <a href="docs/README_zh.md">中文</a>
 </p>
@@ -205,18 +200,6 @@ Place a free-form Markdown file named `task.md` in the project root. The file sh
 | **Reproduce a paper** | Both the finding and the method are already known — re-run them faithfully. |
 | **Validate a suspected phenomenon** | You have a concrete hypothesis, but no paper (or prior run) has confirmed it yet. |
 | **Open-ended discovery** | Only a research direction — let Mechanist mine a new phenomenon, then investigate it. |
-
-Minimal example:
-
-```markdown
-# Does GPT-2 use a dedicated "negation" direction in its residual stream?
-
-We hypothesize that the model represents negation through a consistent,
-localized direction in the residual stream of middle layers. Use probing
-and activation patching to test this.
-
-Model: GPT-2-small (HuggingFace)
-```
 
 > See [Writing `task.md`](#writing-taskmd) for the full reference — you can specify model paths, GPU budgets, hard constraints, and more.
 

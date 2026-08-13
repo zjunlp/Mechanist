@@ -7,11 +7,6 @@
 </p>
 
 <p align="center">
-  <a href="#-概述">概述</a> ·
-  <a href="#-安装">安装</a> ·
-  <a href="#-快速开始">快速开始</a> ·
-  <a href="#-使用指南">使用指南</a> ·
-  <a href="#-致谢">致谢</a> ·
   <a href="http://mechanist.openkg.cn">项目网站</a> ·
   <a href="../README.md">English</a>
 </p>
@@ -206,17 +201,6 @@ mkdir my-experiment && cd my-experiment   # 每个研究问题对应一个目录
 | **验证可疑现象** | 已有具体假设，但尚无论文或先前实验确认。 |
 | **开放式发现** | 只有研究方向——先让 Mechanist 挖出现象，再深入调查。 |
 
-最小示例：
-
-```markdown
-# GPT-2 是否在残差流中使用了专门的"否定"方向？
-
-我们假设模型通过中间层残差流中一致、局部的方向来表示否定语义。
-请使用 probing 和 activation patching 进行验证。
-
-模型：GPT-2-small（HuggingFace）
-```
-
 > 完整参考见[编写 task.md](#编写-taskmd)——你可以指定模型路径、GPU 预算、硬约束等更多细节。
 
 ### 3. 启动 Claude Code 并运行 `/auto`
@@ -394,16 +378,7 @@ retry-settled: true
 
 ---
 
-## 📄 引用
-
-如果您在研究中使用了 Mechanist，请引用：
-
-```bibtex
-TODO
-```
-
----
-
 ## 🙏 致谢
 
-TODO
+我们谨对ARIS为本项目所做的贡献表示衷心感谢，因为我们在项目中使用了其部分源代码。
+同时，衷心感谢社区所有同仁提交问题并提供技术支持。
