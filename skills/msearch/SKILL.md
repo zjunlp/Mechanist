@@ -167,7 +167,7 @@ A search aimed at the wrong reading of the query wastes the slow cloud call and 
 **Precondition:** Steps 0, 0a, 0b, 0c, 0d have each produced their result block (or an explicit "skipped: <reason>" note). Do not start this step until then.
 
 > **Parallelism — the only place it is allowed.** This step has two lanes:
-> - **Lane A — mechanic-db cloud SEARCH** (slow, ~3-10 min per call)
+> - **Lane A — mechanic-db cloud SEARCH** (slow, typically 5-7 min per call; the service kills any search that has not finished within 15 min of submission)
 > - **Lane B — external search** (WebSearch + arXiv + opt-in extras)
 >
 > **Launch Lane A first** — it is the slow cloud call — then, *without waiting for it to return*, run Lane B in parallel while Lane A is in flight. Both lanes must complete (or be marked "skipped: <reason>") before Step 2 begins. This concurrency is confined to Step 1; no other steps overlap. De-duplicate Lane A results against Lane B by normalized title once both lanes return.

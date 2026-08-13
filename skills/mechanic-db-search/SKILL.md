@@ -22,9 +22,9 @@ All transport — auth, submit, poll, error handling, writing results to disk �
 ## Constants
 
 - **TOOL** = the `search_papers` tool on the `mechanic-db` MCP server. Call it directly; do not invoke any Python.
-- **API_KEY** — provided to the MCP server via the plugin manifest env mapping (`MECHANIC_DB_API_KEY`; set as an environment variable in the shell that launches Claude Code, or for Codex the cached `mcp.codex.json` `env`).
+- **API_KEY** — provided to the MCP server via the plugin manifest env mapping (`MECHANIC_DB_API_KEY`; set as an environment variable in the shell that launches Claude Code, or for Codex the cached `mcp.codex.json` `env`). **Optional**: with no key the service still answers on an anonymous per-IP tier (2 searches/min, 20/day, vs 20/min and 1000/day with a key). An unset key is therefore not a reason to skip this skill.
 - **DEFAULT_TOP_K** = 300
-- **TIMEOUT_SEC** = 1200 (one call ≈ 3-20 min; allow headroom)
+- **TIMEOUT_SEC** = 1200 (one call is typically 3-7 min; allow headroom)
 - **MAX_REFINEMENT_ROUNDS** = 3
 
 ## Skip-when-unconfigured contract
@@ -498,6 +498,7 @@ When coverage is unsatisfactory, refine and call again (new output path to keep 
 
 | Symptom | `search_papers` behaviour | Caller's responsibility |
 |---------|---------------------------|--------------------------|
+| No API key set | **Not a failure.** Runs anonymously at 2 searches/min, 20/day. | Call the tool normally. |
 | HTTP 401 / 403 (invalid key) | Returns an `isError` result carrying the server message. | Treat as unavailable; proceed. |
 | HTTP 429 (quota exhausted) | Returns an `isError` result with the message. | Proceed with other sources. |
 | HTTP 5xx / connection error | Returns an `isError` result. | Proceed with other sources. |
