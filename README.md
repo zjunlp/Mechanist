@@ -38,12 +38,15 @@
 - [📖 Overview](#-overview)
 - [🔄 How It Works](#-how-it-works)
 - [🔧 Installation](#-installation)
-  - [1. Install Claude Code](#1-install-claude-code)
-  - [2. Install uv](#2-install-uv)
-  - [3. Create a Conda Environment](#3-create-a-conda-environment)
-  - [4. Configure Environment Variables](#4-configure-environment-variables)
-  - [5. Install the Mechanist Plugin](#5-install-the-mechanist-plugin)
+  - [1. Install Claude Code and uv](#1-install-claude-code-and-uv)
+  - [2. Install the Mechanist Plugin](#2-install-the-mechanist-plugin)
+  - [3. Configure the External Review Model](#3-configure-the-external-review-model)
+  - [4. Prepare the Python Environment](#4-prepare-the-python-environment-optional)
 - [🚀 Quick Start](#-quick-start)
+  - [1. Create a Working Directory](#1-create-a-working-directory)
+  - [2. Write `task.md`](#2-write-the-research-task-as-taskmd)
+  - [3. Run `/auto`](#3-start-claude-code-and-run-auto)
+  - [4. Follow the Run and Read Results](#4-follow-the-run-then-read-the-results)
 - [📚 Usage Guide](#-usage-guide)
   - [`/auto` — The Autonomous Pipeline](#auto--the-autonomous-pipeline)
   - [`/msearch` — Literature Search](#msearch--literature-search)
@@ -58,7 +61,9 @@
 
 **Mechanist** converts a research question about the internal mechanisms of large language models into **evidence-backed findings**. It coordinates a complete research workflow: literature retrieval, hypothesis formulation, experiment implementation and execution, robustness validation, and iterative refinement — all within a single autonomous pipeline.
 
-Mechanist is distributed as a **Claude Code plugin**. You do not need to clone this repository to use it (see [Installation](#-installation)).
+**Mechanist ships as a Claude Code plugin** — no repository clone required. Install it in minutes, hand it a research question, and it runs the experiments on your own machine and GPUs, then hands back a verifiable research report. (Codex support is coming soon.)
+
+For the latest install and walkthrough, see the [Quick Start](http://mechanist.openkg.cn/#/quick-start) page on the website.
 
 ### Key Capabilities
 
@@ -92,137 +97,116 @@ All results are tracked in a **Claim Ledger** (`CLAIMS_LEDGER.md`) that records 
 
 ## 🔧 Installation
 
-### 1. Install Claude Code
+### 1. Install Claude Code and uv
 
-Download and install Claude Code, then log in:
+Mechanist runs inside Claude Code — install the Claude Code CLI first:
 
 ```bash
-# Download and install Claude Code
+# Install Claude Code, restart your terminal, then verify
 curl -fsSL https://claude.ai/install.sh | bash
-
-# Restart your terminal, then verify
 claude --version
 ```
 
-> [!IMPORTANT]
-> **Mechanist requires the Opus 4.7 model.** Launch each session with `--model claude-opus-4-7`, or select Opus 4.7 within a session using `/model`.
-> ```bash
-> claude --model claude-opus-4-7
-> ```
-
-### 2. Install uv
-
-The Mechanist MCP servers use `uv` to bootstrap temporary Python environments:
+Mechanist's MCP servers use `uv` to manage Python environments — install uv next:
 
 ```bash
-# Download and install uv
+# Mechanist's MCP servers use uv to bootstrap temporary Python environments
 curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Restart your terminal, then verify
 uv --version
 ```
 
-### 3. Create a Conda Environment
+### 2. Install the Mechanist Plugin
 
-Create a dedicated conda environment `scientist` for experiment execution and install its dependencies:
-
-```bash
-conda create -n scientist python=3.11 -y
-conda activate scientist
-pip install -r <(curl -sSL https://raw.githubusercontent.com/zjunlp/Mechanist/main/requirements.txt)
-```
-
-### 4. Configure Environment Variables
-
-Mechanist's two MCP servers read configuration from **environment variables**. Set the following values in `~/.bashrc` (or `~/.zshrc`):
-
-| Variable | Required | Default / Example | Purpose |
-|:---|:---|:---|:---|
-| `LLM_API_KEY` | **Yes** | `sk-…` | API key for the external review model (cross-validation). |
-| `LLM_MODEL` | No | `gpt-5.4` | External review model name. |
-| `LLM_BASE_URL` | No | `https://api.openai.com/v1` | Base URL for the LLM provider. If using a proxy, set this to the proxy URL. |
-| `MECHANIC_DB_API_KEY` | No | `sk_…` | API key for the Mechanic-DB paper retrieval service. If unset, Mechanist falls back to local PDFs, Web Search, arXiv, and Semantic Scholar. |
-
-#### External Review Model
-
-The external review model independently cross-validates Claude's ideas, experiment designs, and conclusions at every pipeline stage, preventing correlated failure from same-model self-review. **Do not use a Claude-series model** for this role.
-
-- **Recommended**: Use GPT-5.4 via `https://platform.openai.com`. With a standard OpenAI key in `LLM_API_KEY`, the `LLM_MODEL` and `LLM_BASE_URL` defaults suffice.
-- **Alternative providers** (Azure / DeepSeek / Qwen / third-party proxies): configure all three — `LLM_API_KEY`, `LLM_BASE_URL`, and `LLM_MODEL` — for an OpenAI-compatible endpoint.
-
-#### Mechanic-DB API Key
-
-Mechanic-DB is a self-hosted paper retrieval service backed by a 14k-paper interpretability corpus and a 157M-node cross-disciplinary citation network. It provides precise, domain-focused recall compared to general-purpose web search. Without a key, Mechanist skips Mechanic-DB and falls back to local PDFs, Web Search, arXiv, and Semantic Scholar.
-
-**Step 1:** Register with your email address:
-
-```bash
-curl -X POST http://mechanist.openkg.cn/register \
-  -H 'Content-Type: application/json' \
-  -d '{"email": "you@example.com"}'
-```
-
-**Step 2:** Open the verification link in the email you receive. The page displays an API key starting with `sk_`.
-
-> [!WARNING]
-> **The key is shown only once.** Copy it immediately and set it as `MECHANIC_DB_API_KEY`.
-
-#### Set the Variables
-
-Add the following to `~/.bashrc` (or `~/.zshrc`):
-
-```bash
-# --- Mechanist ---
-export LLM_API_KEY="sk-..."                       # Required: external review model key
-export LLM_MODEL="gpt-5.4"                        # Optional, default: gpt-5.4
-export LLM_BASE_URL="https://api.openai.com/v1"   # Optional, default: official endpoint
-export MECHANIC_DB_API_KEY="sk_..."               # Optional: leave unset to skip Mechanic-DB
-```
-
-Then run `source ~/.bashrc` (or open a new terminal) and confirm with `echo "$LLM_API_KEY"`.
-
----
-
-### 5. Install the Mechanist Plugin
-
-Install directly from the Claude Code plugin marketplace:
+Inside a Claude Code session:
 
 ```text
 /plugin marketplace add zjunlp/Mechanist
 /plugin install mechanist@mechanist
 ```
 
-Once installed and the [environment variables](#4-configure-environment-variables) are set, **restart Claude Code**, then verify:
+Then activate and verify:
 
-- Run `/help` and confirm that Mechanist skills appear — e.g. `/mechanist:auto`, `/mechanist:msearch`, `/mechanist:mhistory`.
-- Run `/mcp` and confirm that both `llm-chat` and `mechanic-db` show as **connected**.
+```text
+/reload-plugins   # only if the install summary asked for it
+/help             # listed as /mechanist:auto, /mechanist:msearch, /mechanist:mhistory
+/mcp              # llm-chat and mechanic-db should both be "connected"
+```
 
-Once both checks pass, proceed to [Quick Start](#-quick-start).
+> Commands still missing after that? Restart Claude Code and try again.
+
+### 3. Configure the External Review Model
+
+Mechanist cross-validates its own ideas, experiment designs, and conclusions with an external reviewer at every stage — a second model, independent of Claude, so the same model never grades itself. **Do not use a Claude-series model for this role.** [GPT-5.4](https://platform.openai.com) is recommended — with a standard OpenAI key the defaults below are already correct. For Azure, DeepSeek, Qwen, or a third-party proxy, set all three variables to an OpenAI-compatible endpoint.
+
+| Variable | Required | Default / Example | Purpose |
+|:---|:---|:---|:---|
+| `LLM_API_KEY` | **Yes** | `sk-…` | API key for the external review model (cross-validation). |
+| `LLM_MODEL` | No | `gpt-5.4` | External review model name. |
+| `LLM_BASE_URL` | No | `https://api.openai.com/v1` | Base URL for the LLM provider. Set this to your proxy URL if you use one. |
+
+Add the following to `~/.bashrc` (or `~/.zshrc`):
+
+```bash
+# --- Mechanist (add to ~/.bashrc or ~/.zshrc) ---
+export LLM_API_KEY="sk-..."                       # required: external review model key
+export LLM_MODEL="<your_model_name>"              # optional, default: gpt-5.4
+export LLM_BASE_URL="<your_base_url>"             # optional, default: official endpoint
+```
+
+Load the new variables, then confirm the key is set:
+
+```bash
+source ~/.bashrc            # or open a brand-new terminal
+echo "$LLM_API_KEY"         # should print your key, not an empty line
+```
+
+> [!NOTE]
+> **Variables are read only when Claude Code starts.** Exporting them inside an already-running session changes nothing. Edit `~/.bashrc` → `source` it (or open a new terminal) → restart Claude Code.
+
+### 4. Prepare the Python Environment (Optional)
+
+Mechanist runs experiments in the Python environment the Claude session was started in. If you do not yet have the basic packages for running experiments (PyTorch, NumPy, scikit-learn, etc.), create a conda environment. The `scientist` environment covers the common tools Mechanist may need:
+
+```bash
+# Example: a dedicated conda env named scientist
+conda create -n scientist python=3.11 -y
+conda activate scientist
+pip install -r <(curl -sSL https://raw.githubusercontent.com/zjunlp/Mechanist/main/requirements.txt)
+```
+
+Once the steps above are done, proceed to [Quick Start](#-quick-start).
 
 ---
 
 ## 🚀 Quick Start
 
-Here is the big picture — every Mechanist run follows this loop:
+Create a folder as the working directory, write a free-form Markdown file `task.md` to describe your research question, then open Claude Code and run `/auto` to start the autonomous research pipeline.
 
 ```
- task.md  ──▶  /auto  ──▶  CLAIMS_LEDGER.md
+ task.md  ──▶  /auto  ──▶  CLAIMS_LEDGER.md + AUTO_PIPELINE_REPORT.md
  (your input)   (the engine)   (the findings)
 ```
 
-- **`task.md`** is where you describe your research question. `/auto` reads it and uses it to drive every stage of the pipeline.
-- **`/auto`** runs the full workflow and writes everything to disk as it goes.
-- **`CLAIMS_LEDGER.md`** is the final report — open it to see what was discovered.
+### 1. Create a Working Directory
 
-### Step 1: Create a Project and Write `task.md`
-
-Each research question gets its own directory with a `task.md`:
+Create a new empty folder for your research task. Mechanist will work inside this folder and write all outputs here.
 
 ```bash
-mkdir my-experiment && cd my-experiment
+mkdir my-experiment && cd my-experiment   # one research question per directory
 ```
 
-Now create `task.md` inside it. Here is a minimal example:
+### 2. Write the Research Task as `task.md`
+
+Place a free-form Markdown file named `task.md` in the project root. The file should contain your research question in natural language. Typical asks include:
+
+| What you can ask | Idea |
+|:---|:---|
+| **Explore a mechanism** | A known model behavior — find which internal component causes it. |
+| **Reproduce a paper** | Both the finding and the method are already known — re-run them faithfully. |
+| **Validate a suspected phenomenon** | You have a concrete hypothesis, but no paper (or prior run) has confirmed it yet. |
+| **Open-ended discovery** | Only a research direction — let Mechanist mine a new phenomenon, then investigate it. |
+
+Minimal example:
 
 ```markdown
 # Does GPT-2 use a dedicated "negation" direction in its residual stream?
@@ -236,21 +220,42 @@ Model: GPT-2-small (HuggingFace)
 
 > See [Writing `task.md`](#writing-taskmd) for the full reference — you can specify model paths, GPU budgets, hard constraints, and more.
 
-### Step 2: Launch the Pipeline
+### 3. Start Claude Code and Run `/auto`
 
-Start Claude Code in your project directory and run `/auto`:
+> [!NOTE]
+> **Use an Opus-series model.** We recommend Opus for best performance — switch inside a session with `/model opus`. Weaker models degrade the whole pipeline.
+
+Start Claude Code in the project root:
 
 ```bash
-claude --model claude-opus-4-7
+claude --model opus
 ```
+
+Inside the session, run bare `/auto`. It will read `task.md` and run the whole research pipeline automatically:
 
 ```text
 /auto
 ```
 
-`/auto` reads your `task.md` and runs the full four-stage workflow — formulating a testable claim, designing and executing experiments, validating robustness, and iteratively refining conclusions. When it finishes, open `CLAIMS_LEDGER.md` for the complete findings.
+### 4. Follow the Run, Then Read the Results
 
-See [Pipeline Modes](#pipeline-modes) to control how behavior and mechanism discovery are handled.
+Mechanist executes four stages in order — **claim → experiment → verify → iteration** — and writes each stage's documents to disk before the next stage begins:
+
+| Stage | Key artifacts |
+|:---|:---|
+| **claim** | `idea-stage/IDEA_REPORT.md` — ranked candidate ideas, or the behavior and claims from `task.md`<br>`refine-logs/FINAL_PROPOSAL.md` — refined method proposal<br>`refine-logs/EXPERIMENT_PLAN.md` — per-claim milestones, models, data, success criteria |
+| **experiment** | `refine-logs/MECHANISM_ROUTING.md` — chosen interpretability method and why<br>`refine-logs/EXPERIMENT_RESULTS.md` — per-claim results and baseline verdicts<br>`runs/` — per-run code, logs, and GPU cost records |
+| **verify** | `verify/VERIFY_REPORT.md` — robustness verdicts and cross-claim summary<br>`verify/INTEGRITY_AUDIT.md` — honesty audits on original and swap runs |
+| **iteration** | `review-stage/AUTO_REVIEW.md` — round-by-round review log<br>`review-stage/AUTO_ITERATION_FINAL_REPORT.md` — what changed across fix loops |
+
+When it finishes, read these two files at the project root:
+
+| File | What's inside |
+|:---|:---|
+| `CLAIMS_LEDGER.md` | Per-claim scoreboard: final verdicts, robustness, and caveats. |
+| `AUTO_PIPELINE_REPORT.md` | The run's journey, an index of every artifact, and any Open Items still needing your action. |
+
+See [Pipeline Modes](#pipeline-modes) to control how behavior and mechanism discovery are handled. For archive / next-round workflows and advanced usage, see the [User Guide](docs/user_guide.md).
 
 ---
 
@@ -279,7 +284,7 @@ The two axes are orthogonal — all 3 × 2 = 6 combinations are valid. The four 
 | **Full Discovery** | `/auto — behavior-source: discovery, mechanism: discovery` | Fully autonomous: the pipeline discovers the phenomenon and routes to the appropriate mechanism. |
 
 > [!NOTE]
-> **Reviewing results:** After each `/auto` run, the scientific conclusions and final pipeline state are aggregated in `CLAIMS_LEDGER.md` at the root of your working directory. This claim-centric report records each claim's statement, data/model/method, main experiment results, verify verdict, and iteration outcome — a single file to review all outputs.
+> **Reviewing results:** After each `/auto` run, start with `CLAIMS_LEDGER.md` (per-claim scoreboard) and `AUTO_PIPELINE_REPORT.md` (run journey, artifact index, and Open Items) at the project root. Stage-level artifacts under `idea-stage/`, `refine-logs/`, `verify/`, `review-stage/`, and `runs/` are written as the pipeline progresses — see [Follow the Run](#4-follow-the-run-then-read-the-results).
 
 #### Writing `task.md`
 

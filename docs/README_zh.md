@@ -38,12 +38,15 @@
 - [📖 概述](#-概述)
 - [🔄 工作流程](#-工作流程)
 - [🔧 安装](#-安装)
-  - [1. 安装 Claude Code](#1-安装-claude-code)
-  - [2. 安装 uv](#2-安装-uv)
-  - [3. 创建 Conda 环境](#3-创建-conda-环境)
-  - [4. 配置环境变量](#4-配置环境变量)
-  - [5. 安装 Mechanist 插件](#5-安装-mechanist-插件)
+  - [1. 安装 Claude Code 与 uv](#1-安装-claude-code-与-uv)
+  - [2. 安装 Mechanist 插件](#2-安装-mechanist-插件)
+  - [3. 配置外部评审模型](#3-配置外部评审模型)
+  - [4. 准备 Python 实验环境](#4-准备-python-实验环境可选)
 - [🚀 快速开始](#-快速开始)
+  - [1. 创建工作目录](#1-创建工作目录)
+  - [2. 编写 `task.md`](#2-将研究任务写成-taskmd)
+  - [3. 运行 `/auto`](#3-启动-claude-code-并运行-auto)
+  - [4. 跟踪运行并阅读结果](#4-跟踪运行然后阅读结果)
 - [📚 使用指南](#-使用指南)
   - [`/auto`——自主流水线](#auto自主流水线)
   - [`/msearch`——文献检索](#msearch文献检索)
@@ -58,7 +61,9 @@
 
 **Mechanist** 将关于大语言模型内部机理的研究问题转化为**有证据支持的科学发现**。它全流程自动协调：文献检索 → 假设提出 → 实验实现与执行 → 鲁棒性验证 → 迭代精炼。
 
-Mechanist 以 **Claude Code 插件**形式分发，无需克隆本仓库即可使用（参见[安装](#-安装)）。
+**Mechanist 以 Claude Code 插件形式分发**——无需克隆本仓库。几分钟内完成安装，交给它一个研究问题，它会在你自己的机器和 GPU 上跑实验，并交回一份可核验的研究报告。（Codex 支持即将推出。）
+
+最新的安装步骤与上手教程见网站 [Quick Start](http://mechanist.openkg.cn/#/quick-start) 页面。
 
 ### 核心能力
 
@@ -92,137 +97,116 @@ Mechanist 以 **Claude Code 插件**形式分发，无需克隆本仓库即可�
 
 ## 🔧 安装
 
-### 1. 安装 Claude Code
+### 1. 安装 Claude Code 与 uv
 
-下载安装 Claude Code 并登录：
+Mechanist 运行在 Claude Code 之内——请先安装 Claude Code CLI：
 
 ```bash
-# 下载并安装 Claude Code
+# 安装 Claude Code，重启终端后验证
 curl -fsSL https://claude.ai/install.sh | bash
-
-# 重启终端，验证安装
 claude --version
 ```
 
-> [!IMPORTANT]
-> **本项目要求使用 Opus 4.7 模型。** 每次启动时通过 `--model` 指定，或在会话内用 `/model` 选择 Opus 4.7。
-> ```bash
-> claude --model claude-opus-4-7
-> ```
-
-### 2. 安装 uv
-
-Mechanist MCP 服务使用 uv 启动临时 Python 环境：
+Mechanist 的 MCP 服务使用 `uv` 管理 Python 环境——接着安装 uv：
 
 ```bash
-# 下载并安装 uv
+# Mechanist 的 MCP 服务用 uv 启动临时 Python 环境
 curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# 重启终端，验证安装
 uv --version
 ```
 
-### 3. 创建 Conda 环境
+### 2. 安装 Mechanist 插件
 
-为实验执行阶段创建专用 conda 环境 `scientist` 并安装依赖：
-
-```bash
-conda create -n scientist python=3.11 -y
-conda activate scientist
-pip install -r <(curl -sSL https://raw.githubusercontent.com/zjunlp/Mechanist/main/requirements.txt)
-```
-
-### 4. 配置环境变量
-
-Mechanist 的两个 MCP server 通过**环境变量**读取配置。请在 `~/.bashrc`（或 `~/.zshrc`）中设置以下变量：
-
-| 环境变量 | 是否必填 | 默认 / 示例 | 用途 |
-|:---|:---|:---|:---|
-| `LLM_API_KEY` | **必填** | `sk-…` | 外部评审模型 API key，用于交叉验证。 |
-| `LLM_MODEL` | 可选 | `gpt-5.4` | 外部评审模型名称。 |
-| `LLM_BASE_URL` | 可选 | `https://api.openai.com/v1` | LLM 服务端点。使用中转站时填中转站 URL。 |
-| `MECHANIC_DB_API_KEY` | 可选 | `sk_…` | Mechanic-DB 论文检索服务 key。未设置时回退至本地 PDF、Web 搜索、arXiv 和 Semantic Scholar。 |
-
-#### 配置外部评审模型
-
-外部评审模型在流水线各阶段独立审阅 Claude 给出的 idea、实验设计与结论，提供交叉验证，避免同模型自评带来的 correlated failure。**不能使用 Claude 系列模型**作为外部评审模型。
-
-- **推荐**：使用 GPT-5.4，前往 `https://platform.openai.com` 获取官方 key 填入 `LLM_API_KEY`。此时 `LLM_MODEL` 与 `LLM_BASE_URL` 使用默认值即可。
-- **替代提供商**（Azure / DeepSeek / 通义千问 / 第三方中转站）：需同时配置 `LLM_API_KEY`、`LLM_BASE_URL`、`LLM_MODEL`，兼容 OpenAI 格式即可。
-
-#### 申请 Mechanic-DB API Key
-
-Mechanic-DB 是 Mechanist 自建的论文检索服务，背后是 14k 篇可解释性论文语料库 + 157M 节点的跨学科引用网络，相比通用 Web 搜索更聚焦、更详细。未配置 key 时系统自动回退至本地 PDF、Web 搜索、arXiv、Semantic Scholar。
-
-**第 1 步：**发起注册请求（将 `you@example.com` 替换为你的真实邮箱）：
-
-```bash
-curl -X POST http://mechanist.openkg.cn/register \
-  -H 'Content-Type: application/json' \
-  -d '{"email": "you@example.com"}'
-```
-
-**第 2 步：**打开邮箱中的验证邮件，点击验证链接。页面会显示 `sk_` 开头的 API key。
-
-> [!WARNING]
-> **该 key 只显示一次**，请立即复制并妥善保存，设置为 `MECHANIC_DB_API_KEY`。
-
-#### 设置环境变量
-
-将以下内容写入 `~/.bashrc`（或 `~/.zshrc`）：
-
-```bash
-# --- Mechanist ---
-export LLM_API_KEY="sk-..."                       # 必填：外部评审模型 key
-export LLM_MODEL="gpt-5.4"                         # 可选，默认 gpt-5.4
-export LLM_BASE_URL="https://api.openai.com/v1"    # 可选，默认官方端点
-export MECHANIC_DB_API_KEY="sk_..."               # 可选：不填则跳过 Mechanic-DB
-```
-
-执行 `source ~/.bashrc`（或重开终端）后用 `echo "$LLM_API_KEY"` 确认非空。
-
----
-
-### 5. 安装 Mechanist 插件
-
-直接从 Claude Code 插件市场安装：
+在 Claude Code 会话中执行：
 
 ```text
 /plugin marketplace add zjunlp/Mechanist
 /plugin install mechanist@mechanist
 ```
 
-安装完成并确认[环境变量](#4-配置环境变量)已配置好后，**重启 Claude Code**，验证安装：
+然后激活并验证：
 
-- 运行 `/help`，确认 Mechanist skills 已出现，例如 `/mechanist:auto`、`/mechanist:msearch`、`/mechanist:mhistory`。
-- 运行 `/mcp`，确认 `llm-chat` 和 `mechanic-db` 均显示为 **connected**。
+```text
+/reload-plugins   # 仅当安装摘要提示时需要
+/help             # 应出现 /mechanist:auto、/mechanist:msearch、/mechanist:mhistory
+/mcp              # llm-chat 与 mechanic-db 均应为 "connected"
+```
 
-两项检查通过后，继续阅读[快速开始](#-快速开始)。
+> 若命令仍未出现，重启 Claude Code 后再试。
+
+### 3. 配置外部评审模型
+
+Mechanist 在每一阶段都会用**外部评审模型**交叉验证自己的 idea、实验设计与结论——该模型须独立于 Claude，避免同模型自评。**不要使用 Claude 系列模型担任此角色。** 推荐通过 [platform.openai.com](https://platform.openai.com) 使用 GPT-5.4；填入标准 OpenAI key 后，下方默认值即可。若使用 Azure、DeepSeek、通义千问或第三方中转，请将三个变量都指向 OpenAI 兼容端点。
+
+| 环境变量 | 是否必填 | 默认 / 示例 | 用途 |
+|:---|:---|:---|:---|
+| `LLM_API_KEY` | **必填** | `sk-…` | 外部评审模型 API key（交叉验证）。 |
+| `LLM_MODEL` | 可选 | `gpt-5.4` | 外部评审模型名称。 |
+| `LLM_BASE_URL` | 可选 | `https://api.openai.com/v1` | LLM 服务端点；使用中转时填中转 URL。 |
+
+将以下内容写入 `~/.bashrc`（或 `~/.zshrc`）：
+
+```bash
+# --- Mechanist（写入 ~/.bashrc 或 ~/.zshrc）---
+export LLM_API_KEY="sk-..."                       # 必填：外部评审模型 key
+export LLM_MODEL="<your_model_name>"              # 可选，默认：gpt-5.4
+export LLM_BASE_URL="<your_base_url>"             # 可选，默认：官方端点
+```
+
+加载新变量并确认 key 已生效：
+
+```bash
+source ~/.bashrc            # 或新开一个终端
+echo "$LLM_API_KEY"         # 应打印你的 key，而不是空行
+```
+
+> [!NOTE]
+> **环境变量只在 Claude Code 启动时读取。** 在已运行的会话里 `export` 不会生效。请编辑 `~/.bashrc` → `source`（或新开终端）→ 再重启 Claude Code。
+
+### 4. 准备 Python 实验环境（可选）
+
+Mechanist 在启动 Claude 会话时所在的 Python 环境中跑实验。若尚未安装实验常用包（PyTorch、NumPy、scikit-learn 等），可用下面命令创建 conda 环境。我们提供的 `scientist` 环境覆盖了 Mechanist 跑实验时常用的工具：
+
+```bash
+# 示例：名为 scientist 的专用 conda 环境
+conda create -n scientist python=3.11 -y
+conda activate scientist
+pip install -r <(curl -sSL https://raw.githubusercontent.com/zjunlp/Mechanist/main/requirements.txt)
+```
+
+完成以上步骤后，继续阅读[快速开始](#-快速开始)。
 
 ---
 
 ## 🚀 快速开始
 
-整个 Mechanist 工作流程遵循以下闭环：
+创建工作目录，用自由格式的 Markdown 文件 `task.md` 描述研究问题，然后打开 Claude Code 运行 `/auto`，即可启动自主研究流水线。
 
 ```
- task.md  ──▶  /auto  ──▶  CLAIMS_LEDGER.md
+ task.md  ──▶  /auto  ──▶  CLAIMS_LEDGER.md + AUTO_PIPELINE_REPORT.md
  (你的输入)     (执行引擎)     (研究发现)
 ```
 
-- **`task.md`** 是你描述研究问题的地方。`/auto` 读取它，并以它为纲驱动流水线的每个阶段。
-- **`/auto`** 运行完整工作流程，过程中将所有产物写入磁盘。
-- **`CLAIMS_LEDGER.md`** 是最终报告——打开它即可看到全部发现。
+### 1. 创建工作目录
 
-### 第一步：创建项目并编写 `task.md`
-
-每个研究问题对应一个独立目录，目录内放置 `task.md`：
+为本次研究任务新建一个空文件夹。Mechanist 会在此目录内工作，并将所有产出写入其中。
 
 ```bash
-mkdir my-experiment && cd my-experiment
+mkdir my-experiment && cd my-experiment   # 每个研究问题对应一个目录
 ```
 
-在目录中创建 `task.md`。以下是一个最小示例：
+### 2. 将研究任务写成 `task.md`
+
+在项目根目录放置名为 `task.md` 的自由格式 Markdown 文件，用自然语言写清研究问题。常见问法包括：
+
+| 你可以让 Mechanist 做的事 | 思路 |
+|:---|:---|
+| **探索机理** | 已知模型行为——找出哪个内部组件导致了它。 |
+| **复现论文** | 发现与方法均已知——按既定规模忠实复现。 |
+| **验证可疑现象** | 已有具体假设，但尚无论文或先前实验确认。 |
+| **开放式发现** | 只有研究方向——先让 Mechanist 挖出现象，再深入调查。 |
+
+最小示例：
 
 ```markdown
 # GPT-2 是否在残差流中使用了专门的"否定"方向？
@@ -235,21 +219,42 @@ mkdir my-experiment && cd my-experiment
 
 > 完整参考见[编写 task.md](#编写-taskmd)——你可以指定模型路径、GPU 预算、硬约束等更多细节。
 
-### 第二步：启动流水线
+### 3. 启动 Claude Code 并运行 `/auto`
 
-在项目目录中启动 Claude Code 并运行 `/auto`：
+> [!NOTE]
+> **请使用 Opus 系列模型。** 推荐 Opus 以获得最佳表现——可在会话内用 `/model opus` 切换。较弱模型会拖累整条流水线。
+
+在项目根目录启动 Claude Code：
 
 ```bash
-claude --model claude-opus-4-7
+claude --model opus
 ```
+
+在会话中直接运行 `/auto`。它会读取 `task.md` 并自动跑完整条研究流水线：
 
 ```text
 /auto
 ```
 
-`/auto` 读取你的 `task.md`，运行完整四阶段工作流程——提出可验证断言、设计并执行实验、验证鲁棒性、迭代精炼结论。运行结束后，打开 `CLAIMS_LEDGER.md` 即可查看完整发现。
+### 4. 跟踪运行，然后阅读结果
 
-通过[流水线模式](#流水线模式)控制行为和机理发现的处理方式。
+Mechanist 按顺序执行四个阶段——**claim → experiment → verify → iteration**——并在进入下一阶段前将本阶段相关文档写入磁盘：
+
+| 阶段 | 关键产物 |
+|:---|:---|
+| **claim** | `idea-stage/IDEA_REPORT.md` — 候选 idea 排序，或从 `task.md` 捕获的行为与断言<br>`refine-logs/FINAL_PROPOSAL.md` — 精炼后的方法提案<br>`refine-logs/EXPERIMENT_PLAN.md` — 各断言里程碑、模型、数据与成功标准 |
+| **experiment** | `refine-logs/MECHANISM_ROUTING.md` — 所选可解释性方法及理由<br>`refine-logs/EXPERIMENT_RESULTS.md` — 各断言结果与基线判决<br>`runs/` — 各次实验的代码、日志与 GPU 开销 |
+| **verify** | `verify/VERIFY_REPORT.md` — 鲁棒性判决与跨断言摘要<br>`verify/INTEGRITY_AUDIT.md` — 对原始结果与 swap 跑的诚实性审计 |
+| **iteration** | `review-stage/AUTO_REVIEW.md` — 逐轮审稿记录<br>`review-stage/AUTO_ITERATION_FINAL_REPORT.md` — 修复循环中各断言的变化 |
+
+结束后，优先阅读项目根目录下的这两个文件：
+
+| 文件 | 内容 |
+|:---|:---|
+| `CLAIMS_LEDGER.md` | 各断言记分板：最终判决、鲁棒性与注意事项。 |
+| `AUTO_PIPELINE_REPORT.md` | 本轮旅程、全部产物索引，以及仍需你处理的 Open Items。 |
+
+通过[流水线模式](#流水线模式)控制行为和机理发现的处理方式。归档 / 下一轮流程与进阶用法见[用户指南](user_guide_zh.md)。
 
 ---
 
@@ -278,7 +283,7 @@ claude --model claude-opus-4-7
 | **全自动发现** | `/auto — behavior-source: discovery, mechanism: discovery` | 全自主：流水线发现现象并路由至合适的机理方法。 |
 
 > [!NOTE]
-> **查看最终结果：**`/auto` 每轮运行结束后，科学结论与流水线终态汇总至工作目录根部的 `CLAIMS_LEDGER.md`。这份以断言为中心的报告逐条列出每项断言的陈述、数据/模型/方法、主实验结果、verify 判决及迭代结果——只需阅读这一个文件即可了解全部产出。
+> **查看最终结果：**`/auto` 每轮结束后，优先阅读项目根目录的 `CLAIMS_LEDGER.md`（各断言记分板）与 `AUTO_PIPELINE_REPORT.md`（本轮旅程、产物索引与 Open Items）。各阶段产物会写在 `idea-stage/`、`refine-logs/`、`verify/`、`review-stage/`、`runs/` 下——详见[跟踪运行](#4-跟踪运行然后阅读结果)。
 
 #### 编写 task.md
 
