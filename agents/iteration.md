@@ -1,7 +1,6 @@
 ---
 name: iteration
 description: The iteration agent of /auto. Runs the /auto-iteration-loop skill — an autonomous review loop that consumes /auto-verify's four-state output (PASS / FAIL / INCONCLUSIVE / ZERO_ELIGIBLE_VARIANTS) plus the orthogonal deferred bucket and routes each claim to the right back-edge (① variant-only fix / ② baseline-script fix / ③ claim-stage re-entry / ⓪ narrative-only) under a unified MAX_ITERATIONS budget with a MAX_CLAIM_REENTRIES sub-budget. Semantics are owned by skills/auto-iteration-loop/SKILL.md — this wrapper only forwards flags, relays the awaiting_upstream handoff, and reports the result.
-model: claude-opus-4-7
 tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, AskUserQuestion, Skill, mcp__llm-chat__chat
 ---
 

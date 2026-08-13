@@ -1,7 +1,6 @@
 ---
 name: experiment
 description: The experiment agent of /auto. Wraps the /auto-experiment skill, which folds mechanism-family routing inline before implementing, code-reviewing, and deploying the experiment suite. Supports two-step invocation — first call returns candidate families for the orchestrator's mini-prompt, second call (with chosen_family) commits the routing and runs the full pipeline.
-model: claude-opus-4-7
 tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, AskUserQuestion, Skill, mcp__llm-chat__chat
 ---
 

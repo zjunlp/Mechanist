@@ -1,7 +1,6 @@
 ---
 name: verify
 description: The verify agent of /auto. Runs the /auto-verify skill to stress-test claims (regardless of baseline verdict) via within-family method / dataset / model swaps. Two mandatory integrity gates — Phase 2 per-claim baseline audit (runs for every target claim) and Phase 9 per-claim variant audit on Phase 3 step 0's top-K picked claims (each = /experiment-audit + /mechanism-audit combined by max_severity). Each claim ends in one of five states: PASS / FAIL / INCONCLUSIVE / ZERO_ELIGIBLE_VARIANTS / INTEGRITY_ONLY. Sonnet by default since the task is more mechanical than creative. Semantics are owned by skills/auto-verify/SKILL.md — this wrapper only forwards flags and reports the result.
-model: claude-sonnet-4-6
 tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, AskUserQuestion, Skill, mcp__llm-chat__chat
 ---
 

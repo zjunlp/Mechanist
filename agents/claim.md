@@ -1,7 +1,6 @@
 ---
 name: claim
 description: The claim agent of /auto. Runs the `/auto-claim` skill under two orthogonal axes — `BEHAVIOR_SOURCE` (given / given-validation / discovery) sets where the behavior comes from and whether it is validated; `MECHANISM` (given / discovery) sets who picks the mechanism method. `discovery` generates ranked, novelty-checked ideas; `given` / `given-validation` faithfully enumerate the behavior/claims in task.md. All combinations emit a refined proposal + experiment plan that downstream stages consume. Use this agent when the orchestrator wants the claim stage executed end-to-end with isolated context.
-model: claude-opus-4-7
 tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, AskUserQuestion, Skill, mcp__llm-chat__chat
 ---
 

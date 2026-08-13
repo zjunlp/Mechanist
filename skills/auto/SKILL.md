@@ -26,8 +26,8 @@ Each stage runs in a dedicated agent (isolated context + configurable model). Th
 | `AUTO_PROCEED` | `true` | When `true`, gates skip the UI prompt entirely and directly pick the recommended option. When `false`, the orchestrator calls `AskUserQuestion` and waits for the user. |
 | `RESUME` | `false` | When `true`, the orchestrator skips any stage whose final artifacts already exist non-empty on disk, and forwards `resume: true` to each invoked agent so sub-skills can do phase-level skipping too. Useful for picking up after a crash, or for re-running only the missing stages. Default `false` = always run every stage from scratch (and overwrite previous artifacts). |
 | `REVIEW_LOOP` | `true` | Run iteration after verify; set `false` to stop at verify. |
-| `MODEL` | _none_ | Global model **family** alias applied to every stage whose `<STAGE>_MODEL` is unset. Accepts `opus` / `sonnet` / `haiku` (case-insensitive). Per-stage `<STAGE>_MODEL` always wins over this. When both `MODEL` and `<STAGE>_MODEL` are unset, the stage falls back to its agent frontmatter default. |
-| `<STAGE>_MODEL` | _none_ | Per-stage model **family** override for any of `CLAIM`, `EXPERIMENT`, `VERIFY`, `ITERATION`. Accepts **only family aliases**: `opus`, `sonnet`, `haiku` (case-insensitive). When unset, falls back to the global `MODEL` flag (if set), then to the agent frontmatter default (currently claim/experiment/iteration = `claude-opus-4-7`, verify = `claude-sonnet-4-6`). **Version pinning is managed only in `agents/<name>.md` frontmatter** — to change the pinned version, edit the agent file directly (one source of truth, fully tracked in git). Pinned IDs are not accepted on the CLI because the Agent tool's `model` parameter schema is restricted to family aliases; passing a pinned ID at the CLI level would fail schema validation. |
+| `MODEL` | _none_ | Global model **family** alias applied to every stage whose `<STAGE>_MODEL` is unset. Accepts `opus` / `sonnet` / `haiku` (case-insensitive). Per-stage `<STAGE>_MODEL` always wins over this. When both are unset, the stage uses its frontmatter `model:` line if present, else inherits the session model (`claude --model …`). |
+| `<STAGE>_MODEL` | _none_ | Per-stage model **family** override for any of `CLAIM`, `EXPERIMENT`, `VERIFY`, `ITERATION`. Accepts **only family aliases**: `opus`, `sonnet`, `haiku` (case-insensitive). When unset, falls back to the global `MODEL`, then the agent's frontmatter `model:` line if present, else the session model (`claude --model …`). **Pinning lives only in `agents/<name>.md` frontmatter** — add a `model:` line to pin a stage, leave it absent to inherit the session model. CLI/frontmatter aliases resolve to the family's *latest* version (`opus` → newest opus, not `claude-opus-4-x`), so running a stage at *exactly* the session model requires an absent frontmatter `model:`. |
 | `DIMENSIONS` | `model` | Verify swap axes — and therefore **the variant count per picked claim**, since verify runs exactly one swap per listed axis. List or comma-separated subset of `{method, dataset, model}`. Default `model` → 1 variant/picked-claim (fast, single-axis model swap). Broaden with `dimensions: method,dataset,model` → 3 variants/picked-claim (full stress test). Forwarded to verify agent. |
 | `TARGET_CLAIMS` | `all` | Which claims verify stress-tests: `all` (default; covers both main-experiment-supported and main-experiment-rejected claims so robustness is checked in both directions) / `passed` (only main-experiment-supported = `claim_supported = pass`) / `failed` (only main-experiment-rejected = `claim_supported = fail`) / a specific claim id. Note `passed ∪ failed = all`. Forwarded to verify agent. |
 | `MAX_VERIFY_CLAIMS` | `1` | Cap on how many Stage-1-admitted claims proceed into Stage 2 (swap variants). Stage 1 (main-experiment integrity audit) **always audits every target claim regardless** — the cap only gates Stage 2 entry. When the admitted pool exceeds the cap, `/auto-verify`'s Phase 3 step 0 picks the top-K by importance judgment (reading each admitted claim's statement against upstream narrative like `IDEA_REPORT.md` / `## Rationale`; row order is NOT a priority signal). Un-picked admitted claims are marked `INTEGRITY_ONLY` with `stage2_skip_reason: max_verify_claims_cap` in `VERIFY_REPORT.md`; user can swap-test them later via `/auto-verify <id> — resume: true` (Stage 1 audit is reused via RESUME). Forwarded to verify agent. At the default cap of 1 with default `DIMENSIONS=model`, verify launches 1 × 1 = 1 variant run per `/auto` pass. |
@@ -96,7 +96,7 @@ In other subagents, they may freely choose any retrieval source — WebSearch, W
 ```
 /auto (orchestrator)
     │
-    ├─ claim       [claude-opus-4-7]     → idea-stage/IDEA_REPORT.md
+    ├─ claim       [session model]     → idea-stage/IDEA_REPORT.md
     │       │                              refine-logs/FINAL_PROPOSAL.md
     │       │                              refine-logs/EXPERIMENT_PLAN.md
     │       │  (internal chain depends on BEHAVIOR_SOURCE (behavior origin + ideation + M0) and
@@ -110,7 +110,7 @@ In other subagents, they may freely choose any retrieval source — WebSearch, W
     │       │   MECHANISM=given captures the user's mechanism method from task.md → forwarded to experiment as CHOSEN_FAMILY.)
     │       └─ Claim Gate
     │
-    ├─ experiment  [claude-opus-4-7]
+    ├─ experiment  [session model]
     │       ├─ Phase 1.25 (BEHAVIOR_SOURCE ∈ {given-validation, discovery} — fires on the plan's M0 marker): Phenomenon-Validation Gate M0 — run M0 first → 4-state:
     │       │     established/conditional → continue ; not-established → 🛑 end pipeline (negative report, skip verify+iteration) ; inconclusive → fix & re-run M0
     │       ├─ (MECHANISM=given → skip Call A + mini-prompt; read chosen_mechanism: from EXPERIMENT_PLAN.md → Call B with CHOSEN_FAMILY=that value, or MECHANISM_ROUTING=not-applicable when it is behavioral-only)
@@ -124,7 +124,7 @@ In other subagents, they may freely choose any retrieval source — WebSearch, W
     │               → MECHANISM_ROUTING.md with committed: true
     │           └─ Experiment Gate (inside agent)
     │
-    ├─ verify      [claude-sonnet-4-6]
+    ├─ verify      [session model]
     │       ├─ Phase 2   : per-claim main-experiment integrity audit (Stage 1 gate)
     │       │              — /experiment-audit + /mechanism-audit on refine-logs/
     │       ├─ Phase 3–7 : pick within-family method swap (+ data/model swaps), run variants
@@ -134,7 +134,7 @@ In other subagents, they may freely choose any retrieval source — WebSearch, W
     │       └─ write verify/VERIFY_REPORT.md, verify/INTEGRITY_AUDIT.md, verify/<claim_dir>/ROBUSTNESS.md
     │       └─ Verify Gate (AUTO_PROCEED-governed, same as Claim/Experiment gates)
     │
-    └─ iteration   [claude-opus-4-7]     → review-stage/AUTO_REVIEW.md, REVIEW_STATE.json,
+    └─ iteration   [session model]     → review-stage/AUTO_REVIEW.md, REVIEW_STATE.json,
             (skipped when REVIEW_LOOP=false)   REVIEWER_MEMORY.md, AUTO_ITERATION_FINAL_REPORT.md
 ```
 
@@ -187,21 +187,23 @@ Note: `RESUME=true` never deletes or overwrites pre-existing artifacts on its ow
 Resolution order (per stage, evaluated independently for `claim` / `experiment` / `verify` / `iteration`):
 1. If the user passed `<STAGE>_MODEL=<alias>` on the CLI (`opus` / `sonnet` / `haiku` only), use it. Pass the alias **as-is** to the Agent tool's `model` parameter. The Agent tool then routes to the alias's current latest version.
 2. Else if the user passed the global `MODEL=<alias>` on the CLI, use that alias for this stage.
-3. Else omit the `model` parameter when calling the Agent tool — the agent falls back to its frontmatter `model:` line, which is the **only** place version pinning lives.
+3. Else omit the `model` parameter. The agent uses its frontmatter `model:` line if it pins one; with no `model:` line (the current default for all four agents) it inherits the session model (`claude --model …`). This is the only way to run a stage at *exactly* the session model — an alias like `opus` would resolve to the family's latest version instead.
 
-| Agent | Frontmatter pin (source of truth, edit here to bump version) | CLI override accepted |
-|---|---|---|
-| claim      | `claude-opus-4-7`   | `claim-model: opus \| sonnet \| haiku` (or global `model:`)      |
-| experiment | `claude-opus-4-7`   | `experiment-model: opus \| sonnet \| haiku` (or global `model:`) |
-| verify     | `claude-sonnet-4-6` | `verify-model: opus \| sonnet \| haiku` (or global `model:`)     |
-| iteration  | `claude-opus-4-7`   | `iteration-model: opus \| sonnet \| haiku` (or global `model:`)  |
+| Agent | Frontmatter `model:` | Effective model when unpinned | CLI override accepted |
+|---|---|---|---|
+| claim      | _none_ | session model (`claude --model …`) | `claim-model: opus \| sonnet \| haiku` (or global `model:`)      |
+| experiment | _none_ | session model (`claude --model …`) | `experiment-model: opus \| sonnet \| haiku` (or global `model:`) |
+| verify     | _none_ | session model (`claude --model …`) | `verify-model: opus \| sonnet \| haiku` (or global `model:`)     |
+| iteration  | _none_ | session model (`claude --model …`) | `iteration-model: opus \| sonnet \| haiku` (or global `model:`)  |
+
+To pin a stage instead, add a `model:` line to that `agents/<name>.md` frontmatter.
 
 Log on entry:
 ```
-[models] claim=<frontmatter-pin or alias>  experiment=...  verify=...  iteration=...  (override-source: CLI-stage | CLI-global | frontmatter per stage)
+[models] claim=<pin | CLI-alias | session>  experiment=...  verify=...  iteration=...  (source: CLI-stage | CLI-global | frontmatter-pin | session)
 ```
 
-When a CLI alias is supplied (per-stage or global), the log line shows the alias rather than the frontmatter pin (since the alias is what the runtime actually used).
+Report the actual resolved model — a CLI alias, a frontmatter pin, or the inherited session model — never a stale documented pin.
 
 ### claim — Idea Discovery
 
