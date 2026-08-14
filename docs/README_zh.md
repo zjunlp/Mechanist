@@ -131,12 +131,12 @@ uv --version
 
 ### 3. 配置外部评审模型
 
-Mechanist 在每一阶段都会用**外部评审模型**交叉验证自己的 idea、实验设计与结论——该模型须独立于 Claude，避免同模型自评。**不要使用 Claude 系列模型担任此角色。** 推荐通过 [platform.openai.com](https://platform.openai.com) 使用 GPT-5.4；填入标准 OpenAI key 后，下方默认值即可。若使用 Azure、DeepSeek、通义千问或第三方中转，请将三个变量都指向 OpenAI 兼容端点。
+Mechanist 在每一阶段都会用**外部评审模型**交叉验证自己的 idea、实验设计与结论——该模型须独立于 Claude，避免同模型自评。**不要使用 Claude 系列模型担任此角色。** 推荐通过 [platform.openai.com](https://platform.openai.com) 使用 GPT-5.6 Luna（`gpt-5.6-luna`）；填入标准 OpenAI key 后，下方默认值即可。若使用 Azure、DeepSeek、通义千问或第三方中转，请将三个变量都指向 OpenAI 兼容端点。
 
 | 环境变量 | 是否必填 | 默认 / 示例 | 用途 |
 |:---|:---|:---|:---|
 | `LLM_API_KEY` | **必填** | `sk-…` | 外部评审模型 API key（交叉验证）。 |
-| `LLM_MODEL` | 可选 | `gpt-5.4` | 外部评审模型名称。 |
+| `LLM_MODEL` | 可选 | `gpt-5.6-luna` | 外部评审模型名称。 |
 | `LLM_BASE_URL` | 可选 | `https://api.openai.com/v1` | LLM 服务端点；使用中转时填中转 URL。 |
 
 将以下内容写入 `~/.bashrc`（或 `~/.zshrc`）：
@@ -144,7 +144,7 @@ Mechanist 在每一阶段都会用**外部评审模型**交叉验证自己的 id
 ```bash
 # --- Mechanist（写入 ~/.bashrc 或 ~/.zshrc）---
 export LLM_API_KEY="sk-..."                       # 必填：外部评审模型 key
-export LLM_MODEL="<your_model_name>"              # 可选，默认：gpt-5.4
+export LLM_MODEL="<your_model_name>"              # 可选，默认：gpt-5.6-luna
 export LLM_BASE_URL="<your_base_url>"             # 可选，默认：官方端点
 ```
 
@@ -206,12 +206,12 @@ mkdir my-experiment && cd my-experiment   # 每个研究问题对应一个目录
 ### 3. 启动 Claude Code 并运行 `/auto`
 
 > [!NOTE]
-> **请使用 Opus 系列模型。** 推荐 Opus 以获得最佳表现——可在会话内用 `/model opus` 切换。较弱模型会拖累整条流水线。
+> 推荐使用 `claude-opus-4-8` 以获得良好表现。较弱模型会拖累整条流水线。
 
 在项目根目录启动 Claude Code：
 
 ```bash
-claude --model opus
+claude --model claude-opus-4-8
 ```
 
 在会话中直接运行 `/auto`。它会读取 `task.md` 并自动跑完整条研究流水线：

@@ -43,7 +43,7 @@ git clone https://github.com/zjunlp/Mechanist.git
 mkdir exp && cd exp
 
 # 通过 --plugin-dir 让 Claude Code 从本地副本加载插件
-claude --model claude-opus-4-7 --plugin-dir ../Mechanist
+claude --model claude-opus-4-8 --plugin-dir ../Mechanist
 ```
 
 ```

@@ -4,12 +4,12 @@
 Environment Variables:
     LLM_API_KEY         - API key (required)
     LLM_BASE_URL        - API base URL (default: https://api.openai.com/v1)
-    LLM_MODEL           - Model name (default: gpt-5.4)
-    LLM_FALLBACK_MODEL  - Fallback model on 504 timeout (default: gpt-5.4)
+    LLM_MODEL           - Model name (default: gpt-5.6-luna)
+    LLM_FALLBACK_MODEL  - Fallback model on 504 timeout (default: gpt-5.6-luna)
     LLM_SERVER_NAME     - Server name for MCP (default: llm-chat)
 
 Supported Providers (examples):
-    OpenAI:      LLM_BASE_URL=https://api.openai.com/v1 LLM_MODEL=gpt-5.4
+    OpenAI:      LLM_BASE_URL=https://api.openai.com/v1 LLM_MODEL=gpt-5.6-luna
     DeepSeek:    LLM_BASE_URL=https://api.deepseek.com/v1 LLM_MODEL=deepseek-v4-flash
     Kimi:        LLM_BASE_URL=https://api.moonshot.cn/v1 LLM_MODEL=moonshot-v1-32k
     MiniMax:     LLM_BASE_URL=https://api.minimax.io/v1 LLM_MODEL=MiniMax-M2.7
@@ -28,8 +28,8 @@ sys.stdin = os.fdopen(sys.stdin.fileno(), 'rb', buffering=0)
 # Configuration from environment
 API_KEY = os.environ.get("LLM_API_KEY", "")
 BASE_URL = os.environ.get("LLM_BASE_URL", "https://api.openai.com/v1")
-DEFAULT_MODEL = os.environ.get("LLM_MODEL", "gpt-5.4")
-FALLBACK_MODEL = os.environ.get("LLM_FALLBACK_MODEL", "gpt-5.4")
+DEFAULT_MODEL = os.environ.get("LLM_MODEL", "gpt-5.6-luna")
+FALLBACK_MODEL = os.environ.get("LLM_FALLBACK_MODEL", "gpt-5.6-luna")
 SERVER_NAME = os.environ.get("LLM_SERVER_NAME", "llm-chat")
 
 # Debug logging

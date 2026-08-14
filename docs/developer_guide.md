@@ -43,7 +43,7 @@ git clone https://github.com/zjunlp/Mechanist.git
 mkdir exp && cd exp
 
 # Launch with --plugin-dir so Claude Code reads the plugin from your local clone
-claude --model claude-opus-4-7 --plugin-dir ../Mechanist
+claude --model claude-opus-4-8 --plugin-dir ../Mechanist
 ```
 
 ```

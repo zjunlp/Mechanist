@@ -131,12 +131,12 @@ Then activate and verify:
 
 ### 3. Configure the External Review Model
 
-Mechanist cross-validates its own ideas, experiment designs, and conclusions with an external reviewer at every stage — a second model, independent of Claude, so the same model never grades itself. **Do not use a Claude-series model for this role.** [GPT-5.4](https://platform.openai.com) is recommended — with a standard OpenAI key the defaults below are already correct. For Azure, DeepSeek, Qwen, or a third-party proxy, set all three variables to an OpenAI-compatible endpoint.
+Mechanist cross-validates its own ideas, experiment designs, and conclusions with an external reviewer at every stage — a second model, independent of Claude, so the same model never grades itself. **Do not use a Claude-series model for this role.** [GPT-5.6 Luna](https://platform.openai.com) (`gpt-5.6-luna`) is recommended — with a standard OpenAI key the defaults below are already correct. For Azure, DeepSeek, Qwen, or a third-party proxy, set all three variables to an OpenAI-compatible endpoint.
 
 | Variable | Required | Default / Example | Purpose |
 |:---|:---|:---|:---|
 | `LLM_API_KEY` | **Yes** | `sk-…` | API key for the external review model (cross-validation). |
-| `LLM_MODEL` | No | `gpt-5.4` | External review model name. |
+| `LLM_MODEL` | No | `gpt-5.6-luna` | External review model name. |
 | `LLM_BASE_URL` | No | `https://api.openai.com/v1` | Base URL for the LLM provider. Set this to your proxy URL if you use one. |
 
 Add the following to `~/.bashrc` (or `~/.zshrc`):
@@ -144,7 +144,7 @@ Add the following to `~/.bashrc` (or `~/.zshrc`):
 ```bash
 # --- Mechanist (add to ~/.bashrc or ~/.zshrc) ---
 export LLM_API_KEY="sk-..."                       # required: external review model key
-export LLM_MODEL="<your_model_name>"              # optional, default: gpt-5.4
+export LLM_MODEL="<your_model_name>"              # optional, default: gpt-5.6-luna
 export LLM_BASE_URL="<your_base_url>"             # optional, default: official endpoint
 ```
 
@@ -206,12 +206,12 @@ Place a free-form Markdown file named `task.md` in the project root. The file sh
 ### 3. Start Claude Code and Run `/auto`
 
 > [!NOTE]
-> **Use an Opus-series model.** We recommend Opus for best performance — switch inside a session with `/model opus`. Weaker models degrade the whole pipeline.
+> We recommend `claude-opus-4-8` for good performance. Weaker models degrade the whole pipeline.
 
 Start Claude Code in the project root:
 
 ```bash
-claude --model opus
+claude --model claude-opus-4-8
 ```
 
 Inside the session, run bare `/auto`. It will read `task.md` and run the whole research pipeline automatically:
