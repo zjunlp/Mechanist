@@ -53,7 +53,7 @@ After each reviewer MCP call, write the files directly following the schema belo
   "purpose": "round-1-review",
   "timestamp": "2026-04-15T14:31:00+08:00",
   "tool": "mcp__llm-chat__chat",
-  "model": "gpt-5.4",
+  "model": "<resolved $LLM_MODEL>",
   "config": {},
   "files_referenced": ["paper/sections/3_method.tex", "results/table1.csv"],
   "prompt": "<full prompt text>"
@@ -70,7 +70,7 @@ The reviewer's full response, verbatim. No truncation, no summarization.
   "purpose": "round-1-review",
   "timestamp": "2026-04-15T14:33:00+08:00",
   "thread_id": "019d8fe0-b25d-...",
-  "model": "gpt-5.4",
+  "model": "<resolved $LLM_MODEL>",
   "duration_ms": 142000,
   "status": "ok"
 }

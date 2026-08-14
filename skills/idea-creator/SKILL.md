@@ -19,7 +19,7 @@ Given a broad research direction from the user, systematically generate, validat
 - **PILOT_TIMEOUT_HOURS = 6** — Hard timeout: kill pilots exceeding 6 hours. Collect partial results if available.
 - **MAX_PILOT_IDEAS = 6** — Pilot at most 6 ideas in parallel. Additional ideas are validated on paper only.
 - **MAX_TOTAL_GPU_HOURS = 10** — Total GPU budget for all pilots combined.
-- **REVIEWER_BACKEND = `llm-chat`** — External LLM reviewer via llm-chat MCP for brainstorming (Phase 2 idea generation) and review (Phase 4 devil's-advocate critique). Model defers to `LLM_MODEL` env. Always ask the external reviewer for strict, high-rigor feedback. Override with `— reviewer: oracle-pro` for GPT-5.4 Pro via Oracle MCP.
+- **REVIEWER_BACKEND = `llm-chat`** — External LLM reviewer via llm-chat MCP for brainstorming (Phase 2 idea generation) and review (Phase 4 devil's-advocate critique). Model defers to `LLM_MODEL` env. Always ask the external reviewer for strict, high-rigor feedback. Override with `— reviewer: oracle-pro` via Oracle MCP.
 - **OUTPUT_DIR = `idea-stage/`** — All idea-stage outputs go here. Create the directory if it doesn't exist.
 
 > 💡 Override via argument, e.g., `/idea-creator "topic" — pilot budget: 4h per idea, 20h total`.

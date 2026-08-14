@@ -119,7 +119,7 @@ Not yet implemented. Fill in by mirroring Check A's five-field template (Trigger
 
 ## Constants
 
-- **REVIEWER_BACKEND = `llm-chat`** — External LLM reviewer via llm-chat MCP (model defers to `LLM_MODEL` env). Always ask the external reviewer for strict, high-rigor feedback. Override with `— reviewer: oracle-pro` for GPT-5.4 Pro via Oracle MCP.
+- **REVIEWER_BACKEND = `llm-chat`** — External LLM reviewer via llm-chat MCP (model defers to `LLM_MODEL` env). Always ask the external reviewer for strict, high-rigor feedback. Override with `— reviewer: oracle-pro` via Oracle MCP.
 
 ## Arguments
 

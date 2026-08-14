@@ -35,7 +35,7 @@ This skill has two calling modes, sharing the same plotting machinery:
 - **COLOR_PALETTE = `tab10`** — Default matplotlib color cycle. Options: `tab10`, `Set2`, `colorblind` (deuteranopia-safe)
 - **FONT_SIZE = 10** — Base font size (matches typical conference body text)
 - **FIG_DIR = `figures/`** — Default output directory in standalone mode. **In auto-ledger mode this is overridden by the caller-supplied `output_dir` (typically `figures/<claim_id>/`).**
-- **REVIEWER_MODEL = `gpt-5.4`** — Model used via Codex MCP for figure quality review. Skipped when `review: false` is passed (default in auto-ledger mode to keep ledger renders cheap).
+- **REVIEWER_MODEL = `$LLM_MODEL`** — Model used via llm-chat MCP for figure quality review. Skipped when `review: false` is passed (default in auto-ledger mode to keep ledger renders cheap).
 
 ## Inputs
 
@@ -77,7 +77,7 @@ claims:                            # one or more claims, batched in a single cal
         caption: "K-sensitivity of top-K ablation accuracy."
         columns: [K, overall_acc, joy, sadness, anger, fear, surprise, disgust]
 formats: pdf,png,md,tex            # union; each figure picks the subset matching its type
-review: false                      # skip Step 7 GPT-5.4 review
+review: false                      # skip Step 7 REVIEWER_MODEL review
 style: publication
 ```
 
@@ -362,11 +362,10 @@ Skipped in auto-ledger mode — the ledger Markdown embed is the only consumer, 
 
 ### Step 7: Figure Quality Review with REVIEWER_MODEL
 
-**Skipped when `review: false`** (auto-ledger mode default). Otherwise, send figure descriptions and captions to GPT-5.4 for review:
+**Skipped when `review: false`** (auto-ledger mode default). Otherwise, send figure descriptions and captions to REVIEWER_MODEL for review:
 
 ```
 mcp__llm-chat__chat:
-  model: gpt-5.4
   prompt: |
     Review these figure/table plans for a [VENUE] submission.
 

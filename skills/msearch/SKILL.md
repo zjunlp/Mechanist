@@ -13,7 +13,7 @@ Search query: $ARGUMENTS
 
 ## Constants
 
-- **REVIEWER_BACKEND = `llm-chat`** — Default: llm-chat MCP (defer to `LLM_MODEL` env). Override with `— reviewer: oracle-pro` for GPT-5.4 Pro via Oracle MCP.
+- **REVIEWER_BACKEND = `llm-chat`** — Default: llm-chat MCP (defer to `LLM_MODEL` env). Override with `— reviewer: oracle-pro` via Oracle MCP.
 - **PAPER_LIBRARY** — Local PDF collection, organized as **two channels** that are both globbed at retrieval time (Step 0c):
   1. **`literature/`** — *user-curated channel*. PDFs the user manually places here (reading list, must-cite references, annotated copies). **Read-only** — never auto-written or deleted, so anything dropped here is safe and always considered.
   2. **`papers/`** — *machine-managed channel*. Auto-downloaded arXiv PDFs land here (only when `ARXIV_DOWNLOAD = true`, or when the query is an arXiv URL). Regenerable scratch — safe to delete and re-fetch.
