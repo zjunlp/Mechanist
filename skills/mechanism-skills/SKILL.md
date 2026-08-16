@@ -58,7 +58,7 @@ Submethods: Residual Stream State · Attention Head Output · Neuron Value Weigh
 Submethods: Static Parameters · Dynamic Components · Layer-wise Representation.
 
 ### 3. Representation and Parameter Analysis — `./representation-and-parameter-analysis/`
-**Premise**: many concepts are encoded as *linear directions* — either in activation space ($\mathbf{v}_c \in \mathbb{R}^{d_{\text{model}}}$) or in parameter space ($\boldsymbol{\tau} = \boldsymbol{\theta}_{\text{ft}} - \boldsymbol{\theta}_{\text{pre}}$). Once a direction is found, it can be used as a read-out (project) or write-in (add) operator.
+**Premise**: many concepts are encoded as *linear directions* — either in activation space ($\mathbf{v}_c \in \mathbb{R}^{d_{\text{model}}}$) or in parameter space ($\boldsymbol{\tau} = \boldsymbol{\theta}_{\text{ft}} - \boldsymbol{\theta}_{\text{pre}}$). Once a target direction/feature is found, it can be used as a read-out (project) or write-in (add) operator — the write-in form doubling as a **causal intervention** that steers the behavior on demand.
 **Signal**: dot products of states with concept directions; arithmetic on task vectors in weight space.
 **Cost**: moderate. Vector construction is one or a few forward passes; evaluation and intervention are linear-algebraic.
 **What it answers**: is a candidate direction *causally sufficient* (not just correlated) to drive the behavior? Promotes a probe direction into a controllable handle, and quantifies how much of the behavior the direction accounts for. In parameter space, the same view enables training-free model editing via task arithmetic.

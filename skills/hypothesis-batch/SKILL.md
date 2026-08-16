@@ -1,7 +1,7 @@
 ---
 name: hypothesis-batch
-description: "Three-step batch pipeline for research hypotheses. The positional argument is the user's whole INPUT INTENTION (direction + whatever angle, constraint, or wanted result they attached) — there is no separate topic argument and no intention flag; the topic label is distilled from it. (1) mass-generate a deduplicated, impact-scored library of candidate BEHAVIORS into `hypothesis_library.json` over `ROUNDS` accumulating rounds of `N_BEHAVIORS` each; (2) evaluate the pool — novelty hard gate + external critical review — and select the top `TOP_N`; (3) attach a mechanism hypothesis to each survivor and write one reviewer-facing `claim.json` per claim — the experiment design included, as its `Experiments` field, with no separate plan file. The library holds behaviors only — no mechanism axis. A single `WRITER` setting picks which model authors both deliverables: `llm-chat` (the external `LLM_MODEL`) or `session` (the current Claude session). Use when the user wants a batch of paper-ready claim skeletons for one research direction."
-argument-hint: "<intention — what you want out of this topic> [— n-behaviors: N] [— rounds: R] [— top-n: K] [— writer: llm-chat|session]"
+description: "Three-step batch pipeline for research hypotheses. The positional argument is the user's whole INPUT INTENTION (direction + whatever angle, constraint, or wanted result they attached) — there is no separate topic argument and no intention flag; the topic label is distilled from it. (1) mass-generate a deduplicated, impact-scored library of candidate BEHAVIORS into `hypothesis_library.json` over `ROUNDS` accumulating rounds of `N_BEHAVIORS` each — every round generating twice, first cold (no discovery-strategy taxonomy in the prompt) and then strategy-guided, with each behavior required to state what is new beyond the domain it was transferred into; (2) evaluate the pool — novelty hard gate + external critical review — and select the top `TOP_N`; (3) attach a mechanism hypothesis to each survivor and write one reviewer-facing `claim.json` per claim — the experiment design included, as its `Experiments` field, with no separate plan file. The library holds behaviors only — no mechanism axis. A single `WRITER` setting picks which model authors both deliverables: `llm-chat` (the external `LLM_MODEL`) or `session` (the current Claude session). Use when the user wants a batch of paper-ready claim skeletons for one research direction."
+argument-hint: "<intention — what you want out of this topic> [— n-behaviors: N] [— rounds: R] [— top-n: K] [— cold-n: N] [— writer: llm-chat|session]"
 allowed-tools: Bash(*), Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Agent, Skill, mcp__llm-chat__chat
 ---
 
@@ -15,9 +15,10 @@ This skill runs three steps, non-interactively, end to end:
 
 ```
 Step 1  BUILD    /research-lit  →  load behavior strategy  →  ROUNDS × round-loop      → hypothesis_library.json
-                 (P1: retrieval)   (P1.5: no artifact)        (P2: brainstorm → semantic
-                  ↳ RESEARCH_LIT.md                                dedup → impact score
-                  ↳ LANDSCAPE.md ──────── grounds every round ──→   → persist)
+                 (P1: retrieval)   (P1.5: no artifact,        (P2: cold pass → guided pass
+                  ↳ RESEARCH_LIT.md   taxonomy withheld            → semantic dedup + delta
+                  ↳ LANDSCAPE.md ──── from the cold pass)            filter → impact score
+                        └──────────── grounds every round ──→        → persist)
 
 Step 2  SELECT   /novelty-check (P3: hard gate) → /research-review (P4: veto + score)   → verdicts written
                  → rank impact ▸ reviewer ▸ novelty, cut to TOP_N (P5)                     back into the library
@@ -51,9 +52,10 @@ The run ships exactly **two kinds of file**, and one model writes both: `hypothe
 
 ## Constants
 
-- **INTENTION** — **the positional argument itself**: everything the user typed before the first ` — `. There is no `— intention:` flag. It is free text stating what the user is actually after — the direction, and whatever angle, constraint, application, or kind of result they attached to it (`"LLM beliefs"` and `"LLM beliefs — I care about whether a retracted claim keeps steering later inferences, and I want something a single 8B model can settle"` are both valid, and the second one steers much harder). Injected verbatim into **every** brainstorm round's prompt (Phase 2), into the impact rationale, and into the selection judgment (Phase 5) — a candidate that ignores the stated intention ranks below one that serves it, at equal scores. Required: if it is empty, ask for it in one line and never invent one. Stored at the library's top level as `intention` so later rounds and re-runs inherit it.
+- **INTENTION** — **the positional argument itself**: everything the user typed before the first ` — `. There is no `— intention:` flag. It is free text stating what the user is actually after — the direction, and whatever angle, constraint, application, or kind of result they attached to it (`"LLM beliefs"` and `"LLM beliefs — I care about whether a retracted claim keeps steering later inferences, and I want something a single 8B model can settle"` are both valid, and the second one steers much harder). Injected verbatim into **every** brainstorm round's prompt (Phase 2), into the impact rationale, into the selection judgment (Phase 5), and into every `claim.json` draft and refinement prompt (Phase 7) — a candidate that ignores the stated intention ranks below one that serves it, at equal scores. Required: if it is empty, ask for it in one line and never invent one. Stored at the library's top level as `intention` so later rounds and re-runs inherit it.
 - **TOPIC** — **derived from `INTENTION`, not passed separately.** Distil a short noun-phrase label naming the research direction (drop the angle, the constraint, and the wanted result — those live in `INTENTION`), plus a lowercase kebab-case `topic_slug`. Used only for library identity: the cross-topic guard, the `topic` field, and record-keeping. Generation and ranking read `INTENTION`, never `TOPIC`.
 - **N_BEHAVIORS = 10** — target count of *new* behaviors to add **per round**. Override with `— n-behaviors: N`.
+- **COLD_N = `max(1, round(N_BEHAVIORS / 5))`** — how many of each round's behaviors come from the **cold pass**: generated *before* the discovery-strategy taxonomy is shown, with no strategy vocabulary in the prompt at all. The remaining `N_BEHAVIORS − COLD_N` come from the strategy-guided pass. Override with `— cold-n: N`; `0` disables the cold pass (not recommended — it is the only part of the round that is not shaped by a checklist). At the default `N_BEHAVIORS = 10` this is 2 cold + 8 guided per round. The cold pass exists because a taxonomy read immediately before generating **anchors** the generation: every candidate arrives pre-shaped to fit a named lens, and the lenses' own blind spot becomes the round's blind spot. Cold candidates are the round's only chance to name something no lens would have asked for. They are held to exactly the same bars and the same dedup as guided ones — the pass is unprimed, not unfiltered.
 - **ROUNDS = 3** — number of consecutive generation rounds in this invocation. Each round runs the full **generate → dedup → impact → persist** cycle and writes `hypothesis_library.json` **before the next round starts**, so the library accumulates. Every round rebuilds its banlist from the just-updated library, so earlier rounds' behaviors are **never** regenerated. Override with `— rounds: R`. Default `3 × 10` targets a pool of ~30. The loop self-terminates early if a round adds nothing after dedup (topic saturated — report it).
 - **TOP_N = 10** — how many behaviors survive Phase 5 and get their own `claim.json`. Override with `— top-n: K`. Fixes the directory numbering (`01`…`<TOP_N>`).
 - **IMPACT_WEB = true** — when true, run one quick web/arXiv search per surviving behavior to ground its impact score. Set `false` for a pure-LLM estimate (faster, may miss recent work).
@@ -72,7 +74,7 @@ The run ships exactly **two kinds of file**, and one model writes both: `hypothe
 
 1. **`INTENTION` (positional, required)** — everything before the first ` — ` (em dash with spaces) or `--`, taken verbatim, punctuation and all. This is the whole user input intention; there is no separate topic argument and no `— intention:` flag. If it is empty, ask for it in one line; never invent one.
 2. **`TOPIC` / `topic_slug`** — distilled from `INTENTION` (see Constants), never parsed from the argument list.
-3. **Options (after ` — ` or `--`)** — comma-separated `key: value` pairs; whitespace around `:` and `,` is ignored. Canonical keys are hyphen-separated and lowercase (`n-behaviors`, `rounds`, `top-n`, `writer`); underscore (`n_behaviors`) and env-style (`TOP_N`) are accepted. `n-behaviors` / `rounds` / `top-n` must parse as positive integers; anything else is a parse error — log `[arg-parse] <key>: "<value>" is not a positive integer` and stop. `writer` accepts `llm-chat` / `session` (case-insensitive); on any other value log `[arg-parse] writer: "<value>" not in {llm-chat, session} — falling back to default 'llm-chat'` and continue with the default. Unknown keys log `[arg-parse] unknown key: <name> — ignoring` and continue. A passed `— intention:` is an unknown key: it is ignored with that log line, because the intention is the positional.
+3. **Options (after ` — ` or `--`)** — comma-separated `key: value` pairs; whitespace around `:` and `,` is ignored. Canonical keys are hyphen-separated and lowercase (`n-behaviors`, `rounds`, `top-n`, `cold-n`, `writer`); underscore (`n_behaviors`) and env-style (`TOP_N`) are accepted. `n-behaviors` / `rounds` / `top-n` must parse as positive integers, and `cold-n` as a non-negative integer no larger than `n-behaviors`; anything else is a parse error — log `[arg-parse] <key>: "<value>" is not a positive integer` and stop. `writer` accepts `llm-chat` / `session` (case-insensitive); on any other value log `[arg-parse] writer: "<value>" not in {llm-chat, session} — falling back to default 'llm-chat'` and continue with the default. Unknown keys log `[arg-parse] unknown key: <name> — ignoring` and continue. A passed `— intention:` is an unknown key: it is ignored with that log line, because the intention is the positional.
 
 **Beware the em dash.** `INTENTION` is free text and may itself contain an em dash. Only ` — ` immediately followed by a `<key>: <value>` pair opens the option list; an em dash followed by ordinary prose is part of the intention. When ambiguous, prefer the longer intention and log `[arg-parse] treated "— <text>" as part of the intention`.
 
@@ -94,7 +96,7 @@ traits via hidden signals in data" — rounds: 10, n-behaviors: 10
 |---|---|
 | `INTENTION` | `Extend research on subliminal learning. … hidden signals in data` — verbatim, the two internal colons are prose, not keys |
 | options | `ROUNDS = 10`, `N_BEHAVIORS = 10` |
-| defaults | `TOP_N = 10`, `IMPACT_WEB = true` |
+| defaults | `TOP_N = 10`, `COLD_N = 2` (from `N_BEHAVIORS / 5`), `IMPACT_WEB = true` |
 | `TOPIC` / `topic_slug` | `subliminal learning in language models` / `subliminal-learning` |
 | shape | ~100 candidates in → 10 claims out |
 
@@ -102,13 +104,20 @@ The `—` before `rounds:` is followed by a `key: value` pair, so it opens the o
 
 `— top-n:` is not passed here, so `TOP_N` falls to its default of 10 — that is the `10` in "87 candidates → top 10". **Pool size and batch size are independent knobs**, and they price differently: `rounds × n-behaviors` sets how wide Step 1 searches and how many candidates Step 2 must score, while `top-n` alone sets Step 3's cost — one drafting pass plus up to 5 refinement rounds per selected behavior. Appending `— top-n: 20` to the invocation above changes nothing before Phase 5; it just takes 20 of the 57 survivors instead of 10, doubling Step 3 and creating `claims/01_…` through `claims/20_…`. Widen the pool to search harder; raise `top-n` only when you actually intend to read that many skeletons.
 
-**Step 1** — `/research-lit` writes `LANDSCAPE.md`; then 10 rounds, each pasting the accumulated banlist and one slice of the search space (r1 = the landscape's structural gaps, r2 = unused discovery strategies, r3+ = derived from what the library under-covers). Each round: brainstorm 10 → semantic dedup → impact score → persist. A representative node:
+**Step 1** — `/research-lit` writes `LANDSCAPE.md`; then 10 rounds, each pasting the accumulated banlist and one slice of the search space (r1 = the landscape's structural gaps, r2 = unused discovery strategies, r3+ = derived from what the library under-covers, on both the phenomena-class and the innovation-move axis). Each round: **2 cold** (no taxonomy in the prompt) → **8 guided** → semantic dedup and delta filter → impact score → persist. A representative node:
 
 ```
-B23  Cross-modal transfer
+B23  cross-modal transfer · guided
      "A student finetuned only on a teacher's numeric outputs acquires the teacher's
       trait, but the transfer collapses once teacher and student tokenizers differ,
-      even at identical initialization."
+      even at identical initialization. The carrier account predicts the opposite —
+      the signal lives in the choice among equally valid outputs, which survives
+      re-encoding — so tokenizer identity should be irrelevant and it is not."
+     innovation: beyond_transfer — "converts an all-or-none same-base rule into a
+                 measured boundary: the vocabulary-overlap fraction at which transfer
+                 halves"; method — "re-tokenizes one fixed corpus under six vocabularies
+                 to vary the channel while holding the data constant, which the standard
+                 teacher-swap design cannot do"
      five_bars: real/nonobvious/specific/robust/tractable — one line each
      impact: 8 · PROCEED · "bounds when data filtering is a real defense; distillation
              pipelines would need to check tokenizer identity, not just content"
@@ -133,7 +142,7 @@ claims/
   02_…/  …  10_…/
 ```
 
-**Cost.** `rounds: 10` is a deliberately large pool, and Step 2 spends one `/novelty-check` **and** one `/research-review` per surviving candidate — here ~155 external reviewer calls, dwarfing Step 1's 10 brainstorm calls. Lower `rounds` for a cheaper pass; the library accumulates across invocations, so several small runs and one large run reach the same place.
+**Cost.** `rounds: 10` is a deliberately large pool, and Step 2 spends one `/novelty-check` **and** one `/research-review` per surviving candidate — here ~155 external reviewer calls, dwarfing Step 1's 20 brainstorm calls (two per round, cold and guided) plus the occasional delta-filter repair. Lower `rounds` for a cheaper pass; the library accumulates across invocations, so several small runs and one large run reach the same place.
 
 ## Step 1 — Build the hypothesis library
 
@@ -155,9 +164,14 @@ Pass `INTENTION` verbatim — the whole positional argument, not `$ARGUMENTS` (w
 
 ### Phase 1.5: Behavior-Discovery Strategy Load
 
-This phase loads strategy into context; it writes **no artifact**. Invoke `/mechanism-behavior-discovery` and read its `SKILL.md` in full — the standard for finding, sharpening, and validating a *new* behavioral phenomenon: the five bars **Real / Non-obvious / Specific / Robust / Tractable**, the discovery strategies, and the validation discipline. It decides *what behavior is worth explaining*. Read it, do not execute its phases, and do not expect an output file. Log `[behavior-strategy] loaded /mechanism-behavior-discovery`.
+This phase loads strategy into context; it writes **no artifact**. Invoke `/mechanism-behavior-discovery` and read its `SKILL.md` in full — the standard for finding, sharpening, and validating a *new* behavioral phenomenon: the five bars **Real / Non-obvious / Specific / Robust / Tractable**, the discovery strategies, the **innovation moves** and the novelty delta they exist to produce, and the validation discipline. It decides *what behavior is worth explaining*. Read it, do not execute its phases, and do not expect an output file. Log `[behavior-strategy] loaded /mechanism-behavior-discovery`.
 
 Hold the loaded guidance in context for Step 1 — do **not** copy it into any output file. The mechanism strategy is **not** loaded here; it belongs to Step 3 (Phase 6), because the library carries no mechanism axis.
+
+**Two halves, loaded for two different moments.** What this skill supplies splits cleanly, and the round loop uses the halves at different times:
+
+- **The bars and the innovation moves are always on.** The five bars, the novelty-delta test, and the three statement failure modes apply to every behavior in every pass, cold or guided. They are *filters on what counts as a candidate*, and a filter cannot anchor generation because it runs after it.
+- **The discovery-strategy taxonomy is withheld from the cold pass.** The six named lenses, their numbering, and their vocabulary are generation *scaffolding*, and scaffolding placed before the first idea decides which ideas are reachable. They enter at Round step 2b and never at 2a. This quarantine is what `COLD_N` buys; loading the taxonomy here and then pasting it into every prompt would spend the budget and get nothing.
 
 What the loaded strategy is used for (advisory — it never relaxes the novelty or feasibility filtering downstream): surface and *sharpen* candidate phenomena, stating each crisply against the five bars, and screen plausibility. A library entry **assumes** its phenomenon exists; its actual existence is settled only by running the claim's Experiment 1, which is downstream of this workflow — never asserted here.
 
@@ -169,15 +183,26 @@ This phase writes `hypothesis_library.json`. It runs the following cycle once pe
 
 **Round step 1 — Rebuild the banlist.** Re-read `hypothesis_library.json` (it grew in the previous round's persist step) and collect **all** behavior statements currently in it — including those added by earlier rounds of this same invocation, and including eliminated ones. The llm-chat model is stateless, so the prompt MUST paste this banlist verbatim and require outputs that are neither in it nor close variants of it.
 
-**Round step 2 — Brainstorm (one `WRITER` pass per round).** Ask for `N_BEHAVIORS` new behaviors that are mutually distinct and **span `/mechanism-behavior-discovery`'s discovery strategies** — cover the different lenses within this one call. Do not hardcode a strategy count; use whatever set that skill currently specifies. For each behavior, return:
+**Round step 2 — Brainstorm.** Every round brainstorms in **two passes, in this order and never merged into one call**: a cold pass that runs before the discovery-strategy taxonomy is shown, then a guided pass that uses it. Both passes return the same fields (below) and both are held to the same bars; they differ only in what their prompt contains.
 
-- `statement` — a one-sentence falsifiable phenomenon **with its triggering condition**;
-- `discovery_strategy` — which lens produced it;
-- `discovery_strategy_detail` — one to two sentences of concrete provenance: which cross-discipline finding or method was borrowed and mapped onto what, or which past CS result was reused in which new setting;
+**Round step 2a — The cold pass (`COLD_N` behaviors).** One `WRITER` call whose prompt carries **only**: `INTENTION` verbatim, the `LANDSCAPE.md` gaps and open problems, the banlist, this round's slice, and the field spec. It carries **no** discovery-strategy list, no strategy names, no lens numbering, and no instruction to cover a taxonomy — and it says so explicitly, so the model does not reconstruct one from memory: *do not organize the output by any taxonomy of research strategies; propose whatever you would propose if none existed.*
+
+Ask instead for the thing a lens cannot ask for: **what is actually strange, unexplained, or quietly assumed in this area** — the observation that does not fit, the assumption everyone is standing on, the question a practitioner in this field would ask that a researcher would not, the result that would be most annoying to whoever currently believes the standard account. One useful framing for this pass: *if you had to bet on one thing here being wrong, what would it be?*
+
+`discovery_strategy` for a cold-pass behavior is set to `"cold-pass"` and stays that way — **never back-fill it with the lens it happens to resemble**. That relabelling is exactly the information the cold pass exists to preserve, and losing it makes round ≥ 3's coverage analysis (which reads the strategy distribution) blind to how much of the pool came from unprimed generation. Its `discovery_strategy_detail` still has to be written and still has to name a concrete provenance — a cold behavior is unprimed, not unmotivated.
+
+**Round step 2b — The guided pass (`N_BEHAVIORS − COLD_N` behaviors).** One `WRITER` call, now with the full `/mechanism-behavior-discovery` apparatus in the prompt: the discovery strategies (spanning the lenses within this one call — do not hardcode a strategy count; use whatever set that skill currently specifies) and the **innovation moves**. The cold pass's outputs are appended to this prompt's banlist, so the guided pass cannot re-derive what the cold pass already found and is pushed into the space the cold pass left.
+
+**Both passes, every behavior, these fields:**
+
+- `statement` — the phenomenon, its triggering condition, and its novelty delta, written to the discipline in *Writing a `statement`* below. This is the field the whole library is judged on;
+- `discovery_strategy` — which lens produced it, as a **bare human-readable name** (`cross-modal transfer`, `borrow from human sciences`, `cold-pass`). Never a numbered label copied out of the skill file — `"4 reuse-existing-CS-results"` leaks this workflow's scaffolding into a node that has to survive on its own;
+- `discovery_strategy_detail` — one to two sentences of concrete provenance: which cross-discipline finding or method was borrowed and mapped onto what, or which past CS result was reused in which new setting. Provenance, **not** an experiment sketch: how the conjecture was *reached*, not how it would be run. A `detail` field that reads like a Methods paragraph means the behavior was written backwards from a protocol, and the statement almost always shows it;
+- `innovation` — `beyond_transfer` and `method`, per *The novelty delta is a field, not a hope* below;
 - `five_bars` — a one-liner for each of Real / Non-obvious / Specific / Robust / Tractable;
 - `gaps` — the `LANDSCAPE.md` structural gaps it is grounded on, when it is; `[]` when it is not. **Each entry carries both the id and the gap restated in one self-contained line** — `{"id": "G2", "gap": "whether two traits held by one teacher transmit independently or compete for a shared carrier"}`, never the bare `"G2"`. The id is the join key back into `LANDSCAPE.md` (round 1's one-behavior-per-gap coverage check reads it, and so does the Phase 5 report); the restated line is what makes the node survive without it.
 
-**Assign each round a different slice of the search space**, so the rounds diverge by construction rather than by luck:
+**Assign each round a different slice of the search space**, so the rounds diverge by construction rather than by luck. The slice is given to **both** passes — it bounds *where* to look, which is not the same as prescribing *how*, so it does not compromise the cold pass:
 
 | Round | Assignment |
 |---|---|
@@ -185,19 +210,72 @@ This phase writes `hypothesis_library.json`. It runs the following cycle once pe
 | 2 | The **discovery strategies not yet used** in round 1. |
 | ≥ 3 | The **phenomena classes underrepresented** after the previous rounds — read the accumulated library, name what kind of behavior is missing, and aim this round there. |
 
+For round ≥ 3, run the coverage read along **two** axes, not one, and name the under-covered cell of each: the phenomena classes (what kind of behavior), and the **innovation moves** (which of `/mechanism-behavior-discovery`'s moves the pool's novelty deltas actually rest on). A library where every delta is "new domain" or "new trait" is under-covered on the second axis even when the first looks healthy, and that is the failure the round should be aimed at — a pool of transfers is not a pool of ideas.
+
 Rounds from 3 on are written **after** reading the library, so their assignment is derived, not guessed. **Every round's prompt carries `INTENTION` verbatim, and every behavior must be answerable to it** — the round assignment slices the search space, the intention constrains what counts as a hit inside that slice. A behavior that would be excellent for the topic but does not serve the stated intention is a miss; say so in one line rather than generating it.
 
 **Spread the altitude.** Per `/mechanism-behavior-discovery`, a candidate may be a broad regularity in how the model reasons or a narrow effect tightly scoped to one input→output pattern — both are good. Aim for a spread across the pool rather than a monoculture of tiny effects.
 
-**Round step 3 — Semantic dedup.** Use `llm-chat` for semantic judgment, not string match: flag each new behavior `new` or `duplicate-of:<Bk>`. Two behaviors are the same behavior when they name the same phenomenon under the same trigger, whatever their wording says. Drop duplicates; merge any extra nuance into the existing node's `notes`.
+#### Writing a `statement`
+
+`statement` is the node's load-bearing sentence and the only one most readers of the library ever process. Phase 3 runs its novelty search against it, Phase 4 reviews it, Phase 5 ranks on it, and Phase 7 repackages it into `Short Hypothesis` and the Abstract's design sentence. **A statement that reads like a sentence from the anchor paper's abstract will be scored as that paper** — the novelty check finds the source, and the node dies at the gate having never been given a chance to say what was actually new about it.
+
+The failure is not carelessness; it is the path of least resistance. `INTENTION` names a reference result, the reference result has a canonical phrasing, and the fastest way to write a falsifiable sentence in that area is to take the canonical phrasing and change one slot — the objective, the trait, the modality, the domain. The pool then reads as one paper's result inflected `ROUNDS × N_BEHAVIORS` ways.
+
+**Three tests, run on every statement before it is persisted.** Each fails on a fact, not on taste:
+
+1. **Source-paraphrase test.** Put the statement next to the anchor paper's own claim. If it can be obtained by substituting nouns — a different trait, a different training objective, a different modality, a different model size — the statement is the source result with a slot filled and is not yet a behavior of its own.
+2. **Sibling-swap test.** Put the statement next to the other behaviors of the same round. If one can be produced from another by editing a single noun phrase, they are one phenomenon with several instantiations, and the library should hold the phenomenon, not the list.
+3. **Setup-to-claim ratio.** Count the clause carrying the *setting inherited from the source* against the clause carrying *what this node predicts*. If the setup is the longer half, the node is mostly a restatement of where it came from. Cut the setup to what is needed for falsifiability and spend the sentence on the prediction.
+
+**What a statement must contain**, in whatever order reads best:
+
+- **The triggering condition** — what has to be true for the phenomenon to appear, and, where it is what makes the claim sharp, the condition under which it should *not* appear.
+- **The phenomenon** — a falsifiable regularity in observable behavior, with a direction, and with the quantity it is measured in named.
+- **The delta clause** — what the standing account predicts *instead*, and what this node predicts against it. This is where `discovery_strategy_detail`'s content lands. The provenance does not stay parked in its own field waiting for Phase 7 to find it: **the borrowed idea's content is written into the statement as the reason the prediction has the shape it does**, while the fact that it was borrowed — the strategy name, the lens, the discipline it came from as a label — stays out. `discovery_strategy_detail` keeps the provenance for the *record*; the statement keeps its *consequence*.
+
+**Register.** No taxonomy vocabulary («cross-domain transfer», «this behavior is tractable»), no account of the search («we borrowed from», «this strategy suggests»), no reference to the library, the round, or another node. Two to three sentences is the working range: one is usually too few to carry a delta clause, and past three the node has become a plan. Numbers beat quantifiers wherever a number can be committed to.
+
+> **Slot-filled** — the anchor result with the objective swapped, setup longer than claim, no delta: *A student's DPO training on teacher-generated preference pairs about semantically neutral content will acquire the teacher's trait when the chosen and rejected responses differ only in latent trait expression and the teacher and student share a base initialization.*
+>
+> **Carrying its delta** — the same starting point, with the provenance absorbed and a prediction that competes: *Preference optimization should destroy a hidden trait channel rather than carry it: its gradient is a contrast between two responses, so any signal shared by the chosen and the rejected one cancels before it reaches the weights. We predict the opposite, and predict it to behave differently in kind — trait transfer under preference training survives, but its strength tracks the within-pair asymmetry of the carrier rather than the size of the corpus, so the standard hygiene of raising pair quality and pairing more tightly matched responses should increase transfer where it is expected to reduce it.*
+
+The second version can only be produced by someone who thought about *why* the channel might behave differently under a contrastive objective; that reasoning is exactly what `discovery_strategy_detail` recorded, and writing it into the statement is what turns a slot-fill into a claim. It also fails none of the three tests, and it hands Phase 3 something to search for that is not the anchor paper.
+
+#### The novelty delta is a field, not a hope
+
+Every behavior carries an `innovation` object with two one-line entries, and both are answerable questions with checkable answers:
+
+```json
+"innovation": {
+  "beyond_transfer": "<what is still new if the borrowed phenomenon reappears here exactly as its source predicts>",
+  "method": "<the one move in the design that is not standard practice for this phenomenon>"
+}
+```
+
+`beyond_transfer` is `/mechanism-behavior-discovery`'s novelty delta, written down. **"The domain is new", "the modality is new", "it is tested at a larger scale", and "nobody has run this exact combination" are not answers** — they describe where the work happens, not what it establishes. Real answers name a quantity that did not exist before (a rate, a capacity, a half-life, a boundary, an interaction), a prediction that contradicts the standing account, or a use the phenomenon is put to.
+
+`method` is `/mechanism-explore`'s method-innovation line, one stage early — the adapted instrument, the imported paradigm, the measurement taken where nobody takes it, the rescue arm, the unit of analysis that had to be defined. **"Induce trait in teacher, SFT student, run trait probe" is not an answer** when that is the anchor paper's own design; it is the control condition the new design has to beat. A behavior may legitimately reuse a standard design *when `beyond_transfer` carries the whole delta* — say so in the field, in those words, rather than dressing an off-the-shelf protocol as a contribution.
+
+**Repair, then drop.** A behavior whose `beyond_transfer` reduces to a domain, modality, or scale swap, or whose `method` restates the anchor design, goes back to `WRITER` **once** with the failing test quoted and an instruction to either find the delta or replace the behavior. If the second pass still has none, drop it before persisting and count it in the round report as `dropped: transfer-only`. This is the one place in Step 1 where a candidate is discarded on quality rather than duplication, and it is cheap here — Phase 3 would spend a full literature search discovering the same thing, and Phase 5 would cut it anyway after the pool had already been shaped around it.
+
+**Round step 3 — Semantic dedup, then the delta filter.** Use `llm-chat` for semantic judgment, not string match: flag each new behavior `new` or `duplicate-of:<Bk>`. Two behaviors are the same behavior when they name the same phenomenon under the same trigger, whatever their wording says. Drop duplicates; merge any extra nuance into the existing node's `notes`.
+
+Dedup runs over **both passes' output together**, and over the whole library, in one judgment — a cold behavior and a guided behavior that landed on the same phenomenon are duplicates like any other. When they do collide, **keep the cold one** and merge the guided one's nuance into it: the cold statement was reached without the scaffolding, which makes it the better record of what the phenomenon is, and it is usually the less templated of the two.
+
+Dedup also catches **template collapse**, which plain semantic dedup does not: two behaviors that differ only in the slot filled into a shared setup sentence — same trigger, same measurement, same predicted direction, different trait or domain or objective — are one phenomenon, and the library keeps the general statement, listing the instantiations in `notes`. Ten trait names in ten nodes is one node with a list, and it is what makes a pool look full while covering one idea. Flag these as `duplicate-of:<Bk>` on the same footing as semantic duplicates.
+
+Then apply the **delta filter** from *The novelty delta is a field, not a hope*: every surviving behavior's `innovation.beyond_transfer` and `innovation.method` are checked, failures go back to `WRITER` once, and anything still empty is dropped as `transfer-only` rather than persisted. Report both counts separately in the round ledger — `duplicates dropped` and `transfer-only dropped` diagnose different broken rounds.
 
 **Round step 4 — Impact score.** For each surviving behavior, score its importance following `/impact-check`'s dimensions — does it solve a real problem, would it be used or cited, could it shift a field's direction, does it help applications or cross-disciplinary work, does it reveal an important phenomenon even with a simple method. If `IMPACT_WEB`, run one quick web/arXiv search per behavior first to ground the score. Return `score` (1–10, 10 = clearly important), a one-line `rationale` (why it matters + who would build on it), and a `recommendation` (`PROCEED` / `PROCEED WITH CAUTION` / `DEPRIORITIZE`). Stamp `method` (`llm-chat` / `llm-chat+web`) and `date`. Judge importance **on its own merits, not against `INTENTION`** — a behavior that serves the intention perfectly but matters to nobody scores low. The intention belongs in the `rationale`'s "who would build on it" half, and it does its ranking work later, as Phase 5's tiebreak. This is a lightweight triage score, not a publication-grade verdict — **no cut happens here.**
 
 **Round step 5 — Merge and persist.** Assign ids by max-suffix+1, never reused: `B1`, `B2`, …. Set `status: "candidate"`, stamp `batch` (date + run index + round index, e.g. `2026-08-15.run01.r03`) and `updated`. Write `hypothesis_library.json` **now, before the next round** — this persisted state is what the next round reads as its banlist.
 
-**Authorship vs. mechanics at this step.** `hypothesis_library.json` is a `WRITER` deliverable, exactly as `claim.json` is: every authored field of a behavior — `statement`, `five_bars`, `discovery_strategy_detail`, `notes`, and the `impact.rationale` line — is `WRITER`'s own wording, carried through verbatim. The orchestrating agent performs only the mechanics that `WRITER` cannot: assigning ids, stamping `status` / `batch` / `updated`, merging into the pool, and writing the file (the `llm-chat` backend has no file access). It never rewrites, paraphrases, tightens, or translates an authored field; a field that needs changing goes back through `WRITER`. This is what makes the same model that conceived a phenomenon in Phase 2 the one that writes it up in Phase 7 — the two deliverables share one voice by construction, not by reconciliation.
+**Authorship vs. mechanics at this step.** `hypothesis_library.json` is a `WRITER` deliverable, exactly as `claim.json` is: every authored field of a behavior — `statement`, `five_bars`, `discovery_strategy_detail`, `innovation`, `notes`, and the `impact.rationale` line — is `WRITER`'s own wording, carried through verbatim. The orchestrating agent performs only the mechanics that `WRITER` cannot: assigning ids, stamping `pass` / `status` / `batch` / `updated`, stripping a numeric prefix off a `discovery_strategy` label, merging into the pool, and writing the file (the `llm-chat` backend has no file access). It never rewrites, paraphrases, tightens, or translates an authored field; a field that needs changing goes back through `WRITER`. This is what makes the same model that conceived a phenomenon in Phase 2 the one that writes it up in Phase 7 — the two deliverables share one voice by construction, not by reconciliation.
 
 **Early stop.** If a round adds **0** survivors after dedup, the topic is saturated for this run: stop the loop and note it in the Phase 5 report rather than spinning further rounds. Never pad a round with near-duplicates to fill it.
+
+Read the two drop counts before concluding saturation, because they mean opposite things. A round emptied by **duplicates** is saturated — the search space is exhausted at this slice, and another round finds the same things again. A round emptied by the **delta filter** is not: the space is still open and the generation collapsed into slot-filling, which is a prompt failure, not a topic failure. In that case run one more round with the failed statements pasted in as negative examples and `COLD_N` raised, before declaring saturation.
 
 **Breadth is the point.** The pool exists to be cut, so `ROUNDS × N_BEHAVIORS` near-duplicates of one framing is a failed Step 1. Overshoot rather than undershoot: the pool must survive a novelty gate and a design veto and still leave `TOP_N`. A pool below `2 × TOP_N` after dedup means the rounds collapsed onto each other — run one extra round aimed at whatever the dedupe revealed as over-covered.
 
@@ -216,9 +294,14 @@ Step 1 writes exactly these fields. Step 2 adds its own (see "Step-2 fields" bel
     {
       "id": "B1",
       "source": "discover",
-      "discovery_strategy": "Cross-domain transfer",
-      "discovery_strategy_detail": "<how this idea was reached: the concrete provenance of the conjecture — e.g. which finding/method from which discipline was borrowed and mapped onto what here, or which past CS result was reused in which new setting>",
-      "statement": "<one-sentence phenomenon + trigger>",
+      "pass": "<cold | guided>",
+      "discovery_strategy": "<bare lens name, or \"cold-pass\" — never a numbered label from the skill file>",
+      "discovery_strategy_detail": "<how this idea was reached: the concrete provenance of the conjecture — e.g. which finding/method from which discipline was borrowed and mapped onto what here, or which past CS result was reused in which new setting. Provenance, not a protocol.>",
+      "statement": "<the phenomenon, its trigger, and its delta clause — two to three sentences, per 'Writing a statement'>",
+      "innovation": {
+        "beyond_transfer": "<what is still new if the borrowed phenomenon reappears exactly as its source predicts — never 'the domain is new'>",
+        "method": "<the one move in the design that is not standard practice for this phenomenon, or an explicit 'standard design; the delta is entirely in beyond_transfer'>"
+      },
       "five_bars": {"real":"","nonobvious":"","specific":"","robust":"","tractable":""},
       "impact": {
         "score": 8,
@@ -240,7 +323,7 @@ Step 1 writes exactly these fields. Step 2 adds its own (see "Step-2 fields" bel
 
 **No mechanism axis.** The library holds behaviors only — no `mechanisms` array, no internal object, no causal relation, no per-mechanism novelty. The mechanism is attached in Step 3, to the `TOP_N` survivors only, and lives in their claim directories.
 
-`source` is `discover` for every behavior this skill mines. `status` lifecycle: `candidate` (written here) → `selected` / `eliminated` (written by Phase 5) → `explored` (flipped by hand when the user promotes a claim into an `/auto` round).
+`source` is `discover` for every behavior this skill mines. `pass` records which half of Round step 2 produced it — `cold` or `guided` — and is stamped by the agent, not authored; it is what makes the cold pass auditable, so a later run can ask whether unprimed generation is actually earning its share of the survivors. `status` lifecycle: `candidate` (written here) → `selected` / `eliminated` (written by Phase 5) → `explored` (flipped by hand when the user promotes a claim into an `/auto` round).
 
 ## Step 2 — Evaluate and select the top N
 
@@ -249,8 +332,10 @@ Step 1 writes exactly these fields. Step 2 adds its own (see "Step-2 fields" bel
 Run a thorough novelty check on **every behavior in the library** with `status: "candidate"` — one `/novelty-check` per behavior, dispatched in parallel:
 
 ```
-/novelty-check "[behavior Bk: statement + trigger + why it would be surprising]"
+/novelty-check "[behavior Bk: statement + trigger + innovation.beyond_transfer + innovation.method + why it would be surprising]"
 ```
+
+**Check the delta, not just the phenomenon.** Pass `innovation` into the prompt and require the verdict to address it: a behavior whose phenomenon is reported in the literature is **not** automatically eliminated if its `beyond_transfer` is a quantity, boundary, or prediction that no found work establishes — that is precisely the case the delta was written for, and eliminating it collapses the workflow back to hunting for phenomena nobody has ever mentioned. The elimination bar is *the claim as stated is already established*, not *this area has been studied*. Conversely, a behavior whose delta the search does find, in a paper the statement never anticipated, is eliminated even when its surface framing looks fresh. Record which of the two the verdict turned on in `novelty.verdict`'s accompanying note.
 
 **What this does:**
 - Multi-source literature search (arXiv, Scholar, Semantic Scholar)
@@ -267,7 +352,7 @@ For each survivor, record its **three nearest works** with the specific finding 
 Review **every behavior that survived novelty** — not just a shortlist. One `/research-review` per survivor, dispatched in parallel:
 
 ```
-/research-review "[behavior Bk: statement + five bars + impact rationale + nearest works]"
+/research-review "[behavior Bk: statement + five bars + innovation + impact rationale + nearest works]"
 ```
 
 **What this does:**
@@ -334,20 +419,26 @@ This is the only cut that produces the batch. It combines all three signals.
 
 **If fewer than `TOP_N` survive**, run **one** top-up round: return to Phase 2, generate additional behaviors aimed at the gaps the eliminations exposed, and put them through Phases 3 → 5. If the batch is still short after that round, ship what survived and state the shortfall plainly. Never pad the batch with a behavior that was already eliminated, never overturn a novelty verdict or a design veto to reach `TOP_N`.
 
-**Report.** Print: `INTENTION` (verbatim), the distilled `TOPIC`, `ROUNDS` requested vs. actually run (note early stop if a round saturated), a one-line per-round ledger (round → behaviors added → running total), total pool size, duplicates dropped, eliminations by reason, the impact score distribution (min/median/max), and the selected `TOP_N` with their ranks and claim directories.
+**Report.** Print: `INTENTION` (verbatim), the distilled `TOPIC`, `ROUNDS` requested vs. actually run (note early stop if a round saturated), a one-line per-round ledger (round → cold added / guided added → duplicates dropped → transfer-only dropped → running total), total pool size, eliminations by reason, the impact score distribution (min/median/max), and the selected `TOP_N` with their ranks and claim directories.
+
+Add two lines that diagnose the *generation* rather than the batch, because they are what a later run acts on:
+
+- **Cold-pass yield** — of the `ROUNDS × COLD_N` cold behaviors, how many survived dedup, how many survived Phase 3, and how many made the `TOP_N`. A cold yield at or above the guided yield says the taxonomy is costing more than it gives on this topic and `COLD_N` should rise next run; a cold yield of zero across all rounds says the cold prompt is not being kept clean, or the topic genuinely has no unprimed surface left.
+- **Delta distribution** — a tally of what the selected behaviors' `innovation.beyond_transfer` entries actually claim (new quantity / contradicted prediction / measured boundary / new instrument / new use). If one bucket holds most of the batch, say so: the pool searched one way, and the next invocation's round ≥ 3 assignment should be aimed at the empty buckets.
 
 ## Step 3 — Mechanism and claim
 
 ### Phase 6: Mechanism Strategy Load
 
-This phase loads strategy into context; it writes **no artifact**. Invoke `/mechanism-explore` via the Skill tool and read its `SKILL.md` in full — the macro-level strategy layer above the concrete method families, organized around six parallel directions (Location / Causal Intervention / Tuning & Editing / Formation Tracing / Unit Interpretation / Decision Auditing) and the strategies that chain them. It shapes *how to explain* each selected behavior. Read it, do not execute its phases, and do not expect an output file. Log `[mechanism-strategy] loaded /mechanism-explore`.
+This phase loads strategy into context; it writes **no artifact**. Invoke `/mechanism-explore` via the Skill tool and read its `SKILL.md` in full — the macro-level strategy layer above the concrete method families, organized around six parallel directions (Location / Causal Intervention / Tuning & Editing / Formation Tracing / Unit Interpretation / Decision Auditing), the strategies that chain them, and the **method-innovation moves** that keep a chain from being an off-the-shelf recipe. It shapes *how to explain* each selected behavior. Read it, do not execute its phases, and do not expect an output file. Log `[mechanism-strategy] loaded /mechanism-explore`.
 
 **Attach a mechanism to each selected behavior.** The library carries none, so this is where each of the `TOP_N` acquires one. For each selected behavior, frame a **falsifiable mechanistic hypothesis**:
 
 - the **internal object** held responsible — layer / head / neuron / SAE feature / direction / circuit;
 - the **predicted causal relation** — ablate → effect, steer → dose-response, patch → localization;
 - at least one **boring null** — memorization / surface feature / shortcut / tokenizer / position;
-- the `/mechanism-explore` combination strategy it commits to (e.g. Location → Causal Intervention), chosen for *this* behavior and justified in one line.
+- the `/mechanism-explore` combination strategy it commits to (e.g. Location → Causal Intervention), chosen for *this* behavior and justified in one line;
+- **the method-innovation line** — what this investigation does that is not the standard recipe for a phenomenon of this kind, and what that buys. It is written against `/mechanism-explore`'s § Method Innovation and it inherits the behavior's own `innovation.method`, which was committed to back in Phase 2: **the mechanism plan makes good on that commitment or explicitly supersedes it with a stronger one**, and if it silently reverts to the default chain, the claim ships with a design the behavior's own library node already said was insufficient. A chain of standard steps with no such line is not ready to be written up.
 
 Prefer a hypothesis on a **climbable ladder of evidence**. The direction is fixed here; the concrete submethod is whatever `Experiments` commits to. Hold the mechanism in context and feed it into Phase 7; it surfaces as `claim.json`'s H-list. **Do not write it back into `hypothesis_library.json`** — the library stays behavior-only.
 
@@ -366,11 +457,11 @@ Prefer a hypothesis on a **climbable ladder of evidence**. The direction is fixe
 
 **Step 1 — Draft.** `WRITER` writes the seven keys in one pass, in the write order below. `WRITER` sees only what it is given, so assemble the input first:
 
-- the behavior node in full — `statement`, `five_bars`, `discovery_strategy_detail`, `gaps` (id **and** restated line), `impact.rationale`;
+- the behavior node in full — `statement`, `five_bars`, `discovery_strategy_detail`, `innovation`, `gaps` (id **and** restated line), `impact.rationale`;
 - its three nearest works from `novelty.nearest_works`, each with the finding it established and the separation;
-- the Phase 6 mechanism hypothesis — internal object, predicted causal relation, boring nulls, the combination strategy;
+- the Phase 6 mechanism hypothesis — internal object, predicted causal relation, boring nulls, the combination strategy, the method-innovation line;
 - the Phase 4 reviewer feedback, ordinary weaknesses included — those are what this draft is meant to fix;
-- `INTENTION`, verbatim;
+- `INTENTION`, verbatim — the claim **serves** it and never quotes it. Its constraint half (the affordable scale, the setting, the kind of model that has to settle it) binds concrete choices in `Experiments`, and its wanted-result half is what the sentence naming who acts on the answer should actually be useful to. It never supplies framing vocabulary: a claim that echoes the user's phrasing reads as a restatement of the request rather than a paper;
 - this phase's specification, from `Feasibility and clarity` to `Write order`.
 
 When `WRITER = session` the agent drafts directly and can read whatever it needs; when `WRITER = llm-chat` the same material must be pasted into the `mcp__llm-chat__chat` prompt, because the chat model has no file access and no memory of having generated the behavior in Phase 2.
@@ -431,17 +522,20 @@ The claim JSON should include the following fields:
 
 **`Short Hypothesis`** carries the whole claim in one paragraph. It names the **triggering condition** (what has to be true for the phenomenon to appear), the **phenomenon** (a falsifiable regularity in observable model behavior), the **internal object** held responsible (layer / head / neuron / SAE feature / direction / circuit), and **H1…Hk** — two to four sub-hypotheses, each with a stated direction. H1 is always the existence claim: does this happen at all. The last H is the one that pays: a causal intervention or an edit that moves the behavior, not another correlation.
 
+*Organize it around the advantage, not only the protocol.* Four fields of the behavior node carry what makes the claim worth reading, and the paragraph should be shaped so a reviewer meets them: `statement`'s delta clause and `five_bars.nonobvious` for what the standing account predicts instead, `innovation.beyond_transfer` for what this establishes even if the effect lands exactly as predicted, `discovery_strategy_detail` for why one would expect it here at all, and `impact.rationale` for who acts on the answer. A clause or a sentence each, written as part of the claim rather than as a note about it. Trigger + phenomenon + H-list + thresholds alone says what will be measured without saying what would be surprising about the answer or why it matters — and when the same threshold and band are restated verbatim at every H, there is no room left for any of it.
+
 **`Related Work`** names real, citable work — author and year — and for each says *what result it established*, then what this claim contradicts, extends past its stated scope, or looks at where it never looked. «They study X, we study Y» is a topical separation and does not count. It closes with at most one positioning sentence («the first to (i)… (ii)…»), and every clause in that sentence must survive checklist item 1.
 
-**`Abstract`** reads like the abstract of a paper someone would actually open: the human-legible motivation first, then the controlled design, then the hypotheses in a sentence each, then what a positive result gives the field.
+**`Abstract`** reads like the abstract of a paper someone would actually open: the human-legible motivation first, then the controlled design, then the hypotheses in a sentence each, then what a positive result gives the field. That ordinary arc is also what makes the claim's novelty and impact visible without ever asserting them — `discovery_strategy_detail` motivates, `five_bars.nonobvious` and the `statement`'s delta clause supply the surprise, `innovation` supplies what the work adds, `impact.rationale` closes on who acts on the result. Opening on the design instead («This plan tests whether…», «We train a student on…») starts the reader past the motivation and the surprise, and the advantage never lands.
 
-*Where its material comes from.* The Abstract is assembled from three fields of the behavior node — `discovery_strategy_detail`, `statement`, `five_bars` — and every one of them is **repackaged, never transcribed**. They enter in this order:
+*Where its material comes from.* The Abstract is assembled from four fields of the behavior node — `discovery_strategy_detail`, `statement`, `innovation`, `five_bars` — and every one of them is **repackaged, never transcribed**. They enter in this order:
 
 1. **`discovery_strategy_detail` → the opening motivation.** It records *how the conjecture was reached* — which cross-discipline finding or past result was borrowed and mapped onto what. Rewrite it as a claim about the world that makes the reader expect the phenomenon might exist, not as an account of the search that produced it. Its provenance survives as a reason to look here; the fact that it was a discovery *strategy* does not survive at all. When the borrowed source is itself citable, the citation goes to `Related Work` and only its content stays here.
-2. **`statement` → the controlled-design sentence.** Restate the phenomenon and its triggering condition once, in the paper's register, with the same direction and the same numbers `Short Hypothesis` uses. This is a second statement of the same claim for a reader who will not read further, not a second, subtly different claim — if the two drift apart, checklist item 8 fails.
-3. **`five_bars` → the surprise and the scope.** `nonobvious` becomes the sentence saying what a reader would have predicted instead, which is what makes the result worth an abstract; `real` becomes the reason the effect is a phenomenon rather than an artifact of the setup; `specific` becomes the bound on what is being claimed. `robust` and `tractable` stay out — they justify studying the behavior, which is Step 2's business, and say nothing to a reviewer — unless one of them carries a number that `Experiments` also reports, in which case that number appears once, here, in the design sentence.
+2. **`statement` → the controlled-design sentence.** Restate the phenomenon and its triggering condition once, in the paper's register, with the same direction and the same numbers `Short Hypothesis` uses. This is a second statement of the same claim for a reader who will not read further, not a second, subtly different claim — if the two drift apart, checklist item 8 fails. The statement's **delta clause** — what the standing account predicts instead — is the half that most often gets dropped in this restatement, and it is the half a reviewer is reading for; keep it, and keep it as a competing prediction rather than a hedge.
+3. **`innovation` → what the paper is claiming to add.** `beyond_transfer` becomes the sentence that says what this establishes *that would still be worth knowing if the effect turns out exactly as expected* — the quantity, the boundary, the contradicted prediction. `method` becomes a clause in the design sentence naming the instrument or paradigm that makes the measurement possible, and it must match what `Experiments` actually does. Neither surfaces as a claim about the paper's own novelty: no «our key innovation is», no «unlike prior work we are the first». The move is stated, and the reader draws the conclusion.
+4. **`five_bars` → the surprise and the scope.** `nonobvious` becomes the sentence saying what a reader would have predicted instead, which is what makes the result worth an abstract; `real` becomes the reason the effect is a phenomenon rather than an artifact of the setup; `specific` becomes the bound on what is being claimed. `robust` and `tractable` stay out — they justify studying the behavior, which is Step 2's business, and say nothing to a reviewer — unless one of them carries a number that `Experiments` also reports, in which case that number appears once, here, in the design sentence.
 
-*The packaging is the point.* None of the three source vocabularies may surface: no «discovery strategy», no «five bars», no «non-obvious», no «real / specific / robust / tractable» used as labels, no «we borrowed this from», no «this behavior is tractable because». Each source field dissolves into a sentence that had to be written anyway, exactly as `The routing must not show` and `One register for the agent, another for the reviewer` require. **The test: a reviewer must not be able to tell the Abstract was assembled from a JSON node** — and must not be able to recover which sentence came from which field.
+*The packaging is the point.* None of the four source vocabularies may surface: no «discovery strategy», no «five bars», no «non-obvious», no «real / specific / robust / tractable» used as labels, no «novelty delta», no «beyond transfer», no «method innovation», no «we borrowed this from», no «this behavior is tractable because». Each source field dissolves into a sentence that had to be written anyway, exactly as `The routing must not show` and `One register for the agent, another for the reviewer` require. **The test: a reviewer must not be able to tell the Abstract was assembled from a JSON node** — and must not be able to recover which sentence came from which field.
 
 > **Transcribed:** *Subliminal learning is a phenomenon where traits transmit through semantically unrelated data. This behavior is real because the effect has been observed at multiple scales, non-obvious because filtering is assumed to work, and specific because it is scoped to same-initialization teacher-student pairs. The idea was reached by transferring the notion of a carrier signal from steganography.*
 >
@@ -503,6 +597,8 @@ Every piece of working material either dissolves into one of the seven fields or
 |---|---|
 | the phenomenon and its triggering condition (`statement`) | `Short Hypothesis`, opening sentences; restated once in `Abstract` as the controlled-design sentence, same direction and same numbers |
 | where the idea came from — the cross-domain result or human finding it transfers (`discovery_strategy_detail`) | `Abstract`, the opening motivation, rewritten as a claim about the world rather than an account of the search; a clause in `Related Work` when the source is itself citable |
+| what is new even if the transfer succeeds exactly (`innovation.beyond_transfer`) | `Abstract`, the sentence saying what the result establishes; `Related Work`, as the separation clause against the nearest work — this is the field that stops «X, but in Y» from being the whole claim |
+| the design move that is not standard practice (`innovation.method`, Phase 6's method-innovation line) | `Experiments`, where the instrument or paradigm is introduced and justified in the sentence that introduces it; one clause in `Abstract`'s design sentence |
 | why a reader would have predicted otherwise, and what the claim is bounded to (`five_bars`: `nonobvious`, `real`, `specific`) | `Abstract`, the surprise-and-scope sentences — dissolved into prose, never as labelled bars |
 | the structural gap in the landscape | `Related Work`, restated as what the literature has not done |
 | the mechanistic conjecture — internal object, causal relation (Phase 6) | `Short Hypothesis`, the H-list |
@@ -557,7 +653,7 @@ What these checks turn up is content, not scoring. Each finding has a field wait
 
 *Is the idea new*
 
-1. **Three nearest works, each separated at the level of a finding.** Name the three closest works. For each, state the specific result it established and what this claim contradicts, extends past its scope, or looks at where it never looked. Fail: fewer than three can be named, or any separator is merely topical. If genuinely nothing is close, decide which case it is — nobody asked the question, or nobody has a use for the answer — and if it is the second, the claim changes.
+1. **Three nearest works, each separated at the level of a finding.** Name the three closest works. For each, state the specific result it established and what this claim contradicts, extends past its scope, or looks at where it never looked. Fail: fewer than three can be named, or any separator is merely topical — and **a separator that names only a different domain, modality, objective, or model scale is topical**, however important the new domain is. The behavior node already committed to a `beyond_transfer`; if no separation clause in `Related Work` carries it, either the claim drifted off its delta during drafting or the delta was never real. If genuinely nothing is close, decide which case it is — nobody asked the question, or nobody has a use for the answer — and if it is the second, the claim changes.
 2. **The expert's prior is written down before the plan is.** State the direction a researcher in this area would predict for the key measurement without having read this claim. If it matches the claim's own prediction, the direction is not what is new — say what is (the magnitude, the mechanism producing it, the setting) and check that the experiment measures *that*. Fail: no experiment distinguishes the claim from the expert's prior.
 
 *Would it matter*
@@ -571,6 +667,8 @@ What these checks turn up is content, not scoring. Each finding has a field wait
 6. **Every mundane explanation is paired with a control.** Match each boring null one-to-one against the controls in `Experiments`. Any account with no control either gets one or moves into `Risk Factors and Limitations` as explicitly not ruled out. Listing a rival and then ignoring it is a fail.
 7. **Every hypothesis has its undecidable band written out.** For each of H1…Hk, point to where `claim.json` says how wide the band is, that a result inside it leaves H*i* unsupported at the planned power, and what the dependent experiments do then. Fail: a prediction with only two outcomes; a band with no stated consequence; a non-significant result read as evidence for a null without an equivalence margin.
 8. **Every number agrees with itself.** List every numeric quantity in `claim.json` and check each occurrence of it against the others, comparing value *and* unit — a percent silently becoming a proportion, tokens becoming layers. Fail: one quantity holding two values across the seven fields; a bar set in `Short Hypothesis` that a later experiment does not enforce at that value; a threshold in `Metrics` that no experiment predicts against. Repair every occurrence; never drop the number instead.
+
+9. **The design does something the standard recipe does not, and the paper says what it buys.** Point to the sentence in `Experiments` that introduces the adapted instrument, the imported paradigm, the rescue arm, the newly-defined unit, or the measurement taken at a stage nobody measures — and to the clause saying what it makes measurable that the default design could not. Fail: `Experiments` could be transplanted onto a different phenomenon in this area by changing the nouns; or the behavior's `innovation.method` named a move that no experiment implements. The permitted exception is the case the node declared — a standard design whose delta is carried entirely by the claim — and then item 1's separation must be doing all the work, visibly.
 
 **Every failure is repaired in place, not noted.** If a failure cannot be repaired without changing the claim, switch the mechanism direction (Phase 6) and rewrite. After two such restarts on the same behavior, stop working it, set `status: "blocked"` on its library node with what is blocking it, and promote the highest-ranked eliminated behavior into the vacated slot rather than shipping a weak skeleton.
 
@@ -586,11 +684,11 @@ Read each draft **as if it were the only file that exists**: repair every refere
 
 > - **[Output Versioning Protocol](../shared-references/output-versioning.md)** — `hypothesis_library.json` is a living document updated in place (not timestamped); save raw llm-chat passes to the run trace instead.
 > - **[Output Manifest Protocol](../shared-references/output-manifest.md)** — log `hypothesis_library.json` to MANIFEST.md on first creation.
-> - **[Output Language Protocol](../shared-references/output-language.md)** — machine fields (ids, `source`, `status`, strategy names, scores, `recommendation`, `method`, dates) stay English; free-text `statement` / `discovery_strategy_detail` / `five_bars` / `rationale` / `notes` follows the project language. `claim.json` is **always English** regardless.
+> - **[Output Language Protocol](../shared-references/output-language.md)** — machine fields (ids, `source`, `pass`, `status`, strategy names, scores, `recommendation`, `method`, dates) stay English; free-text `statement` / `discovery_strategy_detail` / `innovation` / `five_bars` / `rationale` / `notes` follows the project language. `claim.json` is **always English** regardless.
 
 ## Review Tracing
 
-After each `mcp__llm-chat__chat` call (generation, dedup, impact scoring, and — when `WRITER = llm-chat` — every draft, refinement, and repair pass), save the trace per `shared-references/review-tracing.md` to `.mechanist/traces/hypothesis-batch/<date>_run<NN>/`. With `ROUNDS > 1`, put each round's traces in a `r<NN>/` subfolder (e.g. `.mechanist/traces/hypothesis-batch/<date>_run<NN>/r03/`) so every round's passes are kept separately. Claim-writing passes are per claim, not per round — file them under `claims/<NN>_<name>/` in the trace directory.
+After each `mcp__llm-chat__chat` call (the cold pass, the guided pass, dedup, the delta-filter repair pass, impact scoring, and — when `WRITER = llm-chat` — every draft, refinement, and repair pass), save the trace per `shared-references/review-tracing.md` to `.mechanist/traces/hypothesis-batch/<date>_run<NN>/`. Keep the cold and guided passes as separate trace files (`cold.json` / `guided.json`) — the cold prompt's cleanliness is auditable only if the prompt itself was kept. With `ROUNDS > 1`, put each round's traces in a `r<NN>/` subfolder (e.g. `.mechanist/traces/hypothesis-batch/<date>_run<NN>/r03/`) so every round's passes are kept separately. Claim-writing passes are per claim, not per round — file them under `claims/<NN>_<name>/` in the trace directory.
 
 ## Key Rules
 
@@ -601,7 +699,11 @@ After each `mcp__llm-chat__chat` call (generation, dedup, impact scoring, and �
 - **One model conceives and writes.** `WRITER` authors both `hypothesis_library.json` and every `claim.json`, and the setting never splits across phases. The orchestrating agent verifies rather than authors: repairs that change the argument go back through `WRITER`, and the agent only fixes mechanical faults.
 - **One design, written once.** The experiment design lives in `claim.json`'s `Experiments` field and nowhere else. Never emit `EXPERIMENT_PLAN.md` / `FINAL_PROPOSAL.md` / `refine-logs/`, and never invoke `/research-refine-pipeline`, `/research-refine`, or `/experiment-plan` — a second copy of a design is a second thing to keep in sync, and this workflow ships only the reviewer's version.
 - **Rounds accumulate, never repeat.** Persist the library at the end of every round and rebuild the next round's banlist from it, so earlier rounds' behaviors are banned rather than regenerated. A round that adds 0 survivors after dedup means the topic is saturated — stop early and say so; never pad with near-duplicates to fill a round.
-- **Semantic dedup, not string match.** Reworded duplicates must be caught by LLM judgment. Two behaviors are the same when they name the same phenomenon under the same trigger, whatever their wording.
+- **Semantic dedup, not string match.** Reworded duplicates must be caught by LLM judgment. Two behaviors are the same when they name the same phenomenon under the same trigger, whatever their wording. **Template collapse counts as duplication**: behaviors that differ only in the slot filled into a shared setup — the trait, the domain, the objective — are one phenomenon with a list of instantiations, and the library keeps the phenomenon.
+- **Every round generates twice: cold, then guided.** `COLD_N` behaviors are produced with no discovery-strategy taxonomy in the prompt at all, before the guided pass sees it. A taxonomy read immediately before generating decides which ideas are reachable, and the cold pass is the round's only unprimed surface. Never merge the two passes into one call, and never relabel a cold behavior with the lens it resembles.
+- **Novelty is never domain transfer.** Every behavior states, in `innovation.beyond_transfer`, what is still new if the borrowed phenomenon reappears exactly as its source predicts — a quantity, a boundary, a contradicted prediction, a use. A new domain, modality, objective, or scale is where the work happens, not what it establishes. A behavior that cannot answer after one repair pass is dropped as `transfer-only` before it is persisted.
+- **The method is part of the claim.** `innovation.method` names the one design move that is not standard practice for this phenomenon, Phase 6 makes good on it or supersedes it, and `Experiments` implements it. A design that could be transplanted onto a different phenomenon by changing the nouns is a control condition, not a contribution.
+- **A `statement` is written, not slot-filled.** It carries the trigger, the phenomenon, and the delta clause saying what the standing account predicts instead — the provenance in `discovery_strategy_detail` surfaces there as the *reason* the prediction has its shape, never as an account of the search. A statement obtainable by paraphrasing the anchor paper, or by editing one noun in a sibling, is rewritten before it is persisted.
 - **Never reuse ids; never delete a node.** Growth is append-only and eliminations stay in the file with their reason, so the library is a stable, citable backlog.
 - **Every node is self-contained.** The library outlives the run that wrote it, and `idea-stage/LANDSCAPE.md` is regenerable scratch that the next `/research-lit` overwrites — so a node must never carry a bare pointer into it. Anything referenced from another file is restated in the node: a gap is `{"id", "gap"}` with the gap written out, not `"G2"`. Read any node cold, with no other file open, and it must still say what it means.
 - **Score everything.** No behavior is persisted without an `impact` field; no behavior enters Phase 5 without a `novelty` and a `review` field.

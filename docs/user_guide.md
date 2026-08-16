@@ -45,6 +45,12 @@ Build a library of behavior + mechanism hypotheses for a topic without running a
 /hypothesis-batch "LLM beliefs" — n-behaviors: 12         # New behaviors per round (discover mode only)
 /hypothesis-batch "LLM beliefs" — rounds: 5               # Consecutive rounds; stops early if the topic is mined out
 
+# Control how much of each round is generated unprimed
+/hypothesis-batch "LLM beliefs" — cold-n: 4               # How many of the round's behaviors are generated BEFORE the
+                                                          # discovery-strategy taxonomy is shown (default: n-behaviors / 5).
+                                                          # Raise it when the pool keeps collapsing onto one framing;
+                                                          # 0 disables the cold pass (not recommended).
+
 # Speed/accuracy trade-off for novelty scoring
 /hypothesis-batch "LLM beliefs" — novelty-web: false      # Skip web retrieval; use model knowledge only (faster, may miss recent papers)
 ```

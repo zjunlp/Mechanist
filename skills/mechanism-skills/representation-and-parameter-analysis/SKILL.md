@@ -30,3 +30,9 @@ You can find a demo for this method in ./steer-features. This demo shows steer-f
 - **Parameter-Space Task Vectors**:
 Lifts the same idea to weight space and edits weights directly: a *task vector* is the displacement between a fine-tuned checkpoint and its pre-trained checkpoint, and arithmetic on these vectors — addition for multi-task composition, negation for unlearning, and analogy-style combinations across related tasks — modifies model behavior without any further training.
 You can find a demo for this method in ./parameter-space-task-vectors. This demo shows task-vectors: Use this skill when working with task arithmetic for editing neural network models, including creating task vectors from pre-trained and fine-tuned checkpoints, combining them via arithmetic operations (negation, addition, analogies), and applying them to CLIP vision models for multi-task learning.
+
+## Practical Notes
+
+**Default choice.** If the user has not specified a particular method, recommend **Steering features** first — it is the simplest to set up and run.
+
+**Check for an available SAE.** Before implementing, search whether a Sparse Autoencoder has already been released for the target model (and for which layers). If one exists, use it to locate the target feature: SAE features are more monosemantic/interpretable than directions read off the raw backbone activations, and intervening on them usually gives a cleaner, stronger effect. If no SAE is available, fall back to a feature identified directly in the model's own activations — the same direct-intervention procedure applies, without the encode/decode step.

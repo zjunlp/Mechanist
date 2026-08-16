@@ -45,6 +45,11 @@ cp ~/Downloads/*.pdf literature/    # 后续所有 /auto 运行都会包含这�
 /hypothesis-batch "LLM beliefs" — n-behaviors: 12         # 每轮新增 behavior 数（仅 discover 模式）
 /hypothesis-batch "LLM beliefs" — rounds: 5               # 连续多轮；挖尽自动提前停止
 
+# 控制每轮有多少条是"不看策略清单"先生成的
+/hypothesis-batch "LLM beliefs" — cold-n: 4               # 每轮中在看到 discovery-strategy 分类法之前就生成的条数
+                                                          # （默认 n-behaviors / 5）。池子总塌缩到同一个句式时调高；
+                                                          # 设 0 关闭 cold pass（不建议）。
+
 # 速度/精度取舍
 /hypothesis-batch "LLM beliefs" — novelty-web: false      # 跳过 web 检索，仅靠模型知识打分（更快，可能漏掉最新论文）
 ```
