@@ -139,9 +139,9 @@ Before any code is written, route the parsed plan through `/experiment-tips` —
    ## Matches
 
    1. **<tip-folder>** — <one-line trigger that fired>
-      - convention to adopt: <one-line summary from the tip>
+      - convention to adopt: <one-line summary from the tip's own SKILL.md — not from the routing preview>
    2. **<tip-folder>** — <one-line trigger that fired>
-      - convention to adopt: <one-line summary>
+      - convention to adopt: <one-line summary from the tip's own SKILL.md — not from the routing preview>
 
    ## No-match log
    <if a borderline trigger didn't fire, note it here for audit>
@@ -150,6 +150,8 @@ Before any code is written, route the parsed plan through `/experiment-tips` —
    If no tip matches, write a stub `EXPERIMENT_TIPS.md` containing `committed: true` and `matched_tips: []` plus a one-line note explaining why none matched (e.g., "behavioral-only proposal, no representation interventions"). Always write the file — it's the audit anchor for Phase 2 to confirm tips were considered.
 
 **Hard requirement**: before Phase 1.25, the experiment agent's transcript must show an actual `/experiment-tips` invocation. Bypassing the skill or fabricating `refine-logs/EXPERIMENT_TIPS.md` by hand is forbidden. If the transcript shows no invocation, or the file is absent or hand-written, re-run Phase 1.1.
+
+**Hard requirement**: every `matched_tips` entry in `EXPERIMENT_TIPS.md` and its `convention to adopt` must be adopted in all downstream experiments.
 
 ### Phase 1.25: Phenomenon-Validation Gate (`BEHAVIOR_SOURCE ∈ {given-validation, discovery}`)
 
@@ -171,7 +173,7 @@ Then decide the verdict:
    - **`inconclusive`**  — M0's integrity audit FAILs; the phenomenon is *untested*, not disproven. → Do not terminate. Diagnose, fix at the lowest sufficient level, and re-run M0. Log every fix under M0's block in `EXPERIMENT_RESULTS.md` (what changed, old → new, audit rationale).
      - **Script bug** (crash, wrong path, tensor-shape error, eval bug) → `auto-debug` M0 (≤ 3 attempts), then re-run.
      - **Run-level methodology** (under-sampled within plan limits, seed not fixed, decoding drift) → adjust the M0 **run invocation** only; leave the plan alone.
-     - **Plan-level methodology** (wrong metric, `used_n` too low, mis-specified coefficient / threshold / hyperparameter, inadequate dataset size or split) → most commonly under-tuned knobs (finetune lr / LoRA rank / epochs / batch, steering α / target layer, thresholds, decoding temperature). **Re-invoke `/experiment-tips` explicitly for hyperparameter / coefficient tuning** — not a general re-audit — passing M0's realized evidence (loss / effect size / refusal rate / seed variance) and routing to the matching sub-skill: `experiment-tips/finetune-hyperparameter-sweep` for fine-tune knobs, `experiment-tips/steering-coefficient-tuning` for α / β / dose of any additive intervention (steering / CAA / DAS / SAE / ROME), `experiment-tips/steering-block-selection` for the target layer / site / window. Apply the returned scan grid by editing `EXPERIMENT_PLAN.md` in place, confined to the implicated field(s); do not touch the claim, phenomenon description, or milestone graph.
+     - **Plan-level methodology** (wrong metric, `used_n` too low, mis-specified coefficient / threshold / hyperparameter, inadequate dataset size or split) → most commonly under-tuned knobs (finetune lr / LoRA rank / epochs / batch, steering α / target layer, thresholds, decoding temperature). **Re-invoke `/experiment-tips` explicitly for hyperparameter / coefficient tuning** — not a general re-audit — passing M0's realized evidence (loss / effect size / refusal rate / seed variance) and routing to the matching sub-skill: `experiment-tips/finetune-hyperparameter-sweep` for fine-tune knobs, `experiment-tips/steering-coefficient-tuning` for α / β / dose of any additive intervention (steering / CAA / DAS / SAE / ROME), `experiment-tips/steering-block-selection` for the target layer / site / window. Apply the returned search range / scan grid by editing `EXPERIMENT_PLAN.md` in place, confined to the implicated field(s); do not touch the claim, phenomenon description, or milestone graph.
 
    - **`not-established`** — M0 audit clean AND behavior does **not** reproduce at adequate power. → Before settling a terminal negative, treat the null as a candidate hyperparameter / coefficient mis-setting: **re-invoke `/experiment-tips` for tuning** with M0's realized evidence, using the same sub-skill routing as the **plan-level branch** above. If a matching sub-skill returns a concrete scan or knob change, apply it under the `inconclusive` branch's script / run / plan rules and re-run M0; otherwise fall through to step 3.
 
@@ -187,9 +189,9 @@ Then decide the verdict:
 > 1. **~20 GPU-hours are pre-allocated.** Time/GPU cost is **not** a valid reason to skip a sweep or retry — only the terminal triggers below (3-iteration budget / no actionable sub-skill / trigger (c)) may stop iteration.
 > 2. **Terminal `not-established` / `inconclusive` skips all downstream mechanism milestones (M1…Mn).** You **must** exhaust matching tuning sub-skills and retries within the 3-attempt budget before settling on either verdict.
 3.**`finetune-hyperparameter-sweep` in Phase 1.25** — three rules you must obey:
-   > 1. **Iteration order — LR first.** Change LR before anything else (rank, α, batch, wd, β, kl_coef, epochs).
-   > 2. **The primary — and overriding — diagnostic is whether M0 now hits its own declared pass criteria** after the config change. This is what determines `phenomenon_status`; 
-   > 3. **A prior `sweep_status: sanity_checked` / `swept` on the milestone does not exempt it from re-tuning.** If M0 still fails to clear the milestone's own criteria (verdict is `inconclusive` / `not-established`), you **must** change hyperparameters (LR first per rule 1) and re-run — regardless of what `sweep_status` reports and regardless of whether the current config is under- or over-tuned. The pilot's pass thresholds sit well below the downstream-success bar, so "already sanity-checked" is not evidence the config is right for M0's real gate.
+   > 1. **LR first, over a wide range.** Change LR before anything else (rank, α, batch, wd, β, kl_coef, epochs), and search at least an order of magnitude either side of the plan's value — a plan-fixed or paper-copied LR is one point in that range, never the answer.
+   > 2. **The only acceptance test is whether M0 hits its own declared pass criteria** after the config change. This is what determines `phenomenon_status`. Loss, grad norm, and reward curves are not acceptance evidence, however good they look.
+   > 3. **A prior sweep does not exempt the milestone from re-tuning, and neither does an LR fixed by the plan.** If M0 still fails to clear the milestone's own criteria (verdict is `inconclusive` / `not-established`), you **must** change hyperparameters (LR first per rule 1) and re-run — regardless of how well the training curves look and regardless of whether the current config is under- or over-tuned. Clearing the milestone's criteria is the only evidence the config is right.
 
 Mechanism milestones declare `depends_on: [M0]`, so even outside this gate the queue will not launch them before M0 completes; the gate adds the *verdict-based* branch (run status alone is not enough — a clean M0 that shows no effect must stop the pipeline, which `depends_on` cannot express).
 

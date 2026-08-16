@@ -72,6 +72,8 @@ If `mode` is not supplied, run the full skill end-to-end with `mechanism-routing
 
 Your invocation prompt may open with two orchestrator-authored blocks, **stage-scoped to the main experiment** (verify-only / iteration-only items are routed elsewhere and will not appear here). `## HARD CONSTRAINTS` is **non-negotiable** — the user's task.md **strong** items relevant to the main experiment: explicit compute / GPU / time budget and resource caps, forbidden methods / models / datasets, and **emphatic** *must* choices. `## NOTICE` is **informational** — non-emphatic model / dataset / preference items; treat it as awareness, with the on-disk plan as the authoritative form (read specifics from the plan, don't drop a NOTICE item). **Size every `/run-experiment` and `/experiment-queue` dispatch to fit *within* the cap before launching** — never launch over-cap and release afterward. **A declared budget is also a mandate to spend it on fidelity, not just a ceiling:** when a GPU / compute budget covers the fuller run, run at full scale (full model / data / seeds) and never swap in a smaller model, subset data, or drop a must-run experiment *merely to save cost* while under budget (see `/auto-experiment` GPU-budget rule; the ladder-of-evidence cheap screen is exempt — it's a scientific choice, run at its proper scale). If a limit makes a milestone impossible or under-powered, **stop and surface it** in your return rather than exceeding it. Constraints outrank cost-aware defaults and `AUTO_PROCEED`, not the safety-first gates.
 
+**Experiment tips are non-negotiable too**: every `matched_tips` entry in `refine-logs/EXPERIMENT_TIPS.md` and its `convention to adopt` must be adopted in all downstream experiments.
+
 ## Constraint precedence (re-task tie-break)
 
 The **on-disk `refine-logs/EXPERIMENT_PLAN.md` is your authoritative constraint** — it is claim-owned and you may not rewrite it. When the orchestrator re-dispatches you with corrected requirements (a rejected result being redone), the corrective prose must agree with that plan. If it **conflicts** with the plan on disk, do **not** silently pick one and do **not** stall between them — treat the plan as authoritative and **report the conflict in your return** (name the plan field vs the corrective ask) so the orchestrator can update the plan through its owner or take a Round-End Decision. When the corrective ask is consistent with the plan (or the plan was already updated to match), proceed and **supersede** the prior narrative per `/auto-experiment` Phase 5 — never append a second, conflicting result section.
@@ -113,9 +115,10 @@ Every report-style file (`MECHANISM_ROUTING.md`, `EXPERIMENT_RESULTS.md`, `EXPER
 - refine-logs/MECHANISM_ROUTING.md
 - refine-logs/EXPERIMENT_RESULTS.md
 - refine-logs/EXPERIMENT_TRACKER.md
+- refine-logs/EXPERIMENT_TIPS.md
 - (refine-logs/EXPERIMENT_LOG.md when compact: true)
 
-**Notes:** <code review verdict, sanity outcome, deploy issues>
+**Notes:** <code review verdict, sanity outcome, deploy issues. **Always check every `matched_tips` entry in `refine-logs/EXPERIMENT_TIPS.md` against the code / invocations you actually ran** and emit one line per unimplemented tip: `tip-not-implemented: <tip> — <which convention was not applied>`. The orchestrator aggregates these into the Ledger's `open_items[]`.>
 ```
 
 Keep both reports under ~250 words. Detailed results live in the markdown artifacts.
