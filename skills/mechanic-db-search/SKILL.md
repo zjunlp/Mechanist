@@ -196,7 +196,7 @@ model_families: free-text capitalised family of those models (e.g. "GPT", "CLIP"
 
 **R3. `abilities` is ALMOST ALWAYS `[]`.** Only set it when the query EXPLICITLY centers on reasoning / planning / understanding / cognition / innovation / information_processing as its main topic.
 
-**R4. `min_citations`** — set only if the user says "high-impact", "seminal", "经典", "重要的". Otherwise `null`. For "recent + highly cited", leave `null` (recent papers haven't accrued cites yet).
+**R4. `min_citations`** — set only if the user says "high-impact", "seminal", "classic", "important". Otherwise `null`. For "recent + highly cited", leave `null` (recent papers haven't accrued cites yet).
 
 **R5. STRUCTURAL PAIRING — techniques ↔ components.**
 - `circuit_discovery` ↔ `circuit` (and vice versa).
@@ -208,7 +208,7 @@ model_families: free-text capitalised family of those models (e.g. "GPT", "CLIP"
 
 Also pair techniques ↔ task_scenarios where natural: `causal_attribution` on factual recall ↔ `fact_knowledge`; probing for math reasoning ↔ `math` + `abilities:["reasoning"]`; persona/refusal/RLHF interp ↔ `persona` or `safety`. Generic mechanism studies → `task_scenarios:[]`.
 
-**R6. TEMPORAL.** "recent"/"latest"/"近年来"/"新进展" without an explicit year → `year_min = 2024`. "since/from YEAR" → `year_min = YEAR`. "before/until YEAR" → `year_max = YEAR`. The `temporal_mode` argument (§1.7) is a *separate, softer* reranking lever; `year_min`/`year_max` are hard per-sub-query filters. Use both together when the user wants a hard floor *and* a recency tilt.
+**R6. TEMPORAL.** "recent"/"latest"/"in recent years"/"new developments" without an explicit year → `year_min = 2024`. "since/from YEAR" → `year_min = YEAR`. "before/until YEAR" → `year_max = YEAR`. The `temporal_mode` argument (§1.7) is a *separate, softer* reranking lever; `year_min`/`year_max` are hard per-sub-query filters. Use both together when the user wants a hard floor *and* a recency tilt.
 
 **R7. SELF-CHECK before submitting.**
 1. Every `techniques`/`components`/`task_scenarios`/`abilities` value is **literally** in the enum block (case-sensitive, underscore-separated).
@@ -230,8 +230,8 @@ Also pair techniques ↔ task_scenarios where natural: `causal_attribution` on f
 | Mode | When to use |
 |------|-------------|
 | `default` | Generic survey or follow-up retrieval; no strong recency / history signal. |
-| `recent` | User asks for "recent", "latest", "近年来", "新进展", or you're filling the frontier of a development history. (Cloud defaults: α=0.08, year_min≥2020; override via the `recent_alpha` / `recent_min_year` arguments.) |
-| `history` | User asks for "发展史", "evolution of", "foundational work", or you're building the long-arc backbone of a development history. |
+| `recent` | User asks for "recent", "latest", "in recent years", "new developments", or you're filling the frontier of a development history. (Cloud defaults: α=0.08, year_min≥2020; override via the `recent_alpha` / `recent_min_year` arguments.) |
+| `history` | User asks for "development history", "evolution of", "foundational work", or you're building the long-arc backbone of a development history. |
 
 ## 1.6 — Write the HyDE abstract (`hyde_text`) — integrated here
 
@@ -286,11 +286,11 @@ compact `{count, output, skipped}` summary.
 ## 1.8 — Worked examples
 
 ### Example 1 — Single domain, AI interpretability only
-**Query:** `"ROME 是怎么实现 rank-one editing 的？"`
+**Query:** `"How does ROME implement rank-one editing?"`
 
 ```json
 {
-  "original_query": "ROME 是怎么实现 rank-one editing 的？",
+  "original_query": "How does ROME implement rank-one editing?",
   "is_cross_domain": false,
   "sub_queries": [
     {
@@ -314,11 +314,11 @@ compact `{count, output, skipped}` summary.
 ```
 
 ### Example 2 — Single domain, neuroscience (sciatlas_db)
-**Query:** `"海马体在情景记忆形成中的作用？"`
+**Query:** `"What is the role of the hippocampus in episodic memory formation?"`
 
 ```json
 {
-  "original_query": "海马体在情景记忆形成中的作用？",
+  "original_query": "What is the role of the hippocampus in episodic memory formation?",
   "is_cross_domain": false,
   "sub_queries": [
     {
@@ -386,13 +386,13 @@ compact `{count, output, skipped}` summary.
 ```
 
 ### Example 4 — Recent frontier, single interp domain (recency via temporal_mode + year_min + vocab)
-**Query:** `"SAE 上有没有什么新的扩展方法？"`
+**Query:** `"Are there any new extensions to SAEs?"`
 
 The "newness" is carried three ways: the `temporal_mode: recent` argument, `year_min: 2024` (R6), and recency-flavored vocabulary in `semantic_query` / `hyde_text`.
 
 ```json
 {
-  "original_query": "SAE 上有没有什么新的扩展方法？",
+  "original_query": "Are there any new extensions to SAEs?",
   "is_cross_domain": false,
   "sub_queries": [
     {

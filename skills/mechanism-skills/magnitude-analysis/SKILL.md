@@ -17,11 +17,11 @@ Given object categories, the method typically takes three forms:
 
 - **Static Parameters**: 
 In the context of model weights, Magnitude Analysis is often used to identify outliers or “heavy hitters” without running inference. Researchers typically compute perweight or per-row norms of weight matrices to highlight parameters that dominate the inner product computations. These high-magnitude weights are often associated with critical knowledge storage or outlier features.
-You can find a demo for this method in ./static-parameters. This demo shows rope-with-llm：Analyze and manipulate massive values in Large Language Models (LLM) attention mechanisms, particularly for understanding contextual knowledge processing in transformer models with Rotary Position Embedding (RoPE)
+You can find a demo for this method in ./static-parameters. This demo shows rope-with-llm: Analyze and manipulate massive values in Large Language Models (LLM) attention mechanisms, particularly for understanding contextual knowledge processing in transformer models with Rotary Position Embedding (RoPE)
 
 - **Dynamic Components**:
 For functional units whose activity varies with input, ranking them by their activation statistics helps localize specialized capabilities.
-You can find a demo for this method in ./dynamic-components. This demo shows language-specific-neurons：Identify and manipulate language-specific neurons in multilingual LLMs to understand and control language-specific behaviors in models like LLaMA-2, BLOOM, OPT, Mistral, and Phi-2
+You can find a demo for this method in ./dynamic-components. This demo shows language-specific-neurons: Identify and manipulate language-specific neurons in multilingual LLMs to understand and control language-specific behaviors in models like LLaMA-2, BLOOM, OPT, Mistral, and Phi-2
 
 - **Layer-wise Representation**:
 Furthermore, measuring the magnitude of layer-wise distances reveals structural roles. Comparing representations across contrastive inputs localizes layers where task-specific information diverges most strongly, whereas comparing consecutive layers identifies layers with minimal state updates, pointing to redundant computation.

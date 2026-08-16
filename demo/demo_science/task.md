@@ -1,34 +1,39 @@
-# 任务:用特征 steering 生成 α 螺旋 DNA —— 验证 Evo2 内部特征能因果控制蛋白二级结构
-<!-- 跑法: /auto — behavior-source: given-validation, mechanism: given -->
+# Task: Generating α-Helical DNA via Feature Steering — Validating that Evo2 Internal Features Can Causally Control Protein Secondary Structure  
+<!-- Run mode: /auto — behavior-source: given-validation, mechanism: given -->
 
-## 任务概述
-在 Evo2-7B 的预训练 SAE 中,找到一组选择性响应"α螺旋"的特征,
-再通过放大该特征去自回归生成 DNA,用蛋白质结构预测工具验证生成序列所编码蛋白的
-α螺旋含量是否随放大强度升高,证明该特征是可因果操控的旋钮。
+## Task Overview  
+Within the pre-trained SAE of Evo2-7B, first confirm the existence of a set of features that selectively respond to "α-helix", then autoregressively generate DNA by amplifying those features, determine the optimal amplification strength, and use protein structure prediction tools to verify whether the α-helical content of the protein encoded by the generated sequences increases with the amplification strength, thereby proving that the feature is a causally manipulable knob.
 
-## 实验建议
-- Steering 系数需要仔细选择，合适的 Steering 系数范围可能非常窄。不要在仅扫描几个 Steering 系数后就轻言放弃；
-- 使用 Encoder-Clamp-Decoder 模式进行 Steering 注入。
-- 为增强 Steering 的放大效应，可以同时对 5-8 个特征进行干预；
-- 先确定找到合适的 Steering 系数范围，再在该 Steering 系数上开展对照实验；
-- 使用简单而有说服力的对照实验，不必过于复杂。
+## Reference Paper  
+- *Genome modelling and design across all domains of life with Evo 2*.
+- *InterPLM: discovering interpretable features in protein language models*.
 
-## 参考论文
-- `papers/Evo2.pdf` —— *Genome modelling and design across all domains of life with Evo 2*。
-- `papers/InterPLM.pdf` —— *InterPLM: discovering interpretable features in protein language models*。
+## Model / Data  
+- **Evo2-7B**: Download from `huggingface.co/arcinstitute/evo2_7b_262k`;  
+- **SAE (Layer 26)**: Download from `huggingface.co/Goodfire/Evo-2-Layer-26-Mixed`.  
+- **Hugging Face Token**: <Your_token>
+- Other required datasets and tools may refer to the original paper’s configuration or be independently investigated and used.
 
-## 模型 / 数据
-- **Evo2-7B**:`/mnt/quarkfs/share_models/evo2_7b_262k`;
-- **SAE(第 26 层)**:`/mnt/quarkfs/share_models/evo2_sae_l26/sae-layer26-mixed-expansion_8-k_64.pt`。
-- 其它所需的数据集和工具可参考两篇论文的配置，或自行调研并下载、使用。
+## Environment  
+- conda environment `scientist`: torch+CUDA, vortex/evo2, transformers, biopython, DSSP.  
+- GPU: local machine 8×A800-80GB, up to 4 GPUs can be used simultaneously.
 
-## 环境
-- conda 环境 `scientist`:torch+CUDA、vortex/evo2、transformers、biopython、DSSP。
-- GPU:本机 8×A800-80GB，同时最多占用 4 张 GPU。
+## Experiment Tips
 
-## Anti-Cheating Constraints for the Experiment  
+- **Data.** Do NOT reverse-translate protein into DNA (codon-degeneracy noise + unnatural patterns). Use natural CDS from databases, annotating codons with real secondary-structure labels from experimental structures after proper alignment.
 
-- Do not read any datasets, experimental designs, experimental tools, or experimental data from parent folders, to ensure that all experiments are independently completed by you (the Mechanist).  
+- **Feature selection is the biggest driver of success — and the hardest part.** Expect many tries; treat "find a better set" as the main job of the main experiment and iteration stage. A good "manipulable knob" set exists, but a bad set fails the whole task. Select by output-side causal effect, not input-side correlation:
+  - *Correlation ≠ causal knob.* A feature correlated with helix (high Cohen's d / F1 on activations) is often just a "detector" — amplifying it may do nothing, break the ORF, or even lower helix. Working features often have different IDs, found only from the output side. (Thermometer vs thermostat.)
+  - *Two-stage funnel.* (1) Input-side screen (cheap, no generation): shortlist a broad pool at a permissive threshold (e.g. Cohen's d ≥ 0.3, a few dozen); don't over-filter. (2) Output-side screen (real gate): steer each candidate individually → ESMFold → DSSP → measure Δα-helix vs baseline; admit only those with positive Δα-helix at an acceptable valid-fold rate.
+  - *Rank by robustness, not just effect size.* Prefer features that are simultaneously high-Δ, high-valid-rate, and high-pLDDT; lead claims with those.
+  - *Single vs joint steering.* Default to single-feature intervention (screen and headline claim per feature), also try joint multi-feature steering of the top candidates.
 
-## 通知设置
-- 向 wanghaoxiong@zju.edu.cn 汇报工作进展。
+- **Scoring & validity.** Use the real scorer (ESMFold → DSSP). Evo2 outputs are off-distribution, so pLDDT ≥ 60 can reject most baselines and hide the signal — sweep the threshold, report both, and keep length / no-premature-stop filters. The feature may only beat the random control after pLDDT filtering.
+
+- **Dose-response.** Look for a monotonic-increasing interval up to an interior optimum, not global monotonicity: effects rise, saturate, then collapse under over-steering. Confirm the feature beats norm-matched random-direction / random-feature controls under the same validity gating.
+
+## Execution Instructions  
+You are now automatically executing the experiment without human supervision. In the face of any situation, you have the highest autonomous decision-making authority.  
+If the experiment encounters obstacles or unsatisfactory results, you must adjust on your own and continue the experiment. I will check your work progress in 24 hours.  
+If you can not prepare tools and datasets well (e.g. need `sudo` to install some tools), stop and ask human to manage it. Do Not degrade the experiment due to this reason.
+Send a brief report email to me (<your_email_address>) when you make progresses.

@@ -52,7 +52,7 @@ only use gpu_ids =  3,4,5,6,7
 
 
 ## notice
-Compute budget is ample. Do not compress, shrink, or skip steps out of budget anxiety。
+Compute budget is ample. Do not compress, shrink, or skip steps out of budget anxiety.
 
 Use full datasets. Not use subsets.
 

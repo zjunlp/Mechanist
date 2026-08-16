@@ -84,16 +84,16 @@ Note: when verifying claim 3, only use Pythia 1B and Pythia 410M; do not run Pyt
 
 # subliminal
 
-1. behavior：
+1. behavior:
 subliminal learning
 
 
-data: 
-tune teacher model的数据：path
-测试student model的数据：path
+data:
+data for tuning the teacher model: path
+data for evaluating the student model: path
 
-model：path
-student model：path
+teacher model: path
+student model: path
 
 
 
@@ -103,5 +103,5 @@ student model：path
 
 # language
 
-# 创伤
+# trauma
 

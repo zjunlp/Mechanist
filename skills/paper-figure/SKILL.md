@@ -1,6 +1,6 @@
 ---
 name: paper-figure
-description: "Generate publication-quality figures and tables from experiment results. Use when user says \"画图\", \"作图\", \"generate figures\", \"paper figures\", or needs plots for a paper. Also invoked by `/auto`'s Ledger Figures hook to produce per-claim figures embedded into `CLAIMS_LEDGER.md`."
+description: "Generate publication-quality figures and tables from experiment results. Use when user says \"plot this\", \"make a figure\", \"generate figures\", \"paper figures\", or needs plots for a paper. Also invoked by `/auto`'s Ledger Figures hook to produce per-claim figures embedded into `CLAIMS_LEDGER.md`."
 argument-hint: [figure-plan-or-data-path | mode:auto-ledger ...]
 allowed-tools: Bash(*), Read, Write, Edit, Grep, Glob, Agent, mcp__llm-chat__chat
 ---

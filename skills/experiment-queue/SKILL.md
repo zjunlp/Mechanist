@@ -1,6 +1,6 @@
 ---
 name: experiment-queue
-description: SSH job queue for multi-seed / multi-config ML experiments with OOM-aware retry, stale-screen cleanup, wave-transition race prevention, and phase-dependency enforcement. Use when user says "batch experiments", "队列实验", "run grid", "multi-seed sweep", "auto-chain experiments", or when `/run-experiment` is insufficient for ≥10 jobs that need orchestration. `/auto-experiment` Phase 4 auto-routes here when a milestone declares ≥10 jobs or has `depends_on`.
+description: SSH job queue for multi-seed / multi-config ML experiments with OOM-aware retry, stale-screen cleanup, wave-transition race prevention, and phase-dependency enforcement. Use when user says "batch experiments", "queue experiments", "run grid", "multi-seed sweep", "auto-chain experiments", or when `/run-experiment` is insufficient for ≥10 jobs that need orchestration. `/auto-experiment` Phase 4 auto-routes here when a milestone declares ≥10 jobs or has `depends_on`.
 argument-hint: [manifest-or-grid-spec]
 allowed-tools: Bash(*), Read, Grep, Glob, Edit, Write, Agent, Skill(run-experiment), Skill(monitor-experiment)
 ---
@@ -362,7 +362,7 @@ If scheduler crashes / is killed:
 
 ## Example Session
 
-User: "跑 T5+T6 全部实验：T5 = N∈{80,192} × n 4 values × seed {200,201}, T6 = N∈{384,512} × n 4 values × seed {42,200,201}; T6 需要先 train teacher"
+User: "Run all T5+T6 experiments: T5 = N∈{80,192} × n 4 values × seed {200,201}, T6 = N∈{384,512} × n 4 values × seed {42,200,201}; T6 needs its teacher trained first"
 
 Claude invokes `/experiment-queue`:
 1. Parses description into 2-phase manifest

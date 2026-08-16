@@ -1,6 +1,6 @@
 ---
 name: msearch
-description: "Standalone one-shot multi-source literature search. Takes a single query and returns one merged, ranked result set + synthesized landscape from the internet (web + arXiv), local channels (Zotero, Obsidian, local PDFs), and the cloud mechanic-db SEARCH service. Same retrieval engine as `/research-lit`, but standalone: it is NOT part of the `/auto` pipeline (nothing orchestrates it, nothing reads its files) and it writes its output into a dedicated `msearch/` folder. Use when the user says 'search everything for X', '帮我搜一下 / 检索一下 X', 'find papers on X across all sources', or invokes `/msearch <query>`."
+description: "Standalone one-shot multi-source literature search. Takes a single query and returns one merged, ranked result set + synthesized landscape from the internet (web + arXiv), local channels (Zotero, Obsidian, local PDFs), and the cloud mechanic-db SEARCH service. Same retrieval engine as `/research-lit`, but standalone: it is NOT part of the `/auto` pipeline (nothing orchestrates it, nothing reads its files) and it writes its output into a dedicated `msearch/` folder. Use when the user says 'search everything for X', 'look X up for me / retrieve X', 'find papers on X across all sources', or invokes `/msearch <query>`."
 argument-hint: "[query]"
 allowed-tools: Bash(*), Read, Glob, Grep, WebSearch, WebFetch, Write, Agent, AskUserQuestion, mcp__zotero__*, mcp__obsidian-vault__*, mcp__mechanic-db__search_papers, mcp__llm-chat__chat
 ---

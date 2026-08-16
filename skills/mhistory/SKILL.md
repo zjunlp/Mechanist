@@ -9,7 +9,7 @@ Produce a **fact-grounded, chronologically clear, classics-plus-frontier** devel
 
 ## When to trigger
 
-- The user asks for "a development history of X", "trace the evolution of X", "how X got to where it is today", or the Chinese equivalents (发展史 / 综述 / 来龙去脉).
+- The user asks for "a development history of X", "trace the evolution of X", "how X got to where it is today", or an equivalent request phrased in another language.
 - The user explicitly invokes `/mhistory <topic>`.
 
 ## Core principles
