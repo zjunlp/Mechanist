@@ -55,6 +55,12 @@ claude --model claude-opus-4-8 --plugin-dir ../Mechanist
 
 这是与用户模式的关键区别：`--plugin-dir` 让 Claude Code 直接从本地文件系统加载插件，因此你对源码的编辑可以即时生效。
 
+> **如果相对路径加载失败，请改用绝对路径。** `--plugin-dir` 的相对路径是相对于启动时 shell 的当前工作目录解析的，而解析失败时它会被静默忽略——Claude Code 照常启动，只是插件没有加载。在别的目录下启动、通过 IDE 集成或桌面快捷方式启动（其 cwd 往往不是你以为的那个）、或经由 alias / wrapper 脚本启动时，都容易踩到这一点。推荐写法：
+>
+> ```bash
+> claude --model claude-opus-4-8 --plugin-dir /absolute/path/to/Mechanist
+> ```
+
 ### 3. 验证
 
 与用户模式相同的检查：

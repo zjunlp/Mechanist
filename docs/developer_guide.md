@@ -55,6 +55,12 @@ claude --model claude-opus-4-8 --plugin-dir ../Mechanist
 
 This is the key difference from user-mode: `--plugin-dir` tells Claude Code to load the plugin directly from your local filesystem, so any edits you make are picked up immediately.
 
+> **If the relative path doesn't work, use an absolute one.** `--plugin-dir` resolves relative paths against the shell's current working directory at launch, and when resolution fails it is silently ignored — Claude Code starts normally, just without the plugin. This bites when you launch from a different directory, from an IDE integration or desktop shortcut (whose cwd is rarely what you expect), or via an alias/wrapper script. Prefer:
+>
+> ```bash
+> claude --model claude-opus-4-8 --plugin-dir /absolute/path/to/Mechanist
+> ```
+
 ### 3. Verify
 
 Same checks as user-mode:
