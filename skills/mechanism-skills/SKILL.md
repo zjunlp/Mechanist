@@ -182,18 +182,39 @@ When the task carries a record of families already tried for this behavior + mec
 
 ## Practical Tips
 
-### 1. Token Position for Steering Vectors
+### 1. Finding an SAE for the Target Model
+Check whether a Sparse Autoencoder has already been released for the target model — and for which layers. If one exists, use it to locate the target feature: SAE features are far more monosemantic and interpretable than directions read off the raw backbone activations, and intervening on them usually gives a cleaner, stronger effect.
+
+**Search local disk first** (existing model/SAE caches, e.g. the Hugging Face cache or the project's own weights directory), and only download if nothing is found locally.
+
+Commonly used public SAEs:
+
+- Evo2-7B (genomic DNA) → https://huggingface.co/Goodfire/Evo-2-Layer-26-Mixed
+- ESM2-650M (protein) → https://huggingface.co/liambai/InterProt-ESM2-SAEs
+- ESM2-650M (protein) → https://huggingface.co/Elana/InterPLM-esm2-650m
+- CLIP / ViT (vision) → https://huggingface.co/Prisma-Multimodal
+- Gemma 2 / 3 → https://huggingface.co/google/gemma-scope
+- Llama 3.1 / 3.2 → https://huggingface.co/collections/EleutherAI/sparse-autoencoders
+- Qwen3 → https://huggingface.co/Qwen/SAE-Res-Qwen3-1.7B-Base-W32K-L0_100
+- GPT-2 Small → https://huggingface.co/jbloom/GPT2-Small-OAI-v5-32k-resid-post-SAEs
+- Mistral 7B → https://huggingface.co/lmxxf/mistral-7b-sae-layer16
+- Pythia → https://huggingface.co/nileshsarkar-ai/pythia-410m-saes-x32-l1-3e-4-fixed
+
+
+If no SAE covers the target model, fall back to a feature identified directly in the model's own activations — the same direct-intervention procedure applies, without the encode/decode step.
+
+### 2. Token Position for Steering Vectors
 Match the pooling site to where the behavior is encoded.
 - **Last token**: default for prompt-based extraction — autoregressive models concentrate next-token signal at the final input position.
 - **Mean over response tokens**: pair a positive and negative response to the same input, then average hidden states across response positions only (exclude the shared prefix). Use when the behavior spans the full sequence rather than a single token.
 - **Head / MLP output**: if extracting from a head or MLP output instead of the residual stream, match pooling to the claim's granularity (last-token for next-token effects, mean-pool for sequence-level properties).
 
-### 2. Choosing the Intervention Layer
+### 3. Choosing the Intervention Layer
 Start where representations are richest for the target behavior, then refine.
 - **Default range**: middle (~40–60% depth) to middle-to-late (~60–80%) layers. By this depth the residual stream carries compositional representations but has not yet committed to the output distribution, so additive interventions redirect behavior without breaking syntax/fluency.
 - **Task-specific refinement**: if the default sweep fails, treat layer index as a hyperparameter. Use probing accuracy or gradient-based localization (§6 Gradient Detection) to narrow candidates before running full intervention sweeps.
 
-### 3. Calibrating Intervention Strength
+### 4. Calibrating Intervention Strength
 Find the magnitude that reliably elicits the target effect, judged jointly by a target metric and a general capability metric. Re-tune from scratch whenever layer, position, or method changes — the optimum may not transfer.
 - **Non-monotonic response**: too small → no effect (signal drowned out); moderate → target behavior peaks; too large → fluency/coherence degrade, then the target effect itself collapses as activations go off-distribution.
 - **Sweep procedure**:
