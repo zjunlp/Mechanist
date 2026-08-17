@@ -1,16 +1,32 @@
 ---
 name: steering-coefficient-tuning
-description: 'Steering strength protocol — steering vector, CAA, DAS dose-response, representation engineering, SAE feature scaling, ROME-style edits, any additive intervention on internal representations. Fires on ANY steering run, including (especially) when the plan already fixes a coefficient or copies one from a reference paper: a fixed coefficient is one grid point and a plan-fixed small range is only a subset of the range to sweep, never the answer, so the coefficient is always swept over a wide range, in units of the projection std σ. The only test of a coefficient is whether the run hits the pass criteria in `task.md` or the milestone''s own claim criteria — effect-size plots, dose-response curves, and output samples are never acceptance evidence, no matter how good they look. Criteria not met = widen the range and re-run; stopping with no passing coefficient is never a negative finding, it requires an open-item warning that the range may have been too narrow. Triggers: `α`, `β`, `dose`, `magnitude`, `scale`, `coefficient`, `k`, `steering vector`, `CAA`, `DAS`, `repe`, `SAE feature scaling`, `ROME`, "steering had no effect", "random direction beat my steering vector", "model output garbage after steering".'
+description: 'How to set the strength of any additive intervention on internal representations — steering vectors, CAA, DAS dose-response, representation engineering, SAE feature scaling, ROME-style edits. Use whenever the plan pins a steering strength (`α`, `β`, `dose`, `magnitude`, `scale`, `coefficient`, `k`) to a fixed value or a narrow range, especially one copied from a paper. Covers the coarse-to-fine sweep strategy (start wide — e.g. `[1, 2, 4, 8, 16, 32, …]` or a few multiples of the current activation — then narrow in on the optimum), why the best coefficient is layer-dependent, the mid- vs late-layer behavior (late layers break into repetition / format-spam), when to stop raising the coefficient and switch feature / layer / method instead, and the requirement to score every sweep point on a target metric alongside a fluency / general-ability metric. Prevents two symmetric failures: TOO SMALL → effect drowned in noise → false "no causal effect"; TOO LARGE → off-distribution collapse → fluency breaks / a random direction matches it → false "specificity fails". Triggers include `dose ∈ {-3..3}`, `α = 3`, "random direction beat my steering vector", "steering had no effect", "model output garbage after steering".'
 ---
 
-# Steering Coefficient Sweep
+# Steering Coefficient Tuning
 
-1. **Any steering run → always sweep the coefficient over a wide range.** Whether the plan hard-codes a coefficient, copies one from a paper, or leaves it open makes no difference: that value is one grid point, never the answer. The same holds when the plan hard-codes a **small range** of coefficients to try — that range is not the answer either, only a subset of the wide range you must keep sweeping beyond.
+## The point
 
-2. **Express the coefficient in σ units and sweep in σ.** `σ = std(hᵀu)`, the projection std at the intervention site (`u` = unit steering direction); a paper's `α = 3` almost always means 3σ. Raw activation units are not comparable across layers / directions / models, so the sweep grid is always in σ.
+A steering coefficient that is **too small** does nothing; one that is **too large** damages the model's general ability and breaks fluent generation. You want the **moderate** range in between, and you find it by sweeping.
 
-3. **The only test of a coefficient is the criteria** — the pass criteria in `task.md`, or the claim criteria of the relevant experiment-plan milestone. Nothing else counts as acceptance evidence: a clean dose-response curve, a large effect size, a fluent-looking sample certify nothing. Criteria not met = coefficient not acceptable, no matter how good the plots look.
+Keep the following in mind:
 
-4. **Criteria not met → widen the range and re-run.** Keep enlarging the range until a coefficient passes. Only after the whole range has failed should you touch anything else.
+1. **The best coefficient depends on where you intervene** — different layers (and different sites) need different coefficients. A value tuned at one layer does not transfer to another.
+
+2. **Mid layers usually work best**, because "semantic maturity" varies with depth (task-dependent):
+   - **Early** layers — closer to tokens / local patterns.
+   - **Mid** layers — more often carry high-level control signals: behavior, intent, style, refusal.
+   - **Late** layers — closer to logits and surface token choice, so even a slightly large coefficient at a late layer tends to produce repeated tokens, format-symbol spam, or broken semantics.
+
+3. **Sweep coarse-to-fine.**
+   - **Start wide.** Try a broad, geometrically spaced range — e.g. `[1, 2, 4, 8, 16, 32, …]`.
+   - **Escalate before abandoning.** At a given layer, if a small coefficient does not work, try a larger one. Only when raising the coefficient *still* does not work **and** the side effects have become severe — the generated text is entirely worthless — should you switch the feature, switch the layer, or switch to a different method.
+   - **Then narrow.** Once a promising range is located, progressively shrink it to find the optimum.
+
+4. **Score every sweep point on a target metric *and* a fluency / general-ability / specific-function metric**; keep the Pareto-optimal candidates.
 
 5. **Stopping without a coefficient that meets the criteria is not allowed.** If no coefficient passes and you stop anyway, the result is not a negative finding — you **must** record an `open_items[]` warning: *"no coefficient met the criteria; the coefficient range may not have been swept widely enough, and this is a likely cause of the failure — recommend manually sweeping beyond the recorded bounds `<β_min>…<β_max>` before treating the result as established."*
+
+## Composition
+
+Lock the site set via `../steering-block-selection/` **first** (the usable coefficient range is site-dependent), then tune `β` here on that locked site set. Re-tune whenever the site, direction, or model changes.

@@ -218,9 +218,9 @@ Start where representations are richest for the target behavior, then refine.
 Find the magnitude that reliably elicits the target effect, judged jointly by a target metric and a general capability metric. Re-tune from scratch whenever layer, position, or method changes — the optimum may not transfer.
 - **Non-monotonic response**: too small → no effect (signal drowned out); moderate → target behavior peaks; too large → fluency/coherence degrade, then the target effect itself collapses as activations go off-distribution.
 - **Sweep procedure**:
-  1. Start small (e.g., α = 1 for a steering vector on a normalized residual stream) and increase in fixed steps.
+  1. Start small (e.g., α = 1 for a steering vector on a normalized residual stream) and increase geometrically (1 → 2 → 4 → 8 → 16 → 32 …), not in fixed steps.
   2. At each step, log the target metric (e.g., target-behavior rate on held-out probes) and a capability metric (e.g., perplexity or benchmark score).
-  3. Pick the α where the target metric peaks while capability drop stays within tolerance (e.g., < 5–10%).
+  3. Pick the smallest α that meets the target while capability drop stays within tolerance (e.g., < 5–10%) — not the α where the target metric peaks.
   4. Same recipe for SAE feature scaling or activation patching — sweep the coefficient or patch fraction.
 - **Layer–magnitude coupling**: earlier layers need larger multipliers; later layers saturate sooner. Always re-sweep when the site changes.
 - **Suppression**: subtracting a direction follows the same sweep; large negative multipliers produce symmetric off-distribution failures.

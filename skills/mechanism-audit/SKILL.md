@@ -45,7 +45,7 @@ This catalogue is the **single source of truth** for what `/mechanism-audit` aud
 
 | ID | Name                       | Trigger (one-line)                                                              | Required artifacts                                                                                              |
 |----|----------------------------|---------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------|
-| A  | Steering coefficient sweep | Any additive activation intervention with a scalar coefficient α (steering, CAA, DAS, RepE, SAE feature scaling, activation patching, ROME). | intervention/hook script(s); sweep config or α grid; per-α run outputs with target + capability metrics; direction-extraction site (for σ_proj). |
+| A  | Steering coefficient sweep | Any additive activation intervention with a scalar coefficient α (steering, CAA, DAS, RepE, SAE feature scaling, activation patching, ROME). | intervention/hook script(s); sweep config or α grid; per-α run outputs with target + capability metrics; direction-extraction site (for the coefficient's unit). |
 | B  | Reserved                   | — (future: direction-extraction quality)                                        | —                                                                                                               |
 | C  | Reserved                   | — (future: site / layer selection rationale)                                    | —                                                                                                               |
 | D  | Reserved                   | — (future: n_effective sufficiency)                                             | —                                                                                                               |
@@ -63,13 +63,13 @@ This catalogue is the **single source of truth** for what `/mechanism-audit` aud
   1. Intervention / hook script(s) implementing the additive update.
   2. Sweep config or in-code α grid (yaml / json / Python list literal).
   3. Per-α run outputs containing the target metric AND any capability / coherence metric (perplexity, val-acc on an unrelated task, fluency, NaN rate, repetition rate, output-confidence).
-  4. Direction-extraction code — wherever the steering direction is computed (and where `σ_proj = projections.std()` or equivalent would live).
+  4. Direction-extraction code — wherever the steering direction is computed, and wherever the coefficient's **unit** is established (a raw multiplier on the direction as extracted, a multiple of the site's activation norm, or a projection-std / σ scaling).
   5. **Sampled post-steering output cases** — raw model completions for representative prompts at several α values (especially α = 0, mid-plateau, near-collapse, and the locked α), if logged. These let the reviewer eyeball whether the metric story matches the actual text — e.g., a target-metric "win" at large α paired with repetition / garbled output / off-topic drift indicates the metric is reading OOD collapse as behavior. If too many cases were logged, Step 3 samples a few per α value (e.g. 5 prompts × the α grid).
 
 **Audit questions** (the reviewer answers all 8):
   1. Was a sweep performed (multiple α tried), not a single hardcoded value?
-  2. Did the sweep span ≥ 3 orders of magnitude (e.g. [0.1, 0.3, 1, 3, 10] × σ_proj) and include α = 0 baseline?
-  3. Was α expressed in σ_proj units (k · σ_proj), not raw unit-vector norm? (Look for `.std()` on a projection-like quantity next to the steering call.)
+  2. **Asked only when the run did not meet its target criteria.** Did the sweep span a wide, geometrically spaced range — ratio of largest to smallest nonzero **|α|** ≥ 30× (e.g. [1, 2, 4, 8, 16, 32]) — and include an α = 0 baseline? The ratio is computed on **absolute values**, so a signed grid such as [−2, −1, 0, 1, 2] scores 2×, not 4×. (Sign *coverage* — whether the negative direction was tried at all — is not asked by any of the 8 questions; question 8 asks only whether a deliberately asymmetric protocol kept its signs.) **If the run met its criteria, this question is satisfied as asked** — a narrow sweep that found a working coefficient needs no widening, and the smallest sufficient α is the right one to lock. Sweep width matters only as the diagnosis for a shortfall: criteria unmet on a narrow grid is *unresolved*, not negative. Never treat a larger α as more rigorous than a smaller one that already works.
+  3. Is the coefficient's **unit** stated unambiguously, so the grid is reproducible and comparable? **Raw numbers are acceptable** — a raw multiplier on the extracted direction, a multiple of the site's activation norm, and σ / projection-std units are all valid, and none is preferred over the others. What is not acceptable is an *undeclared* unit, or the same numeric α transplanted to a different site / direction / model without re-sweeping there.
   4. Was BOTH a *target metric* AND an independent *capability / coherence metric* logged at every sweep point?
   5. Was a usable plateau identified — target clearly above baseline noise AND capability within tolerance (< ~10% degradation; no collapse)? (If raw post-steering output cases are available — artifact #5 — spot-check them: at the locked α the text should read coherently and express the target behavior; at near-collapse α the metric should track visible degradation. A capability metric that says "fine" while sampled outputs are garbled / repetitive / off-topic is a broken metric, not a successful steer.)
   6. Was the locked α placed in the MIDDLE of the plateau (not at its edge)?
@@ -84,14 +84,14 @@ This catalogue is the **single source of truth** for what `/mechanism-audit` aud
   - Asymmetric protocol flattened into uniform-push (sign pattern broken).
 
 **WARN** if ANY of (and no FAIL):
-  - Sweep performed but spans < 3 orders of magnitude, OR < 5 grid points.
-  - α expressed in raw norm rather than σ_proj units (silently incomparable across runs / sites / papers).
+  - **Target criteria not met**, and the sweep is narrow in *either* sense — largest-to-smallest nonzero |α| ratio < 30×, or fewer than 5 grid points — so the shortfall is unresolved rather than negative. Both conditions sit inside the "criteria not met" gate: when the criteria *were* met, neither a narrow range nor a small point count is a WARN.
+  - Coefficient unit undeclared, OR the same numeric α transplanted to a different site / direction / model without re-sweeping there (the usable range is site-dependent, so a transplanted number is not comparable). Note: a raw coefficient with its unit stated is **not** a WARN.
   - Plateau identified but α sits at the plateau edge (not middle).
   - No random-direction control at the locked α.
 
-**PASS** if all 8 questions are satisfied AND the chosen α is mid-plateau with both behavior expression and capability preservation evidence.
+**PASS** if all 8 questions are satisfied AND the chosen α is mid-plateau with both behavior expression and capability preservation evidence. When `target_criteria_met = true` on a sweep too narrow to map a plateau, questions 2 and 6 count as satisfied and question 5 is judged at the locked α alone; do not ask such a run to sweep wider.
 
-**Evidence to report**: file:line for the sweep-grid definition, the logged α values, the chosen α, plateau range [α_min, α_collapse], the capability metric used, random-baseline result (if any), and the σ_proj computation site.
+**Evidence to report**: file:line for the sweep-grid definition, the logged α values, the chosen α, plateau range [α_min, α_collapse], the capability metric used, random-baseline result (if any), and where the coefficient's unit is established (direction-normalization / activation-norm / σ computation site, as applicable).
 
 **Structured fields** (the reviewer MUST return these named slots — they map 1:1 to the Check A JSON node in Step 5):
 
@@ -100,7 +100,8 @@ This catalogue is the **single source of truth** for what `/mechanism-audit` aud
 | `status`                 | `"pass" \| "warn" \| "fail"`                                         | `"warn"`                                                                |
 | `intervention_type`      | `"steering" \| "CAA" \| "DAS" \| "RepE" \| "SAE_feature" \| "activation_patch" \| "ROME" \| "other"` | `"CAA"`                                                                 |
 | `sweep_grid`             | `number[]` (α values tried; `[α₀]` if single-value)                  | `[0, 0.3, 1.0, 3.0]`                                                    |
-| `sigma_proj_scaling`     | `bool`                                                               | `false`                                                                 |
+| `target_criteria_met`    | `true \| false \| "unknown"` — did the run meet the claim's / `task.md`'s pass criteria? **Gates question 2**: when `true`, a narrow sweep is not a finding | `false`                    |
+| `coefficient_unit`       | `"raw_multiplier" \| "activation_norm_multiple" \| "sigma_proj" \| "unstated"` | `"raw_multiplier"`                                             |
 | `capability_metric`      | `string \| null`                                                     | `"perplexity_holdout"` or `null` if none logged                         |
 | `plateau_range`          | `[number, number] \| null`                                           | `[0.3, 3.0]`                                                            |
 | `locked_alpha`           | `number \| null`                                                     | `3.0`                                                                   |
@@ -109,7 +110,7 @@ This catalogue is the **single source of truth** for what `/mechanism-audit` aud
 | `sign_pattern`           | `"preserved" \| "broken" \| "n/a"`                                   | `"n/a"`                                                                 |
 | `output_case_spotcheck`  | `{cases_available: bool, verdict: "metric_text_consistent"\|"metric_text_mismatch"\|"no_cases_logged", note: string}` | `{cases_available: true, verdict: "metric_text_mismatch", note: "..."}` |
 | `evidence`               | `string[]` (`"file:line"` or `"file:line-line"`)                     | `["src/steering.py:42-58", "configs/sweep.yaml:12"]`                    |
-| `details`                | `string` (one-paragraph reviewer explanation)                        | `"Sweep done but α locked at plateau edge; no σ_proj scaling."`         |
+| `details`                | `string` (one-paragraph reviewer explanation)                        | `"Sweep done but α locked at plateau edge; grid spans only 10×."`       |
 
 When `triggered=false` for Check A (handled by executor on early N/A exit, not by reviewer), the JSON node degenerates to `{"status": "n/a", "triggered": false, "trigger_match": []}` — no structured fields are emitted.
 
@@ -307,7 +308,7 @@ mcp__llm-chat__chat:
     For each check block above, return ALL named slots listed in that block's
     "Structured fields" table — verbatim by field name and type. At minimum every
     check returns `check_id`, `status`, `evidence`, `details`; check-specific slots
-    (e.g. Check A's `intervention_type`, `sweep_grid`, `sigma_proj_scaling`,
+    (e.g. Check A's `intervention_type`, `sweep_grid`, `target_criteria_met`, `coefficient_unit`,
     `capability_metric`, `plateau_range`, `locked_alpha`, `alpha_position`,
     `random_baseline`, `sign_pattern`, `output_case_spotcheck`) are mandatory and
     must use the exact field names from that check's Structured fields table.
@@ -381,7 +382,8 @@ intervention, or its intervention lies outside the current catalogue coverage.*
 - Triggered: [yes — via "src/steering.py:42 (activations += alpha * v)" | no]
 - Intervention type: [steering vector | CAA | DAS | SAE feature | ROME | n/a]
 - Sweep grid: [α values tried, or "single hardcoded value: ..."]
-- σ_proj scaling used: [yes | no | n/a]
+- Target criteria met: [yes → sweep width not assessed | no → width assessed | unknown]
+- Coefficient unit: [raw multiplier | activation-norm multiple | σ_proj | unstated]
 - Capability metric logged: [perplexity | val-acc | fluency | ... | none]
 - Plateau range: [α_min, α_collapse] = [..., ...]
 - Locked α: [value]   (position in plateau: middle | edge | outside)
@@ -419,7 +421,8 @@ Also write `MECHANISM_AUDIT.json`:
                         "configs/sweep.yaml:12 (alpha grid)"],
       "intervention_type": "CAA",
       "sweep_grid": [0, 0.3, 1.0, 3.0],
-      "sigma_proj_scaling": false,
+      "target_criteria_met": false,
+      "coefficient_unit": "raw_multiplier",
       "capability_metric": "perplexity_holdout",
       "plateau_range": [0.3, 3.0],
       "locked_alpha": 3.0,
@@ -432,7 +435,7 @@ Also write `MECHANISM_AUDIT.json`:
         "note": "perplexity within tolerance at α=3.0 but sampled completions show repetition / topic drift on 3 of 5 prompts."
       },
       "evidence": ["src/steering.py:42-58", "configs/sweep.yaml:12"],
-      "details": "Sweep done but α locked at plateau edge; no σ_proj scaling."
+      "details": "Criteria not met, and the grid spans only 10× (< 30×) over 4 points, so the shortfall is unresolved rather than negative; α also sits at the plateau edge."
     },
     "check_b_reserved": {"status": "not_implemented"},
     "check_c_reserved": {"status": "not_implemented"},
@@ -458,7 +461,7 @@ Also write `MECHANISM_AUDIT.json`:
 
   Triggered checks: A  (matches at src/steering.py:42, configs/sweep.yaml:12)
 
-  A. Steering Coefficient Sweep: ⚠️ WARN — α at plateau edge, no σ_proj scaling
+  A. Steering Coefficient Sweep: ⚠️ WARN — α at plateau edge, grid spans only 10×
   B–F. Reserved:                 — not_implemented
 
   Overall (C1): ⚠️ WARN
