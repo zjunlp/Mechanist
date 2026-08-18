@@ -23,6 +23,14 @@ Ideally the localization / intervention moves **only** the target behavior and l
 - **Valid result** — the target behavior moves while general ability remains intact or shows only a slight degradation. Report both metrics together; never report the target metric alone.
 
 
+**3. Feature selection is the biggest driver of success — and the hardest part.**
+Expect many tries; treat "find a better set" as the main job of the main experiment and iteration stage. A good "manipulable knob" set exists, but a bad set fails the whole task. **The data you select features from must be deliberately prepared and designed** — the candidate set can be no better than the data it was mined from. Rules:
+- **Behavior-positive, and verified.** The data used to find candidates must actually exhibit the target behavior — checked on the data itself, not assumed from how it was constructed or from a topic / source label.
+- **Matched control.** The negative set must differ from the positive set **only** in the target behavior. If the two sets also differ in topic, format, language, length, or template, the features you find are detectors of that confound, not of the behavior.
+- **Clean on general ability.** The positive data must be otherwise unremarkable on abilities unrelated to the target behavior (fluent, well-formed, on-distribution). Data that is degenerate elsewhere yields features that encode the degeneracy rather than the behavior.
+- **Enough of it, and held out.** Mine candidates on one split and confirm the effect on a disjoint one; a set fitted to the selection inputs stops working the moment the inputs change. Sample-size and provenance floors are governed by `skills/data-rule/`.
+- **Same measurement pipeline as the claim.** The data must be gradeable by the exact metric the claim is stated in — otherwise the candidates are being ranked on a proxy.
+
 ## When to Use the Tips Below
 
 Consult these tips whenever **EXPERIMENT_PLAN.md is about to be turned into runnable code**. Typical triggers:
