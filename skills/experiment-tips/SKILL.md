@@ -31,6 +31,9 @@ Expect many tries; treat "find a better set" as the main job of the main experim
 - **Enough of it, and held out.** Mine candidates on one split and confirm the effect on a disjoint one; a set fitted to the selection inputs stops working the moment the inputs change. Sample-size and provenance floors are governed by `skills/data-rule/`.
 - **Same measurement pipeline as the claim.** The data must be gradeable by the exact metric the claim is stated in — otherwise the candidates are being ranked on a proxy.
 
+**4. Feature set — steer a set, not a single feature.**
+A single feature / neuron usually exerts only limited control over the target behavior. Prefer intervening on a **set** of features: either multiple features collected within the same layer, or features gathered across several layers. Sweep the set — its size, its composition, and whether it stays within one layer or spans a range — the same way you would sweep any other knob, and score each candidate set on both the target metric and general ability (rule 2).
+
 ## When to Use the Tips Below
 
 Consult these tips whenever **EXPERIMENT_PLAN.md is about to be turned into runnable code**. Typical triggers:
