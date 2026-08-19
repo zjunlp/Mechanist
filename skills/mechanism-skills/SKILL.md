@@ -189,7 +189,7 @@ Check whether a Sparse Autoencoder has already been released for the target mode
 
 Commonly used public SAEs:
 
-- Evo2-7B (genomic DNA) → https://huggingface.co/Goodfire/Evo-2-Layer-26-Mixed
+- Evo2-7B-262k (genomic DNA) → https://huggingface.co/Goodfire/Evo-2-Layer-26-Mixed
 - ESM2-650M (protein) → https://huggingface.co/liambai/InterProt-ESM2-SAEs
 - ESM2-650M (protein) → https://huggingface.co/Elana/InterPLM-esm2-650m
 - CLIP / ViT (vision) → https://huggingface.co/Prisma-Multimodal
