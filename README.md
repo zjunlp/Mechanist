@@ -395,3 +395,16 @@ TODO
 
 We would like to express our heartfelt gratitude for the contribution of ARIS to our project, as we have utilized portions of their source code in our project. 
 Many thanks to all the colleagues in the community for submitting issues and providing technical support. 
+
+## Citation
+
+If you use Mechanist, please cite:
+
+```bibtex
+@article{wang2026mechanist,
+  title={Mechanist: AI as a Scientific Instrument for Discovering the Mechanisms of Intelligence},
+  author={Wang, Mengru and Fang, Junfeng and Qiao, Shuofei and Xu, Zhenqian and Xu, Haoming and Wang, Haoxiong and Deng, Shumin and Yang, Linyi and Cui, Zhixiang and Xu, Xin and others},
+  journal={arXiv preprint arXiv:2608.12036},
+  year={2026}
+}
+```
