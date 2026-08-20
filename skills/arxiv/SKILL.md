@@ -1,9 +1,12 @@
 ---
 name: arxiv
-description: Search, download, and summarize academic papers from arXiv. Use when user says "search arxiv", "download paper", "fetch arxiv", "arxiv search", "get paper pdf", or wants to find and save papers from arXiv to the local paper library.
-argument-hint: [query-or-arxiv-id]
+description: "Search, download, or summarize arXiv papers. Use for arXiv topics, URLs, IDs, or paper retrieval."
 allowed-tools: Bash(*), Read, Write
 ---
+
+## Host compatibility
+
+Before acting on a historical host tool name, read and apply the bundled `shared-references/host-compatibility.md`. Use the active host capability by meaning; never fabricate or call an unavailable literal tool name.
 
 # arXiv Paper Search & Download
 

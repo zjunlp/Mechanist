@@ -1,9 +1,12 @@
 ---
 name: auto-verify
-description: "Workflow 1.75: stress-test claims (regardless of main-experiment verdict) by swapping method, dataset, and model, then judging whether each variant agrees with the main experiment. Three stages with two integrity gates: Stage 1 audits the main experiment's eval method for every target claim; Stage 2 runs swap variants only on the top-K admitted claims picked by importance (K = `MAX_VERIFY_CLAIMS`, default 1); Stage 3 judges (binary pass/fail per variant), audits the variants, and computes a per-claim `robustness = #pass / N_eligible ∈ [0,1]` that decides PASS / FAIL / INCONCLUSIVE / ZERO_ELIGIBLE_VARIANTS (threshold default 0.5 → at least half of eligible variants must pass; e.g. at N=3 this means ≥2 of 3). INCONCLUSIVE = main-experiment integrity broken (Phase 2 FAIL — variants never ran); ZERO_ELIGIBLE_VARIANTS = variants ran but all failed integrity at Phase 9; INTEGRITY_ONLY = Stage 1 audit passed but Stage 2 was intentionally skipped (either `SWAP_VARIANTS=false` global mode or per-claim `MAX_VERIFY_CLAIMS` cap — distinguished by `stage2_skip_reason`). All are valid on purpose: iteration fixes the main experiment for INCONCLUSIVE, only the variants for ZERO_ELIGIBLE_VARIANTS, and takes no action for INTEGRITY_ONLY. The goal is objective correctness, not maximizing PASS. No cross-claim aggregation. Use when user says \"verify\", \"robustness check\", \"stress test claim\"."
-argument-hint: [claim-id-or-empty]
-allowed-tools: Bash(*), Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Agent, AskUserQuestion, Skill, mcp__llm-chat__chat
+description: "Audit and stress-test claims with method, dataset, or model swaps; report per-claim robustness."
+allowed-tools: Bash(*), Read, Write, Edit, Grep, Glob, Agent, AskUserQuestion, Skill, mcp__llm-chat__chat
 ---
+
+## Host compatibility
+
+Before acting on a historical host tool name, read and apply the bundled `shared-references/host-compatibility.md`. Use the active host capability by meaning; never fabricate or call an unavailable literal tool name.
 
 # Workflow 1.75: Claim Verification
 
@@ -107,7 +110,7 @@ Skip entirely if `RESUME = false` (default). When `true`, each phase begins with
 |---|---|---|
 | 1    | always run (cheap argument parsing) | — |
 | 2    | for each target Cx, ALL of `verify/<claim_dir>/main_experiment_audit/{EXPERIMENT_AUDIT.md, EXPERIMENT_AUDIT.json, MECHANISM_AUDIT.md, MECHANISM_AUDIT.json}` exist non-empty | Main-experiment integrity audit, **per claim**, **two cross-model audits**. Skip the `/experiment-audit` call for any Cx whose `EXPERIMENT_AUDIT.{md,json}` are present; skip the `/mechanism-audit` call independently when `MECHANISM_AUDIT.{md,json}` are present. Even on full skip, re-read both JSONs and recompute the combined verdict every invocation (cheap, deterministic) to decide whether Cx enters Stages 2–3 or is short-circuited to INCONCLUSIVE. |
-| 3    | Step 0 always runs (re-reads `verify/INTEGRITY_AUDIT.md` to rebuild ADMITTED/REJECTED buckets, tops up FAIL claims' `ROBUSTNESS.md` stub, then re-uses `verify/STAGE2_PICK.json` if present-non-empty to skip the LLM importance-judgment call and rebuild the PICKED set). Step 1 (pick-alternatives) skips per claim if `verify/<claim_dir>/PLAN.md` already exists non-empty. | Re-reading from disk is the only safe re-entry mechanism after a `STOP_AFTER_STAGE=1` halt — Phase 3 cannot trust in-memory state from Phase 2. |
+| 3    | Step 0 always runs (re-reads `verify/INTEGRITY_AUDIT.md` to rebuild ADMITTED/REJECTED buckets, tops up FAIL claims' `ROBUSTNESS.md` stub, then re-uses `verify/STAGE2_PICK.json` if present-non-empty to skip the LLM importance-judgment call and rebuild the PICKED set). Step 1 (verify-pick-alternatives) skips per claim if `verify/<claim_dir>/PLAN.md` already exists non-empty. | Re-reading from disk is the only safe re-entry mechanism after a `STOP_AFTER_STAGE=1` halt — Phase 3 cannot trust in-memory state from Phase 2. |
 | 4    | always re-runs (no clean per-claim skip artifact in the current design) | Phase 4 is a single reviewer LLM call per claim — cheap, not GPU-bound. Skipping it would require Phase 4 to leave a deterministic sentinel (e.g., a `reviewed: true` frontmatter field in `PLAN.md`); since it doesn't, RESUME re-pays the LLM cost. Acceptable in practice. |
 | 5    | `verify/<claim_dir>/variants/<variant-tag>/` has code committed | Per-variant: skip code generation for variants whose directory is already populated. |
 | 6    | reviewer-approved marker per variant (e.g., `.code_review_passed`) | Per-variant. |
@@ -444,11 +447,11 @@ Do not write `VERIFY_REPORT.md` at this point — it is Phase 11's product and r
 
 #### Step 1: Pick alternatives for each picked claim
 
-For each claim in PICKED, follow the protocol in `./pick-alternatives/SKILL.md` (a sub-skill of this skill, not a top-level slash command). Read its `SKILL.md` and execute its steps inline, passing the claim id, claim statement, and the resolved `DIMENSIONS` from Phase 1 as inputs.
+For each claim in PICKED, follow the protocol in `./verify-pick-alternatives/WORKFLOW.md` (an internal workflow, not a top-level slash command). Read it in full and execute its steps inline, passing the claim id, claim statement, and the resolved `DIMENSIONS` from Phase 1 as inputs.
 
-**What the sub-skill does** (full protocol in `./pick-alternatives/SKILL.md`):
+**What the internal workflow does** (full protocol in `./verify-pick-alternatives/WORKFLOW.md`):
 - Reads `idea-stage/IDEA_REPORT.md` and any prior `research-lit` outputs for candidate methods/datasets/models
-- When the claim is about **LLM internal mechanisms** or **LLM interpretability**, and `method` is in `DIMENSIONS`, also reads `skills/mechanism-skills/SKILL.md` and the **main experiment's family sub-skill** to surface **within-family** method-swap candidates (e.g., swap `probing/residual-stream-states` for `probing/sae-feature-activation-state`; `causal-attribution/ablation` for `causal-attribution/patching` or `causal-attribution/attribution-patching`; `vocabulary-projection/residual-stream-state` for `vocabulary-projection/attention-head-output`). **Hard constraint: the method swap MUST stay within the same mechanism family.** Cross-family candidates (e.g., probing → causal attribution) are filtered out — they answer a different question (does the claim survive a totally different mechanism?) and belong in a separate sweep, not this verify pass.
+- When the claim is about **LLM internal mechanisms** or **LLM interpretability**, and `method` is in `DIMENSIONS`, also reads `skills/mechanism-skills/SKILL.md` and the **main experiment family's `WORKFLOW.md`** to surface **within-family** method-swap candidates (e.g., swap `probing/residual-stream-states` for `probing/sae-feature-activation-state`; `causal-attribution/ablation` for `causal-attribution/patching` or `causal-attribution/attribution-patching`; `vocabulary-projection/residual-stream-state` for `vocabulary-projection/attention-head-output`). **Hard constraint: the method swap MUST stay within the same mechanism family.** Cross-family candidates (e.g., probing → causal attribution) are filtered out — they answer a different question (does the claim survive a totally different mechanism?) and belong in a separate sweep, not this verify pass.
 - If research coverage is thin for any of the three dimensions (fewer than 2 credible candidates), calls `/research-lit "alternative [method|dataset|model] for claim: [statement]" — extra: semantic-scholar` to fill the gap
 - Asks the external LLM reviewer to rank candidates by "strongest independent test of the claim" (not "closest to the main experiment")
 - Returns a structured variant list: exactly one swap per axis in `DIMENSIONS` (e.g., DIMENSIONS=method,dataset,model → one method swap + one dataset swap + one model swap; DIMENSIONS=method → method swap only)
@@ -1067,7 +1070,7 @@ Variant subfolders under `variants/` keep their existing format: `<dimension>-sw
   │                                     → Phase 2 gate = max_severity(exp, mech); n/a treated as pass
   │                                     → combined FAIL short-circuits only that claim to INCONCLUSIVE
   ├── /result-to-claim                ← per-claim verdicts (auto-run if missing, plus per-variant)
-  ├── ./pick-alternatives/SKILL.md    ← sub-skill (inline, not a slash command): choose method/dataset/model swaps (within mechanism family)
+  ├── ./verify-pick-alternatives/WORKFLOW.md ← internal workflow (inline, not a slash command): choose method/dataset/model swaps (within mechanism family)
   ├── /research-lit                   ← called when candidate research is thin
   ├── /run-experiment                 ← launch each variant
   ├── /monitor-experiment             ← track variant progress

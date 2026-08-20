@@ -1,9 +1,12 @@
 ---
 name: auto-experiment
-description: "Workflow 1.5: Bridge between idea discovery and auto review. Reads EXPERIMENT_PLAN.md, routes mechanism family inline (Phase 1.5), implements experiment code, deploys to GPU, and collects initial results. Use when user says \"implement experiments\", \"experiment\", \"deploy the plan\", or has an experiment plan ready to execute."
-argument-hint: [research-direction]
-allowed-tools: Bash(*), Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Agent, AskUserQuestion, Skill, mcp__llm-chat__chat
+description: "Route, implement, sanity-check, run, and record experiments from EXPERIMENT_PLAN.md."
+allowed-tools: Bash(*), Read, Write, Edit, Grep, Glob, Agent, AskUserQuestion, Skill, mcp__llm-chat__chat
 ---
+
+## Host compatibility
+
+Before acting on a historical host tool name, read and apply the bundled `shared-references/host-compatibility.md`. Use the active host capability by meaning; never fabricate or call an unavailable literal tool name.
 
 # Workflow 1.5: Experiment
 
@@ -123,7 +126,7 @@ Before any code is written, route the parsed plan through `/experiment-tips` —
 
 2. **Invoke `/experiment-tips`** as the routing entry point. It matches the plan against the symptom-level trigger table in `skills/experiment-tips/SKILL.md` and returns a list of tip folders to load.
 
-3. **For each matched tip**, load `skills/experiment-tips/<tip>/SKILL.md` in full into working memory. **Hard requirement:** the routing previews in `experiment-tips/SKILL.md` are deliberately thin — every implementation detail lives in the tip's `SKILL.md`, not in the routing file. Acting on the preview alone is forbidden.
+3. **For each matched tip**, load `skills/experiment-tips/<tip>/WORKFLOW.md` in full into working memory. **Hard requirement:** the routing previews in `experiment-tips/SKILL.md` are deliberately thin - every implementation detail lives in the tip's internal `WORKFLOW.md`, not in the routing file. Acting on the preview alone is forbidden.
 
 4. **Write `refine-logs/EXPERIMENT_TIPS.md`** with the routing decision:
 
@@ -139,9 +142,9 @@ Before any code is written, route the parsed plan through `/experiment-tips` —
    ## Matches
 
    1. **<tip-folder>** — <one-line trigger that fired>
-      - convention to adopt: <one-line summary from the tip's own SKILL.md — not from the routing preview>
+      - convention to adopt: <one-line summary from the tip's own WORKFLOW.md - not from the routing preview>
    2. **<tip-folder>** — <one-line trigger that fired>
-      - convention to adopt: <one-line summary from the tip's own SKILL.md — not from the routing preview>
+      - convention to adopt: <one-line summary from the tip's own WORKFLOW.md - not from the routing preview>
 
    ## No-match log
    <if a borderline trigger didn't fire, note it here for audit>
@@ -209,8 +212,8 @@ When `CHOSEN_FAMILY` is **unset**, behavior is gated by `MECHANISM_ROUTING`:
 
 2. **Invoke `/mechanism-skills` via the Skill tool — this is a hard requirement, not a description of behavior.** The manifest must be derived from the catalog this skill loads at routing time, not from prior training knowledge. You are not permitted to write `MECHANISM_ROUTING.md` until you have actually read, in this turn, via the Skill tool:
    - `skills/mechanism-skills/SKILL.md` (the routing entry point listing all eleven families)
-   - The `SKILL.md` of every family you intend to list as a candidate
-   - The `SKILL.md` of every submethod underneath those families
+   - The internal `WORKFLOW.md` of every family you intend to list as a candidate
+   - The internal `WORKFLOW.md` of every submethod underneath those families
 
    If any of these files is unread, re-invoke `/mechanism-skills` before generating candidates — do not write the manifest from memory.
 
@@ -224,7 +227,7 @@ When `CHOSEN_FAMILY` is **unset**, behavior is gated by `MECHANISM_ROUTING`:
 
    For each candidate, record:
    - Canonical `family/submethod`
-   - `path` of the form `skills/mechanism-skills/<family>/<submethod>/SKILL.md`. Verify each path exists on disk (Glob or `ls`) before writing the manifest; if any candidate path is missing, that candidate is a hallucination — re-invoke `/mechanism-skills` and reground.
+   - `path` of the form `skills/mechanism-skills/<family>/<submethod>/WORKFLOW.md`. Verify each path exists on disk (Glob or `ls`) before writing the manifest; if any candidate path is missing, that candidate is a hallucination - re-invoke `/mechanism-skills` and reground.
    - Planned screen → decode → verify → recover composition
    - Cost notes (GPU-hours / wall-clock estimate)
    - One-line rationale tied to a specific claim
@@ -245,17 +248,17 @@ When `CHOSEN_FAMILY` is **unset**, behavior is gated by `MECHANISM_ROUTING`:
    chosen_idea_title: <title | n/a>
    effective_domain: <resolved domain>
    candidate_paths:
-     - skills/mechanism-skills/<family>/<submethod>/SKILL.md
-     - skills/mechanism-skills/<family>/<submethod>/SKILL.md
+     - skills/mechanism-skills/<family>/<submethod>/WORKFLOW.md
+     - skills/mechanism-skills/<family>/<submethod>/WORKFLOW.md
 
    ## Candidates
 
    1. **[recommended]** <canonical family/submethod> — <rationale>
-      - path: skills/mechanism-skills/<family>/<submethod>/SKILL.md
+      - path: skills/mechanism-skills/<family>/<submethod>/WORKFLOW.md
    2. <canonical family/submethod> — <rationale>
-      - path: skills/mechanism-skills/<family>/<submethod>/SKILL.md
+      - path: skills/mechanism-skills/<family>/<submethod>/WORKFLOW.md
    3. <canonical family/submethod> — <rationale>
-      - path: skills/mechanism-skills/<family>/<submethod>/SKILL.md
+      - path: skills/mechanism-skills/<family>/<submethod>/WORKFLOW.md
 
    ## Composition plan
    <screen → decode → verify → recover, with cost notes. Downstream analysis steps (decomposition, probing aggregation, …) belong here, not in the candidate slot.>
@@ -286,7 +289,7 @@ When `CHOSEN_FAMILY` is **unset**, behavior is gated by `MECHANISM_ROUTING`:
 
    **`CHOSEN_FAMILY` sources.** `CHOSEN_FAMILY` is forwarded by `/auto`'s orchestrator from one of three places: **(1) `MECHANISM=given`** — the user named the mechanism method/family in `task.md` and the claim stage stamped it as `chosen_mechanism` in `FINAL_PROPOSAL.md` / `EXPERIMENT_PLAN.md` (this is the first-class mechanism-given path: no routing, no mini-prompt); **(2)** the `AUTO_PROCEED=false` family mini-prompt (`MECHANISM=discovery`); **(3)** an explicit `family:` pin in `task.md` (the cross-round Rule-2 path under `MECHANISM=discovery` — see `/auto` → Global Exploration Memory). Mode B treats all three identically: **commit the named family** (per Step 6 — auto-selection of a *different* family never happens; the scaffold is built around `CHOSEN_FAMILY`, not re-routed away from it). A pinned family that is itself in `families_already_settled` is **fine** — the orchestrator already confirmed the re-run with the user (`honor-pin`) before forwarding — so commit it rather than blocking.
 
-7. **Plan reconciliation (runs whenever a family becomes committed — the auto-select in step 5 or the Mode B commit in step 6; skip for `routing: not-applicable`).** Now that a concrete submethod is locked, reconcile it against the fields the claim stage could only estimate before the method was known. Read the just-loaded submethod `SKILL.md` (already in context from step 2) for its real requirements, then for **every `method_sensitive` field** declared on the intervention milestone(s) in `EXPERIMENT_PLAN.md`, compare the plan's value to what this submethod needs and write the verdict into the `## Plan reconciliation` section of `MECHANISM_ROUTING.md`:
+7. **Plan reconciliation (runs whenever a family becomes committed - the auto-select in step 5 or the Mode B commit in step 6; skip for `routing: not-applicable`).** Now that a concrete submethod is locked, reconcile it against the fields the claim stage could only estimate before the method was known. Read the just-loaded submethod `WORKFLOW.md` (already in context from step 2) for its real requirements, then for **every `method_sensitive` field** declared on the intervention milestone(s) in `EXPERIMENT_PLAN.md`, compare the plan's value to what this submethod needs and write the verdict into the `## Plan reconciliation` section of `MECHANISM_ROUTING.md`:
    - **`matches`** — the plan's value is fine for this submethod. Nothing else to do.
    - **`re-bound <new value> — <why>`** — the submethod needs a different value that still serves the milestone's *scientific intent* (e.g. attribution-patching's gradient estimate needs more `n_pairs` for a stable estimate; a method needs a different read `site`; the GPU-hours estimate moves up or down because the committed submethod's compute profile differs from the generic pre-routing estimate). Record the new value here; **do not edit `EXPERIMENT_PLAN.md`** (the plan stays the claim stage's audit reference — the realized value is captured downstream as planned-vs-actual in Phase 5). Phase 2 implements to the re-bound value; the Phase 4 gate displays the re-bound GPU-hours.
    - **`conflict — <why>`** — the submethod **cannot** satisfy the field without changing the plan's scientific intent (e.g. it structurally cannot measure the planned `metric`, or requires `sites` the plan explicitly excluded). This is a **plan defect, not a routing re-bind**, and is out of this stage's authority (this skill never rewrites the claim-authored plan). Set `reconciliation_status: escalate` and **stop before Phase 2** (do not build). The orchestrator surfaces this as a **Round-End Decision** (`ended-needs-decision`, never a crash halt and never an auto-rewrite of the plan), and the plan owner (the user) repairs the conflicting field in `EXPERIMENT_PLAN.md` — or picks a fitting submethod, or re-scopes the claim — and re-runs. Do **not** silently swap the metric/sites to make the method fit.
@@ -667,4 +670,3 @@ When writing `EXPERIMENT_TRACKER.md` and `EXPERIMENT_RESULTS.md`, the `Run` colu
 
 Or use /auto for the autonomous idea → routing → experiments → verify → iteration chain.
 ```
-

@@ -1,9 +1,12 @@
 ---
 name: analyze-results
-description: Analyze ML experiment results, compute statistics, generate comparison tables and insights. Use when user says "analyze results", "compare", or needs to interpret experimental data.
-argument-hint: [results-path-or-description]
+description: "Analyze ML results, compute statistics, compare runs, and summarize evidence. Use for result analysis or comparison."
 allowed-tools: Bash(*), Read, Grep, Glob, Write, Edit, Agent
 ---
+
+## Host compatibility
+
+Before acting on a historical host tool name, read and apply the bundled `shared-references/host-compatibility.md`. Use the active host capability by meaning; never fabricate or call an unavailable literal tool name.
 
 # Analyze Experiment Results
 

@@ -1,9 +1,12 @@
 ---
 name: idea-creator
-description: Generate and rank research ideas given a broad direction. Use when user says "brainstorm ideas", "generate research ideas", "what can we work on", or wants to explore a research area for publishable directions.
-argument-hint: [research-direction]
-allowed-tools: Bash(*), Read, Write, Grep, Glob, WebSearch, WebFetch, Agent, mcp__llm-chat__chat
+description: "Generate and rank research ideas from a broad direction. Use for brainstorming or choosing research directions."
+allowed-tools: Bash(*), Read, Write, Grep, Glob, Agent, mcp__llm-chat__chat
 ---
+
+## Host compatibility
+
+Before acting on a historical host tool name, read and apply the bundled `shared-references/host-compatibility.md`. Use the active host capability by meaning; never fabricate or call an unavailable literal tool name.
 
 # Research Idea Creator
 

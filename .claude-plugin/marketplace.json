@@ -15,11 +15,15 @@
       "description": "Mechanist — AI Systems as Scientific Instruments for Understanding the Mechanisms of Intelligence.",
       "version": "0.1.0",
       "author": { "name": "zjunlp" },
-      "homepage": "https://github.com/zjunlp/Mechanist",
+      "homepage": "http://mechanist.openkg.cn",
       "repository": "https://github.com/zjunlp/Mechanist",
       "license": "MIT",
       "category": "research",
-      "keywords": ["research", "experiments", "literature-review", "auto-pipeline", "mcp"]
+      "keywords": ["research", "experiments", "literature-review", "auto-pipeline", "mcp"],
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      }
     }
   ]
 }

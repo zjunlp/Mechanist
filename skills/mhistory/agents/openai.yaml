@@ -1,0 +1,7 @@
+interface:
+  display_name: "Mechanist History"
+  short_description: "Trace the development and frontier of a research topic"
+  brand_color: "#176B5B"
+  default_prompt: "Use $mhistory to trace the history of this research topic."
+policy:
+  allow_implicit_invocation: true

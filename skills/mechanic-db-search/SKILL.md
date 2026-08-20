@@ -1,8 +1,11 @@
 ---
 name: mechanic-db-search
-description: Paper retrieval via the cloud SEARCH service. The Agent builds a decomposed query JSON from its task context (preferred) or submits a polished free-form English query; the cloud service performs multi-ranker retrieval and fusion. Use as one of an important paper sources.
-argument-hint: "[query]"
+description: "Retrieve papers through Mechanist's cloud literature search using structured or free-form queries."
 ---
+
+## Host compatibility
+
+Before acting on a historical host tool name, read and apply the bundled `shared-references/host-compatibility.md`. Use the active host capability by meaning; never fabricate or call an unavailable literal tool name.
 
 # mechanic-db-search — Cloud SEARCH Wrapper
 
@@ -22,7 +25,7 @@ All transport — auth, submit, poll, error handling, writing results to disk �
 ## Constants
 
 - **TOOL** = the `search_papers` tool on the `mechanic-db` MCP server. Call it directly; do not invoke any Python.
-- **API_KEY** — provided to the MCP server via the plugin manifest env mapping (`MECHANIC_DB_API_KEY`; set as an environment variable in the shell that launches Claude Code, or for Codex the cached `mcp.codex.json` `env`). **Optional**: with no key the service still answers on an anonymous per-IP tier (2 searches/min, 20/day, vs 20/min and 1000/day with a key). An unset key is therefore not a reason to skip this skill.
+- **API_KEY** — provided to the MCP server as `MECHANIC_DB_API_KEY` in the environment that launches the active host. **Optional**: with no key the service still answers on an anonymous per-IP tier (2 searches/min, 20/day, vs 20/min and 1000/day with a key). An unset key is therefore not a reason to skip this skill. Never read the key from host or project configuration inside this skill.
 - **DEFAULT_TOP_K** = 300
 - **TIMEOUT_SEC** = 1200 (one call is typically 3-7 min; allow headroom)
 - **MAX_REFINEMENT_ROUNDS** = 3
@@ -505,4 +508,4 @@ When coverage is unsatisfactory, refine and call again (new output path to keep 
 | Polling timeout (>1200 s) | Returns an `isError` result (`polling exceeded …`). | Proceed with other sources. |
 | Job status `failed` / `error` | Returns an `isError` result with the server's error payload. | Proceed with other sources. |
 
-This skill is **an important supplement**, never a replacement: callers (`/research-lit`, `/idea-creator`, `/mhistory`, …) merge its results with their existing sources (arXiv, S2, Zotero, local PDFs, Exa, DeepXiv, WebSearch) and de-duplicate by `paper_id` / `doi` / normalized title.
+This skill is **an important supplement**, never a replacement: callers (`/research-lit`, `/idea-creator`, `/mhistory`, …) merge its results with their existing sources (arXiv, S2, Zotero, local PDFs, Exa, DeepXiv) and de-duplicate by `paper_id` / `doi` / normalized title.

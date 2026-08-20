@@ -1,0 +1,7 @@
+interface:
+  display_name: "Mechanist Search"
+  short_description: "Search and synthesize research across multiple sources"
+  brand_color: "#176B5B"
+  default_prompt: "Use $msearch to search the literature for this topic."
+policy:
+  allow_implicit_invocation: true

@@ -1,19 +1,22 @@
 ---
 name: next-round
-description: "Between-round transition helper for multi-round /auto exploration. Archives the just-finished round's outputs into rounds/round_<N>/ and drafts the next round's task.md with recommended behavior-source/mechanism params, by reading the orchestrator-owned Global Exploration Memory (research_memory.json). Use after a /auto round completes and you want to start a new round — either exploring a NEW behavior (new-behavior) or a NEW mechanism for an already-found behavior (new-mechanism). Reads memory, never writes it."
-argument-hint: "[new-behavior | new-mechanism <behavior-id>]"
+description: "Archive a completed Mechanist round and draft the next task.md for a new behavior or mechanism."
 allowed-tools: Bash(*), Read, Write, Edit, Glob, Grep, AskUserQuestion
 ---
 
+## Host compatibility
+
+Before acting on a historical host tool name, read and apply the bundled `shared-references/host-compatibility.md`. Use the active host capability by meaning; never fabricate or call an unavailable literal tool name.
+
 # Next Round — Archive + Draft the Next `task.md`
 
-You help the user move from one `/auto` round to the next in a multi-round research program. **The user decides what to do; you only assist.** You do exactly three things:
+You help the user move from one `auto`-skill round to the next in a multi-round research program. **The user decides what to do; you only assist.** You do exactly three things:
 
 1. **Archive** this round's outputs into `rounds/round_<N>/`.
 2. **Draft** the next round's `task.md` (a starting point the user edits), with recommended `BEHAVIOR_SOURCE` / `MECHANISM` params.
 3. **Report** what you did and what the user should run next.
 
-You **read** the Global Exploration Memory (`research_memory.json`) for context and recommendations, but you **never write it** — that file is owned solely by `/auto` (see `skills/auto/SKILL.md` → "Global Exploration Memory"). You archive the just-finished round into `rounds/round_<N>/` where `<N>` is the round number resolved in Step 1.
+You **read** the Global Exploration Memory (`research_memory.json`) for context and recommendations, but you **never write it** — that file is owned solely by the `auto` skill (see `skills/auto/SKILL.md` → "Global Exploration Memory"). You archive the just-finished round into `rounds/round_<N>/` where `<N>` is the round number resolved in Step 1.
 
 ## The two re-run intents
 
@@ -21,10 +24,10 @@ The user's next round is one of (read `$ARGUMENTS`; if absent, recommend then co
 
 | Intent | Means | Recommend running |
 |---|---|---|
-| **`new-behavior`** | explore a brand-new phenomenon | `/auto — behavior-source: discovery, mechanism: discovery` |
-| **`new-mechanism <behavior-id>`** | keep an already-found behavior, try a different mechanism direction | `/auto — behavior-source: given, mechanism: discovery` (behavior written into the new `task.md`) |
+| **`new-behavior`** | explore a brand-new phenomenon | the `auto` skill with `behavior-source: discovery, mechanism: discovery` |
+| **`new-mechanism <behavior-id>`** | keep an already-found behavior, try a different mechanism direction | the `auto` skill with `behavior-source: given, mechanism: discovery` (behavior written into the new `task.md`) |
 
-The actual "don't redo concluded work" enforcement happens inside `/auto` (the claim agent reads `research_memory.json` by default). Your drafted `task.md` only needs to carry the direction, the recommended `behavior-source` / `mechanism`, and a human-readable summary of what's been explored.
+The actual "don't redo concluded work" enforcement happens inside the `auto` skill (the claim agent reads `research_memory.json` by default). Your drafted `task.md` only needs to carry the direction, the recommended `behavior-source` / `mechanism`, and a human-readable summary of what's been explored.
 
 ## Workflow
 
@@ -38,8 +41,8 @@ ls -d idea-stage refine-logs verify review-stage 2>/dev/null
 [ -s task.md ] && echo "task.md present" || echo "no task.md"
 ```
 
-- If **no round outputs** are present (`refine-logs/` etc. all absent), there is nothing to transition from — tell the user to run `/auto` first and stop.
-- If **`research_memory.json` is absent** but round outputs exist, `/auto` did not reach its final memory hook (crashed, or the reproduction combo `given`+`given`). You can still archive and draft, but warn that memory-based recommendations and avoid-repeat will be unavailable this transition.
+- If **no round outputs** are present (`refine-logs/` etc. all absent), there is nothing to transition from — tell the user to invoke the `auto` skill first and stop.
+- If **`research_memory.json` is absent** but round outputs exist, the `auto` skill did not reach its final memory hook (crashed, or the reproduction combo `given`+`given`). You can still archive and draft, but warn that memory-based recommendations and avoid-repeat will be unavailable this transition.
 
 ### Step 1 — Determine the round number and read memory
 
@@ -47,7 +50,7 @@ ls -d idea-stage refine-logs verify review-stage 2>/dev/null
 # Round number = highest existing archive slot + 1. Parse the numeric SUFFIX of
 # rounds/round_<k>, not a count — a count recycles a slot when a middle archive was deleted
 # (round_1, round_3 present, round_2 gone → count=2 → 3 collides with round_3). The
-# multi-round guard guarantees prior rounds are archived before a fresh /auto, so max-suffix+1
+# multi-round guard guarantees prior rounds are archived before a fresh auto run, so max-suffix+1
 # is the round whose outputs now sit at root — collision-free and INDEPENDENT of whether
 # memory was written (not-established given-validation/discovery rounds record no mechanisms[] entry;
 # reproduction-combo (given+given) rounds skip the memory write entirely).
@@ -64,7 +67,7 @@ echo "round to archive: $N"
 
 Read `research_memory.json` (when present) for: the overarching `direction`, the list of explored `behaviors[]` (`statement` + `status` + prose `behavior_conclusion` + `impact.assessment` / `recommendation`), and per behavior the tried mechanisms (each entry's `direction` + `family` + `headline` + per-claim `statement` / `method` / `conclusion`), plus `untried_mechanism_directions` per behavior and the root `untried_behavior_directions`. Judge whether a mechanism attempt is stably positive, stably negative, or still open (deferred / integrity-broken / mixed / under-power) from that entry's `headline` + every `claims[].conclusion` — the schema records prose findings, and that is where settlement lives.
 
-Only rounds that produced a scientific outcome are recorded here — `/auto` writes nothing for `ended-needs-decision` exits. If the just-finished round happens to be one of those, memory reflects only the state up to the *previous* recorded round; the operational stop is documented in the archived round's `CLAIMS_LEDGER.md.round_end` for the user to inspect, but this skill does not consult it. Users who ran into a fixable stop are expected to apply the named `remedy` (in `task.md` or in the plan files) before invoking `/next-round`.
+Only rounds that produced a scientific outcome are recorded here — the `auto` skill writes nothing for `ended-needs-decision` exits. If the just-finished round happens to be one of those, memory reflects only the state up to the *previous* recorded round; the operational stop is documented in the archived round's `CLAIMS_LEDGER.md.round_end` for the user to inspect, but this skill does not consult it. Users who ran into a fixable stop are expected to apply the named `remedy` (in `task.md` or in the plan files) before invoking the `next-round` skill.
 
 ### Step 2 — Resolve the intent (+ recommend)
 
@@ -87,7 +90,7 @@ Present the recommendation as the first option; the user always decides. Once re
 Use a **keep-list, not an allowlist**: enumerate what must *stay*, and archive everything else at the project root into `rounds/round_<N>/`. An allowlist of "things to move" silently goes stale every time the pipeline gains a new output type (it has already missed `experiments/`, `results/`, `logs/`, `cache/`, `.mechanist/`); a keep-list is immune to that.
 
 **Keep-list (never archived):**
-- Config / tooling: `.claude/`, `.mcp.json`, `.git/`, `.gitignore`
+- Config / tooling: `.claude/`, `.codex/`, `.agents/`, `AGENTS.md`, `.mcp.json`, `.git/`, `.gitignore`
 - Cross-round memory (orchestrator-owned): `research_memory.json`
 - The archive root itself: `rounds/`
 - Notification archive (cross-round, append-only): `notification/` — the `/notify` skill's briefing log stays at root across rounds, never moved into `rounds/round_<N>/`
@@ -117,7 +120,7 @@ mkdir -p "rounds/round_${N}"
 
 # Keep-list (config / memory / archive-root). mechanic_db_cache is NOT kept — it is
 # archived per round (round-specific literature evidence) via the everything-else sweep.
-keep=( .claude .mcp.json .git .gitignore task.md research_memory.json rounds notification )
+keep=( .claude .codex .agents AGENTS.md .mcp.json .git .gitignore task.md research_memory.json rounds notification )
 # new-mechanism reuses stimuli + activation cache; new-behavior archives them.
 [ "$INTENT" = "new-mechanism" ] && keep+=( data cache )
 
@@ -138,19 +141,19 @@ echo "archived round ${N} → rounds/round_${N}/"
 
 If a path is large and `mv` fails (e.g. cross-device), retry with `rsync -a --remove-source-files` — do not ask permission. Print the plan before moving so the user can eyeball it; if the user pre-flagged a path to keep/move differently, honor that over the defaults.
 
-**If the clobber guard fired (`exit 3`): terminate the entire skill immediately — do not enter Step 4, do not overwrite `task.md`, do not report success.** Relay the error verbatim to the user and stop. Aborting here leaves the root outputs un-archived as-is (the next `/auto`'s multi-round guard will halt on them again, as intended), which avoids the deadlock of a draft-overwritten `task.md` sitting next to stranded prior-round outputs.
+**If the clobber guard fired (`exit 3`): terminate the entire skill immediately — do not enter Step 4, do not overwrite `task.md`, do not report success.** Relay the error verbatim to the user and stop. Aborting here leaves the root outputs un-archived as-is (the next `auto` run's multi-round guard will halt on them again, as intended), which avoids the deadlock of a draft-overwritten `task.md` sitting next to stranded prior-round outputs.
 
 ### Step 4 — Draft the next `task.md`
 
 **Run this step only if Step 3 archived successfully (the clobber guard did not abort).**
 
-Overwrite `task.md` at the project root with a **DRAFT** the user will edit. Keep it short; the avoid-repeat enforcement is `/auto`'s job, so this file just orients the user. Follow `task.md`'s existing language.
+Overwrite `task.md` at the project root with a **DRAFT** the user will edit. Keep it short; the avoid-repeat enforcement is the `auto` skill's job, so this file just orients the user. Follow `task.md`'s existing language.
 
 Template (fill from memory + the archived `task.md`):
 
 ```markdown
-<!-- DRAFT for round <N+1> — generated by /next-round. EDIT before running /auto. -->
-<!-- Recommended: /auto — behavior-source: <discovery | given | given-validation>, mechanism: discovery -->
+<!-- DRAFT for round <N+1> — generated by the next-round skill. EDIT before starting the next round. -->
+<!-- Recommended invocation: Claude Code: /auto — behavior-source: <discovery | given | given-validation>, mechanism: discovery | Codex: $auto — behavior-source: <discovery | given | given-validation>, mechanism: discovery -->
 
 # Research direction
 <carry over the overarching direction from the previous task.md / memory `direction`>
@@ -159,7 +162,7 @@ Template (fill from memory + the archived `task.md`):
 ## Behavior to investigate (this round)
 <the chosen behavior's one-sentence statement — only for new-mechanism>
 
-## Already explored (for reference — /auto will avoid re-doing these)
+## Already explored (for reference — the auto skill will avoid re-doing these)
 - Behavior B1 "<statement>" — status: <established|...>
   - Conclusion: <behavior_conclusion — what is now known about the phenomenon>
   - Impact: <impact.assessment — one-line case>; recommendation: <impact.recommendation>
@@ -168,7 +171,7 @@ Template (fill from memory + the archived `task.md`):
       - C1 — <statement> — <conclusion>
       - C2 — <statement> — <conclusion>
 - Behavior B2 "<statement>" — status: ...; conclusion: ...
-<!-- Pull behavior_conclusion / impact.assessment / mechanism headline / per-claim statement + conclusion from research_memory.json — show the substantive findings and paper-style conclusions (not PASS/FAIL labels, not raw ids), so the human (and the next /auto run) can build on them. Skip mechanisms whose (direction, family) has already been read as stably positive or stably negative — they add noise for the reader; keep the ones the user could realistically retry (deferred / integrity-broken / mixed / under-power). -->
+<!-- Pull behavior_conclusion / impact.assessment / mechanism headline / per-claim statement + conclusion from research_memory.json — show the substantive findings and paper-style conclusions (not PASS/FAIL labels, not raw ids), so the human (and the next auto run) can build on them. Skip mechanisms whose (direction, family) has already been read as stably positive or stably negative — they add noise for the reader; keep the ones the user could realistically retry (deferred / integrity-broken / mixed / under-power). -->
 <!-- new-mechanism: also list this behavior's untried_mechanism_directions as suggestions, and briefly note (from the tried mechanisms' conclusion prose) what has and hasn't been settled so the new direction is complementary. -->
 <!-- new-behavior: this list is the set to avoid; consider untried_behavior_directions: <...> -->
 
@@ -176,9 +179,9 @@ Template (fill from memory + the archived `task.md`):
 <one line: what this round should push on, per the recommendation>
 ```
 
-- **new-behavior**: leave the "Behavior to investigate" section out; fill "Already explored" with all behaviors so the user (and `/auto`) avoid them; surface `untried_behavior_directions` as candidate starting points.
+- **new-behavior**: leave the "Behavior to investigate" section out; fill "Already explored" with all behaviors so the user (and the `auto` skill) avoid them; surface `untried_behavior_directions` as candidate starting points.
 - **new-mechanism**: fill "Behavior to investigate" with the chosen behavior verbatim (this is what `behavior-source: given` reads), and list as suggestions its `untried_mechanism_directions` **plus any direction left `inconclusive`** (unresolved, so still a valid retry target).
-- **re-validate (behavior `inconclusive`)**: fill "Behavior to investigate" with the same behavior; in Notes, point to the M0 weakness from `behavior_conclusion` and what to strengthen (data / contrast / model) so the re-run can resolve it. Recommended param is `behavior-source: given-validation` (it re-opens the plan with the M0 gate). Note: this keeps the prior `data/`/`cache/` (it maps to `INTENT=new-mechanism`), so if strengthening M0 needs new/stronger data, tell the user to delete `data/` (and `cache/`) before running `/auto` — otherwise the kept stimuli are reused.
+- **re-validate (behavior `inconclusive`)**: fill "Behavior to investigate" with the same behavior; in Notes, point to the M0 weakness from `behavior_conclusion` and what to strengthen (data / contrast / model) so the re-run can resolve it. Recommended param is `behavior-source: given-validation` (it re-opens the plan with the M0 gate). Note: this keeps the prior `data/`/`cache/` (it maps to `INTENT=new-mechanism`), so if strengthening M0 needs new/stronger data, tell the user to delete `data/` (and `cache/`) before invoking the `auto` skill — otherwise the kept stimuli are reused.
 
 ### Step 5 — Report
 
@@ -187,13 +190,13 @@ Print a concise summary:
 ```
 [next-round] archived round <N> → rounds/round_<N>/
 [next-round] intent: <new-behavior | new-mechanism <behavior-id>>
-[next-round] drafted task.md for round <N+1> (recommended: /auto — behavior-source: <...>, mechanism: <...>)
-Next: edit task.md, then run /auto.
+[next-round] drafted task.md for round <N+1>
+Next: edit task.md, then invoke the auto skill (Claude Code: /auto — behavior-source: <...>, mechanism: <...>; Codex: $auto — behavior-source: <...>, mechanism: <...>).
 ```
 
 ## Key Rules
 
-- **You read memory, never write it.** `research_memory.json` is owned by `/auto`. Do not edit it, do not move it.
+- **You read memory, never write it.** `research_memory.json` is owned by the `auto` skill. Do not edit it, do not move it.
 - **The user decides.** When intent is ambiguous, recommend (first option) and confirm with `AskUserQuestion`; never silently pick.
 - **Archive is non-destructive.** Move outputs into `rounds/round_<N>/`; keep a copy of the round's `task.md`; never overwrite an existing `rounds/round_<N>/`. If the target already has contents, this is a **hard failure (exit 3)**, not a silent skip: abort the entire skill and never go on to overwrite `task.md` while this round's outputs remain un-archived at root.
-- **The drafted `task.md` is a starting point, not the source of truth.** Avoid-repeat is enforced by `/auto` reading memory; the draft just orients the human.
+- **The drafted `task.md` is a starting point, not the source of truth.** Avoid-repeat is enforced by the `auto` skill reading memory; the draft just orients the human.

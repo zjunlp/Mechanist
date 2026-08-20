@@ -1,9 +1,12 @@
 ---
 name: research-review
-description: Get a deep critical review of research from an external LLM reviewer via llm-chat MCP. Use when user says "review my research", "help me review", "get external review", or wants critical feedback on research ideas, papers, or experimental results.
-argument-hint: [topic-or-scope]
+description: "Get rigorous external-LLM criticism of research ideas, papers, plans, or experimental results."
 allowed-tools: Bash(*), Read, Grep, Glob, Write, Edit, Agent, mcp__llm-chat__chat
 ---
+
+## Host compatibility
+
+Before acting on a historical host tool name, read and apply the bundled `shared-references/host-compatibility.md`. Use the active host capability by meaning; never fabricate or call an unavailable literal tool name.
 
 # Research Review via llm-chat MCP
 
@@ -16,45 +19,14 @@ Get a multi-round critical review of research work from an external LLM.
 
 ## Reviewer LLM Configuration (mandatory, read first)
 
-This skill calls an external LLM reviewer. **Never hardcode a model name and never read the reviewer model from `task.md` / project READMEs / source comments.** Project-level files may list available API keys for unrelated purposes (e.g., LLM-as-judge inside experiment code); those are *not* the reviewer config.
-
-Resolve `LLM_MODEL`, `LLM_BASE_URL`, `LLM_API_KEY` strictly in this priority order before any reviewer call:
-
-1. **Project MCP config** — `${PROJECT_ROOT}/.mcp.json`, field `mcpServers["llm-chat"].env.{LLM_MODEL,LLM_BASE_URL,LLM_API_KEY}`.
-2. **User MCP config** — `~/.claude/settings.json`, same field.
-3. **Shell environment** — `$LLM_MODEL`, `$LLM_BASE_URL`, `$LLM_API_KEY`.
-
-### Pre-flight check (run before Step 2, mandatory)
-
-```bash
-LLM_MODEL_SRC=""
-if [ -f .mcp.json ] && jq -e '.mcpServers["llm-chat"].env.LLM_MODEL' .mcp.json >/dev/null 2>&1 ; then
-  export LLM_MODEL=$(jq -r '.mcpServers["llm-chat"].env.LLM_MODEL' .mcp.json)
-  export LLM_BASE_URL=$(jq -r '.mcpServers["llm-chat"].env.LLM_BASE_URL' .mcp.json)
-  export LLM_API_KEY=$(jq -r '.mcpServers["llm-chat"].env.LLM_API_KEY' .mcp.json)
-  LLM_MODEL_SRC="project .mcp.json"
-elif [ -f ~/.claude/settings.json ] && jq -e '.mcpServers["llm-chat"].env.LLM_MODEL' ~/.claude/settings.json >/dev/null 2>&1 ; then
-  export LLM_MODEL=$(jq -r '.mcpServers["llm-chat"].env.LLM_MODEL' ~/.claude/settings.json)
-  export LLM_BASE_URL=$(jq -r '.mcpServers["llm-chat"].env.LLM_BASE_URL' ~/.claude/settings.json)
-  export LLM_API_KEY=$(jq -r '.mcpServers["llm-chat"].env.LLM_API_KEY' ~/.claude/settings.json)
-  LLM_MODEL_SRC="user ~/.claude/settings.json"
-elif [ -n "$LLM_MODEL" ] && [ -n "$LLM_BASE_URL" ] && [ -n "$LLM_API_KEY" ] ; then
-  LLM_MODEL_SRC="shell env"
-fi
-echo "[reviewer-config] LLM_MODEL=$LLM_MODEL  LLM_BASE_URL=$LLM_BASE_URL  source=$LLM_MODEL_SRC"
-```
-
-**Hard-fail rule**: If `LLM_MODEL` is empty after this resolution (none of the three sources provides it), the skill MUST abort with:
-> "Reviewer model not configured. Add `mcpServers.llm-chat.env.{LLM_MODEL,LLM_BASE_URL,LLM_API_KEY}` to `.mcp.json` (project) or `~/.claude/settings.json` (user)."
-
-Do not guess a default. Do not fall back to a model name read from `task.md` or any other project file.
+Read and follow `../shared-references/reviewer-runtime.md`. The MCP server owns provider configuration and credentials; this skill never reads host config or project files for secrets.
 
 ## Context: $ARGUMENTS
 
 ## Prerequisites
 
-- **llm-chat MCP Server** configured in `~/.claude/settings.json` with `LLM_API_KEY`, `LLM_BASE_URL`, and `LLM_MODEL`.
-- This gives Claude Code access to the `mcp__llm-chat__chat` tool.
+- The active host exposes the bundled `llm-chat` MCP chat tool.
+- Reviewer credentials are present in the environment that launched the host.
 
 ## Workflow
 

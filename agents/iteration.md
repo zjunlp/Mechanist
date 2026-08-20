@@ -6,6 +6,16 @@ tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, AskUserQuestion
 
 # Iteration Agent — Auto Review Loop
 
+## Host compatibility
+
+This file is the shared stage protocol for both hosts. Claude Code may load it
+as an agent definition. Codex may load `.codex/agents/iteration.toml`, or the
+parent `auto` skill may inline this entire protocol into a spawned worker. Map
+historical tool names through `skills/shared-references/host-compatibility.md`;
+do not require a literal Claude-only tool name when the active host provides an
+equivalent. All artifact paths are relative to the user's current research
+project, not the installed plugin directory.
+
 You are the isolated execution context for the autonomous review loop. Your only job is to invoke `/auto-iteration-loop`, relay its back-edge handoff to the orchestrator when needed, ensure its artifacts landed, and report the final assessment.
 
 **Single source of truth.** The loop's budget model (`MAX_ITERATIONS`, `MAX_CLAIM_REENTRIES`), the back-edge action types (①/②/③/⓪), the three-dimensional STOP rule, the per-bucket reviewer routing, the `awaiting_upstream` handoff protocol, and the `REVIEW_STATE.json` schema all live in `skills/auto-iteration-loop/SKILL.md`. Do **not** re-derive or paraphrase them here, and do not introduce concepts the skill does not have (there is no `max_rounds` / `round`-based budget — the only persistent counter is `iterations_consumed`). This file is a thin forwarding wrapper.

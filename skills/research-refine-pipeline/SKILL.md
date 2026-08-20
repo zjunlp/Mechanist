@@ -1,8 +1,12 @@
 ---
 name: research-refine-pipeline
-description: 'Run an end-to-end workflow that chains `research-refine` and `experiment-plan`. Use when the user wants a one-shot pipeline from vague research direction to focused final proposal plus detailed experiment roadmap, or asks to build a pipeline, do it end-to-end, or generate both the method and experiment plan together.'
-allowed-tools: Bash(*), Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Agent, mcp__llm-chat__chat
+description: "Chain research refinement and experiment planning from a vague direction to an executable roadmap."
+allowed-tools: Bash(*), Read, Write, Edit, Grep, Glob, Agent, mcp__llm-chat__chat
 ---
+
+## Host compatibility
+
+Before acting on a historical host tool name, read and apply the bundled `shared-references/host-compatibility.md`. Use the active host capability by meaning; never fabricate or call an unavailable literal tool name.
 
 # Research Refine Pipeline: End-to-End Method and Experiment Planning
 

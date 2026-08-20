@@ -1,0 +1,39 @@
+{
+  "name": "mechanist",
+  "version": "0.1.0+codex.20260820082147",
+  "description": "Mechanist \u2014 AI Systems as Scientific Instruments for Understanding the Mechanisms of Intelligence.",
+  "author": {
+    "name": "zjunlp",
+    "url": "https://github.com/zjunlp"
+  },
+  "homepage": "http://mechanist.openkg.cn",
+  "repository": "https://github.com/zjunlp/Mechanist",
+  "license": "MIT",
+  "keywords": [
+    "research",
+    "experiments",
+    "literature-review",
+    "auto-pipeline",
+    "mcp",
+    "science"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Mechanist",
+    "shortDescription": "Autonomous research agent for mechanistic interpretability",
+    "longDescription": "Coordinates literature review, hypothesis formulation, experiment execution, verification, and iterative refinement for mechanistic interpretability research.",
+    "developerName": "zjunlp",
+    "category": "Research",
+    "capabilities": [
+      "Read",
+      "Write",
+      "Run"
+    ],
+    "defaultPrompt": [
+      "Run the Mechanist research pipeline",
+      "Plan a mechanistic interpretability experiment",
+      "Audit these experiment results"
+    ]
+  }
+}

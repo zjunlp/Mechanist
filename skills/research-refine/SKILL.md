@@ -1,8 +1,12 @@
 ---
 name: research-refine
-description: 'Turn a vague research direction into a problem-anchored, elegant, frontier-aware, implementation-oriented method plan via iterative external LLM review (llm-chat MCP). Use when the user says "refine my approach", "decompose this problem", "refine research plan", or wants a concrete research method that stays simple, focused, and top-venue ready instead of a vague or overbuilt idea.'
-allowed-tools: Bash(*), Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Agent, mcp__llm-chat__chat
+description: "Refine a vague research direction into an implementable method plan through iterative external review."
+allowed-tools: Bash(*), Read, Write, Edit, Grep, Glob, Agent, mcp__llm-chat__chat
 ---
+
+## Host compatibility
+
+Before acting on a historical host tool name, read and apply the bundled `shared-references/host-compatibility.md`. Use the active host capability by meaning; never fabricate or call an unavailable literal tool name.
 
 # Research Refine: Problem-Anchored, Elegant, Frontier-Aware Plan Refinement
 

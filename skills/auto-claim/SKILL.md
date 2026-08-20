@@ -1,9 +1,12 @@
 ---
 name: auto-claim
-description: "Workflow 1: Claim-stage pipeline, controlled by two orthogonal axes. BEHAVIOR_SOURCE selects the behavior stage: `given` (default; behavior taken from task.md and assumed to hold — no ideation, no novelty, no M0), `given-validation` (behavior taken from task.md but the experiment plan opens with an M0 phenomenon-validation gate), or `discovery` (mine a NEW behavior via /mechanism-behavior-discovery + full ideation: research-lit → idea-creator → novelty-check → impact-check → research-review → research-refine-pipeline, impact-first ranking; plan opens with M0). MECHANISM selects the mechanism stage: `discovery` (default; system routes — claim loads /mechanism-explore to shape direction) or `given` (user named the mechanism method/family in task.md — capture it and forward as CHOSEN_FAMILY, no routing). resource_fidelity:strict (exact models/datasets, no downscaling) is stamped iff BEHAVIOR_SOURCE=given AND MECHANISM=given (the reproduction combination). Always emits `idea-stage/IDEA_REPORT.md` + `refine-logs/{FINAL_PROPOSAL,EXPERIMENT_PLAN}.md`. Use when user says \"idea discovery pipeline\", \"full idea-finding workflow\", \"find a research direction from scratch\", \"reproduce task.md\", or wants the claim stage of /auto."
-argument-hint: [research-direction]
-allowed-tools: Bash(*), Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Agent, AskUserQuestion, Skill, mcp__llm-chat__chat
+description: "Run the claim stage from task.md or a direction; write the idea report, proposal, and experiment plan."
+allowed-tools: Bash(*), Read, Write, Edit, Grep, Glob, Agent, AskUserQuestion, Skill, mcp__llm-chat__chat
 ---
+
+## Host compatibility
+
+Before acting on a historical host tool name, read and apply the bundled `shared-references/host-compatibility.md`. Use the active host capability by meaning; never fabricate or call an unavailable literal tool name.
 
 # Workflow 1: Claim Stage — Behavior (given / given-validation / discovery) × Mechanism (given / discovery)
 
@@ -125,7 +128,7 @@ Summarize the reference paper before searching the literature:
    - Read the PDF directly (first 5 pages)
 
 3. **If other URL**:
-   - Fetch and extract content via WebFetch
+   - Fetch and extract content via
 
 4. **Generate `idea-stage/REF_PAPER_SUMMARY.md`**:
 

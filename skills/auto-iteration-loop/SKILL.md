@@ -1,9 +1,12 @@
 ---
 name: auto-iteration-loop
-description: Autonomous research review loop that consumes /auto-verify's four-state output (PASS / FAIL / INCONCLUSIVE / ZERO_ELIGIBLE_VARIANTS / deferred) and routes each claim to the right back-edge — brief audit, two-phase FAIL handling (variant-integrity fix then optional claim-stage re-entry), main-experiment-script fix, or variant-only fix — under a unified iteration budget. Configure the reviewer LLM via llm-chat MCP server or environment variables. Trigger with "auto review loop llm" or "llm review".
-argument-hint: [research-direction]
-allowed-tools: Bash(*), Read, Grep, Glob, Write, Edit, WebSearch, WebFetch, Agent, AskUserQuestion, Skill, mcp__llm-chat__chat
+description: "Run bounded reviewer-driven fixes after auto-verify. Use for the autonomous review loop or LLM review iteration."
+allowed-tools: Bash(*), Read, Grep, Glob, Write, Edit, Agent, AskUserQuestion, Skill, mcp__llm-chat__chat
 ---
+
+## Host compatibility
+
+Before acting on a historical host tool name, read and apply the bundled `shared-references/host-compatibility.md`. Use the active host capability by meaning; never fabricate or call an unavailable literal tool name.
 
 # Auto Iteration Loop: Adversarial Review with Bounded Back-Edges
 
@@ -41,68 +44,7 @@ Autonomously iterate over `/auto-verify`'s per-claim verdicts: review → implem
 
 ## Reviewer LLM Configuration (mandatory, read first)
 
-This skill calls an external LLM reviewer. **Never hardcode a model name and never read the reviewer model from `task.md` / project READMEs / source comments.** Project-level files may list available API keys for unrelated purposes (e.g., LLM-as-judge inside experiment code); those are *not* the reviewer config.
-
-Resolve `LLM_MODEL`, `LLM_BASE_URL`, `LLM_API_KEY` strictly in this priority order before any reviewer call:
-
-1. **Project MCP config** — `${PROJECT_ROOT}/.mcp.json`, field `mcpServers["llm-chat"].env.{LLM_MODEL,LLM_BASE_URL,LLM_API_KEY}`.
-2. **User MCP config** — `~/.claude/settings.json`, same field.
-3. **Shell environment** — `$LLM_MODEL`, `$LLM_BASE_URL`, `$LLM_API_KEY`.
-
-### Pre-flight check (run before Phase A of every iteration, mandatory)
-
-```bash
-LLM_MODEL_SRC=""
-if [ -f .mcp.json ] && jq -e '.mcpServers["llm-chat"].env.LLM_MODEL' .mcp.json >/dev/null 2>&1 ; then
-  export LLM_MODEL=$(jq -r '.mcpServers["llm-chat"].env.LLM_MODEL' .mcp.json)
-  export LLM_BASE_URL=$(jq -r '.mcpServers["llm-chat"].env.LLM_BASE_URL' .mcp.json)
-  export LLM_API_KEY=$(jq -r '.mcpServers["llm-chat"].env.LLM_API_KEY' .mcp.json)
-  LLM_MODEL_SRC="project .mcp.json"
-elif [ -f ~/.claude/settings.json ] && jq -e '.mcpServers["llm-chat"].env.LLM_MODEL' ~/.claude/settings.json >/dev/null 2>&1 ; then
-  export LLM_MODEL=$(jq -r '.mcpServers["llm-chat"].env.LLM_MODEL' ~/.claude/settings.json)
-  export LLM_BASE_URL=$(jq -r '.mcpServers["llm-chat"].env.LLM_BASE_URL' ~/.claude/settings.json)
-  export LLM_API_KEY=$(jq -r '.mcpServers["llm-chat"].env.LLM_API_KEY' ~/.claude/settings.json)
-  LLM_MODEL_SRC="user ~/.claude/settings.json"
-elif [ -n "$LLM_MODEL" ] && [ -n "$LLM_BASE_URL" ] && [ -n "$LLM_API_KEY" ] ; then
-  LLM_MODEL_SRC="shell env"
-fi
-echo "[reviewer-config] LLM_MODEL=$LLM_MODEL  LLM_BASE_URL=$LLM_BASE_URL  source=$LLM_MODEL_SRC"
-```
-
-**Hard-fail rule**: If `LLM_MODEL` is empty after this resolution (none of the three sources provides it), the skill MUST abort with:
-> "Reviewer model not configured. Add `mcpServers.llm-chat.env.{LLM_MODEL,LLM_BASE_URL,LLM_API_KEY}` to `.mcp.json` (project) or `~/.claude/settings.json` (user)."
-
-Do not guess a default. Do not fall back to a model name read from `task.md` or any other project file.
-
-> The earlier `## LLM Configuration` example block in older versions of this skill (which duplicated the same `llm-chat` MCP setup) has been removed — the authoritative config resolution is the priority order above. For a worked `.mcp.json` example, see `mcp-servers/llm-chat/` in the project repo.
-
-## API Call Method
-
-**Primary: MCP Tool**
-
-```
-mcp__llm-chat__chat:
-  prompt: |
-    [Review prompt content]
-  model: "${LLM_MODEL}"   # resolved per "Reviewer LLM Configuration" priority order above — never hardcode
-  system: "You are a senior ML reviewer..."
-```
-
-**Fallback: curl**
-
-```bash
-curl -s "${LLM_BASE_URL}/chat/completions" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer ${LLM_API_KEY}" \
-  -d '{
-    "model": "${LLM_MODEL}",
-    "messages": [
-      {"role": "system", "content": "You are a senior ML reviewer..."},
-      {"role": "user", "content": "[review prompt]"}
-    ],
-    "max_tokens": 4096
-  }'
-```
+Read and follow `../shared-references/reviewer-runtime.md`. The MCP server owns provider configuration and credentials; this skill never reads host config or project files for secrets. Use the bundled `llm-chat` MCP tool for reviewer calls; do not fall back to direct HTTP.
 
 ## State Persistence (Compact Recovery)
 

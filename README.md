@@ -56,7 +56,7 @@
 
 **Mechanist** converts a research question about the internal mechanisms of large language models into **evidence-backed findings**. It coordinates a complete research workflow: literature retrieval, hypothesis formulation, experiment implementation and execution, robustness validation, and iterative refinement — all within a single autonomous pipeline.
 
-**Mechanist ships as a Claude Code plugin** — no repository clone required. Install it in minutes, hand it a research question, and it runs the experiments on your own machine and GPUs, then hands back a verifiable research report. (Codex support is coming soon.)
+**Mechanist ships as a Claude Code and Codex plugin.** Install it, hand it a research question, and it runs the experiments on your own machine and GPUs, then hands back a verifiable research report. See [Codex compatibility and local installation](docs/codex_compatibility.md) for the Codex development workflow.
 
 For the latest install and walkthrough, see the [Quick Start](http://mechanist.openkg.cn/#/quick-start) page on the website.
 
@@ -91,6 +91,8 @@ All results are tracked in a **Claim Ledger** (`CLAIMS_LEDGER.md`) that records 
 ---
 
 ## 🔧 Installation
+
+> **Codex users:** follow [Codex compatibility and local installation](docs/codex_compatibility.md). Plugins are supported in Codex CLI and Codex in the ChatGPT desktop app, not the Codex IDE extension. The Claude Code steps below remain unchanged.
 
 ### 1. Install Claude Code and uv
 
@@ -338,7 +340,7 @@ After a `/auto` run completes, use `/next-round` to archive the round's artifact
 /next-round
 ```
 
-Before archiving, `/next-round` prints what will be moved and what will stay. Artifacts go into `rounds/round_<N>/`, while `task.md`, `research_memory.*`, `.claude/`, `.mcp.json`, and `.git` remain in the root. The `new-mechanism` variant additionally preserves `data/` and `cache/` to reuse activations from the same behavior.
+Before archiving, `/next-round` prints what will be moved and what will stay. Artifacts go into `rounds/round_<N>/`, while `task.md`, `research_memory.*`, host configuration (`.claude/`, `.codex/`, `.agents/`, `AGENTS.md`, `.mcp.json`), and `.git` remain in the root. The `new-mechanism` variant additionally preserves `data/` and `cache/` to reuse activations from the same behavior.
 
 **Multi-round guard:** Each `/auto` start checks for unarchived artifacts from the previous round in the root directory. If found, it halts and prompts you to either run `/next-round` (archive and proceed — recommended), `resume: true` (continue the unfinished round), or manually delete the listed artifacts. This guard fires even in fully automatic mode — it will never silently overwrite a previous round's work.
 

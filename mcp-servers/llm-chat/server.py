@@ -10,6 +10,7 @@ Environment Variables:
 
 Supported Providers (examples):
     OpenAI:      LLM_BASE_URL=https://api.openai.com/v1 LLM_MODEL=gpt-5.6-luna
+    Claude:      LLM_BASE_URL=https://api.anthropic.com/v1 LLM_MODEL=claude-opus-4-8
     DeepSeek:    LLM_BASE_URL=https://api.deepseek.com/v1 LLM_MODEL=deepseek-v4-flash
     Kimi:        LLM_BASE_URL=https://api.moonshot.cn/v1 LLM_MODEL=moonshot-v1-32k
     MiniMax:     LLM_BASE_URL=https://api.minimax.io/v1 LLM_MODEL=MiniMax-M2.7
@@ -26,11 +27,11 @@ sys.stdout = os.fdopen(sys.stdout.fileno(), 'wb', buffering=0)
 sys.stdin = os.fdopen(sys.stdin.fileno(), 'rb', buffering=0)
 
 # Configuration from environment
-API_KEY = os.environ.get("LLM_API_KEY", "")
-BASE_URL = os.environ.get("LLM_BASE_URL", "https://api.openai.com/v1")
-DEFAULT_MODEL = os.environ.get("LLM_MODEL", "gpt-5.6-luna")
-FALLBACK_MODEL = os.environ.get("LLM_FALLBACK_MODEL", "gpt-5.6-luna")
-SERVER_NAME = os.environ.get("LLM_SERVER_NAME", "llm-chat")
+API_KEY = os.environ.get("LLM_API_KEY") or ""
+BASE_URL = os.environ.get("LLM_BASE_URL") or "https://api.openai.com/v1"
+DEFAULT_MODEL = os.environ.get("LLM_MODEL") or "gpt-5.6-luna"
+FALLBACK_MODEL = os.environ.get("LLM_FALLBACK_MODEL") or "gpt-5.6-luna"
+SERVER_NAME = os.environ.get("LLM_SERVER_NAME") or "llm-chat"
 
 # Debug logging
 DEBUG_LOG = os.path.join(tempfile.gettempdir(), f"{SERVER_NAME}-mcp-debug.log")

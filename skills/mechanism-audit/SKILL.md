@@ -1,9 +1,12 @@
 ---
 name: mechanism-audit
-description: "Audit the **mechanistic experiment rigor** for a specific claim. Catalogue currently has six slots A–F: A (steering coefficient sweep) is implemented; B–F are reserved for future checks (direction extraction quality, site/layer selection, n_effective sufficiency, probe-vs-causal disentanglement, intervention scope). Uses cross-model review (external LLM reviewer via llm-chat MCP). Complementary to `/experiment-audit` (which audits evaluation methodology, not mechanism tuning). The output `overall_verdict` (PASS/WARN/FAIL/N/A) is THIS claim's mechanism-rigor verdict — i.e., whether the interpretability mechanism backing this claim was tuned with the necessary controls. Returns N/A when the claim's experiment does not use any mechanism intervention (e.g., pure dataset evaluation). Does NOT judge methodology honesty (that is `/experiment-audit`'s job) or semantic claim support (that is `/result-to-claim`'s job)."
-argument-hint: <experiment-dir-or-results-path> — claim <Cx> [— output-dir <path>]
+description: "Audit one claim's mechanistic rigor before making a causal interpretation of intervention results."
 allowed-tools: Bash(*), Read, Write, Edit, Grep, Glob, Agent, mcp__llm-chat__chat
 ---
+
+## Host compatibility
+
+Before acting on a historical host tool name, read and apply the bundled `shared-references/host-compatibility.md`. Use the active host capability by meaning; never fabricate or call an unavailable literal tool name.
 
 # Mechanism Audit: Per-Claim Cross-Model Mechanism-Rigor Verification
 
@@ -139,40 +142,7 @@ If `— claim` is omitted, abort with:
 
 ## Reviewer LLM Configuration (mandatory, read first)
 
-This skill calls an external LLM reviewer. **Never hardcode a model name and never read the reviewer model from `task.md` / project READMEs / source comments.** Project-level files may list available API keys for unrelated purposes (e.g., LLM-as-judge inside experiment code); those are *not* the reviewer config.
-
-Resolve `LLM_MODEL`, `LLM_BASE_URL`, `LLM_API_KEY` strictly in this priority order before any reviewer call:
-
-1. **Project MCP config** — `${PROJECT_ROOT}/.mcp.json`, field `mcpServers["llm-chat"].env.{LLM_MODEL,LLM_BASE_URL,LLM_API_KEY}`.
-2. **User MCP config** — `~/.claude/settings.json`, same field.
-3. **Shell environment** — `$LLM_MODEL`, `$LLM_BASE_URL`, `$LLM_API_KEY`.
-
-### Pre-flight check (run before Step 4 — skip on Step 2 early N/A exit)
-
-```bash
-LLM_MODEL_SRC=""
-if [ -f .mcp.json ] && jq -e '.mcpServers["llm-chat"].env.LLM_MODEL' .mcp.json >/dev/null 2>&1 ; then
-  export LLM_MODEL=$(jq -r '.mcpServers["llm-chat"].env.LLM_MODEL' .mcp.json)
-  export LLM_BASE_URL=$(jq -r '.mcpServers["llm-chat"].env.LLM_BASE_URL' .mcp.json)
-  export LLM_API_KEY=$(jq -r '.mcpServers["llm-chat"].env.LLM_API_KEY' .mcp.json)
-  LLM_MODEL_SRC="project .mcp.json"
-elif [ -f ~/.claude/settings.json ] && jq -e '.mcpServers["llm-chat"].env.LLM_MODEL' ~/.claude/settings.json >/dev/null 2>&1 ; then
-  export LLM_MODEL=$(jq -r '.mcpServers["llm-chat"].env.LLM_MODEL' ~/.claude/settings.json)
-  export LLM_BASE_URL=$(jq -r '.mcpServers["llm-chat"].env.LLM_BASE_URL' ~/.claude/settings.json)
-  export LLM_API_KEY=$(jq -r '.mcpServers["llm-chat"].env.LLM_API_KEY' ~/.claude/settings.json)
-  LLM_MODEL_SRC="user ~/.claude/settings.json"
-elif [ -n "$LLM_MODEL" ] && [ -n "$LLM_BASE_URL" ] && [ -n "$LLM_API_KEY" ] ; then
-  LLM_MODEL_SRC="shell env"
-fi
-echo "[reviewer-config] LLM_MODEL=$LLM_MODEL  LLM_BASE_URL=$LLM_BASE_URL  source=$LLM_MODEL_SRC"
-```
-
-**Skip rule.** If Step 2 took the early N/A exit (no implemented check triggered), the reviewer call in Step 4 never runs — skip this pre-flight too. A pure-evaluation claim must not be aborted just because the project lacks a reviewer key it would never use.
-
-**Hard-fail rule**: If the pre-flight runs (i.e., at least one check triggered) and `LLM_MODEL` is empty after this resolution (none of the three sources provides it), the skill MUST abort with:
-> "Reviewer model not configured. Add `mcpServers.llm-chat.env.{LLM_MODEL,LLM_BASE_URL,LLM_API_KEY}` to `.mcp.json` (project) or `~/.claude/settings.json` (user)."
-
-Do not guess a default. Do not fall back to a model name read from `task.md` or any other project file.
+Read and follow `../shared-references/reviewer-runtime.md`. The MCP server owns provider configuration and credentials; this skill never reads host config or project files for secrets.
 
 ## Workflow
 
@@ -541,7 +511,7 @@ if combined == "fail":
 ## Acknowledgements
 
 Check A's failure-mode catalog and audit logic are concentrated from
-`experiment-tips/steering-coefficient-tuning/SKILL.md`.
+`experiment-tips/steering-coefficient-tuning/WORKFLOW.md`.
 
 ## Review Tracing
 

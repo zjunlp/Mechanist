@@ -1,15 +1,63 @@
 ---
 name: auto
-description: "Autonomous pipeline: claim → experiment (mechanism routing folded in) → verify → iteration. Each stage is delegated to an isolated agent with its own context window and configurable model. Gates are AUTO_PROCEED-governed; defaults run end-to-end without human input. Use when user says \"auto pipeline\", or wants the core stages chained without confirmation."
-argument-hint: [research-direction (optional; falls back to task.md when omitted)]
-allowed-tools: Bash(*), Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Agent, AskUserQuestion, Skill, CronCreate, CronList, mcp__llm-chat__chat
+description: "Run Mechanist end to end: claim, experiment, verification, and bounded iteration. Use for an autonomous research pipeline."
+allowed-tools: Bash(*), Read, Write, Edit, Grep, Glob, Agent, AskUserQuestion, Skill, CronCreate, CronList, mcp__llm-chat__chat
 ---
+
+## Host compatibility
+
+Before acting on a historical host tool name, read and apply the bundled `shared-references/host-compatibility.md`. Use the active host capability by meaning; never fabricate or call an unavailable literal tool name.
 
 # Auto Pipeline: Idea → Experiments → Verify → Review
 
 End-to-end autonomous run for: **$ARGUMENTS** (when provided) or the project's `task.md` (when `$ARGUMENTS` is empty).
 
+Before executing this workflow, read `../shared-references/host-compatibility.md`
+and map the historical Claude Code tool names to the active host. On Codex,
+`$ARGUMENTS` means the current skill invocation text/options.
+
 Each stage runs in a dedicated agent (isolated context + configurable model). The orchestrator only sees each agent's final summary and the files on disk — it uses those to fire the gates between stages.
+
+## Host-portable stage dispatch
+
+The four stage protocols are shared files at `../../agents/{claim,experiment,verify,iteration}.md`
+relative to this skill. Dispatch them sequentially; later stages consume files
+written by earlier stages and therefore must not run in parallel.
+
+### Claude Code
+
+Use the Claude Code `Agent` tool and the corresponding `agents/<stage>.md`
+definition. Preserve the existing isolated-context behavior.
+
+### Codex
+
+Use a Codex subagent for every stage. Project checkouts also expose named
+custom agents under `.codex/agents/{claim,experiment,verify,iteration}.toml`.
+When a named custom agent is available, spawn that agent. For an installed
+plugin where project-level custom-agent files are not loaded, use the built-in
+worker agent and construct an equivalent self-contained prompt as follows:
+
+1. Read the complete `agents/<stage>.md` file from the installed plugin.
+2. Inline its complete body in the subagent prompt under `## Stage protocol`.
+3. Prepend the orchestrator-authored HARD CONSTRAINTS and NOTICE blocks.
+4. Append the resolved invocation arguments, expected artifacts, current
+   project working directory, and active output language.
+5. Explicitly instruct the subagent to use the bundled stage skill named by
+   the protocol and the host mappings in
+   `../shared-references/host-compatibility.md`.
+6. Spawn exactly one stage subagent, wait for it to finish, then verify the
+   stage's required artifacts from the main thread before continuing.
+
+Subagents inherit the parent sandbox and approvals. If spawning is disabled or
+unavailable, execute the same stage protocol in the current context, preserve
+the same artifact boundary, and log `[host-fallback] stage=<stage> executed in
+parent context — Codex subagents unavailable`. A missing custom-agent name is
+not a reason to skip a stage because the inlined-protocol fallback is complete.
+
+For an `awaiting_upstream` iteration handoff, spawn a fresh appropriate stage
+subagent for each queued call in order, verify its artifacts, then spawn a fresh
+iteration subagent with `resume: true`. Never reuse a completed child context
+as a substitute for the persisted on-disk state.
 
 > **⏰ First action — register the hourly notification timer.** Before any pipeline work, if `task.md` opts into notifications (see the Notifications rule in [Key Rules](#key-rules)), register a **recurring scheduled task** with `CronCreate` (cron `<off-minute> * * * *` — one call per hour, pick a minute ≠ 0/30; prompt: `/notify hourly`). This fires the hourly briefing on a real wall-clock timer instead of relying on the orchestrator remembering to poll during long waits. The timer is the **sole** source of the hourly cadence — the orchestrator never separately polls or manually fires `/notify hourly`. Register it **once, up front** — first `CronList` to check an equivalent `/notify hourly` job is not already scheduled (e.g. on resume), and skip if so. When `task.md` does **not** opt into notifications, skip this entirely (no timer). The timer covers only the hourly cadence; the event-driven `/notify` touchpoints (progress / done / halted / approval-needed) are separate and stay orchestrator-initiated (see [Key Rules](#key-rules)).
 
@@ -26,8 +74,8 @@ Each stage runs in a dedicated agent (isolated context + configurable model). Th
 | `AUTO_PROCEED` | `true` | When `true`, gates skip the UI prompt entirely and directly pick the recommended option. When `false`, the orchestrator calls `AskUserQuestion` and waits for the user. |
 | `RESUME` | `false` | When `true`, the orchestrator skips any stage whose final artifacts already exist non-empty on disk, and forwards `resume: true` to each invoked agent so sub-skills can do phase-level skipping too. Useful for picking up after a crash, or for re-running only the missing stages. Default `false` = always run every stage from scratch (and overwrite previous artifacts). |
 | `REVIEW_LOOP` | `true` | Run iteration after verify; set `false` to stop at verify. |
-| `MODEL` | _none_ | Global model **family** alias applied to every stage whose `<STAGE>_MODEL` is unset. Accepts `opus` / `sonnet` / `haiku` (case-insensitive). Per-stage `<STAGE>_MODEL` always wins over this. When both are unset, the stage uses its frontmatter `model:` line if present, else inherits the session model (`claude --model …`). |
-| `<STAGE>_MODEL` | _none_ | Per-stage model **family** override for any of `CLAIM`, `EXPERIMENT`, `VERIFY`, `ITERATION`. Accepts **only family aliases**: `opus`, `sonnet`, `haiku` (case-insensitive). When unset, falls back to the global `MODEL`, then the agent's frontmatter `model:` line if present, else the session model (`claude --model …`). **Pinning lives only in `agents/<name>.md` frontmatter** — add a `model:` line to pin a stage, leave it absent to inherit the session model. CLI/frontmatter aliases resolve to the family's *latest* version (`opus` → newest opus, not `claude-opus-4-x`), so running a stage at *exactly* the session model requires an absent frontmatter `model:`. |
+| `MODEL` | _none_ | Global host-native model identifier applied to every stage whose `<STAGE>_MODEL` is unset. Claude Code accepts its aliases such as `opus`, `sonnet`, and `haiku`; Codex accepts Codex model IDs. Per-stage overrides win. When omitted, inherit the session model. |
+| `<STAGE>_MODEL` | _none_ | Per-stage host-native model override for `CLAIM`, `EXPERIMENT`, `VERIFY`, or `ITERATION`. Forward the value unchanged when the active host supports model selection; otherwise inherit the session model and log that the override was unavailable. |
 | `DIMENSIONS` | `model` | Verify swap axes — and therefore **the variant count per picked claim**, since verify runs exactly one swap per listed axis. List or comma-separated subset of `{method, dataset, model}`. Default `model` → 1 variant/picked-claim (fast, single-axis model swap). Broaden with `dimensions: method,dataset,model` → 3 variants/picked-claim (full stress test). Forwarded to verify agent. |
 | `TARGET_CLAIMS` | `all` | Which claims verify stress-tests: `all` (default; covers both main-experiment-supported and main-experiment-rejected claims so robustness is checked in both directions) / `passed` (only main-experiment-supported = `claim_supported = pass`) / `failed` (only main-experiment-rejected = `claim_supported = fail`) / a specific claim id. Note `passed ∪ failed = all`. Forwarded to verify agent. |
 | `MAX_VERIFY_CLAIMS` | `1` | Cap on how many Stage-1-admitted claims proceed into Stage 2 (swap variants). Stage 1 (main-experiment integrity audit) **always audits every target claim regardless** — the cap only gates Stage 2 entry. When the admitted pool exceeds the cap, `/auto-verify`'s Phase 3 step 0 picks the top-K by importance judgment (reading each admitted claim's statement against upstream narrative like `IDEA_REPORT.md` / `## Rationale`; row order is NOT a priority signal). Un-picked admitted claims are marked `INTEGRITY_ONLY` with `stage2_skip_reason: max_verify_claims_cap` in `VERIFY_REPORT.md`; user can swap-test them later via `/auto-verify <id> — resume: true` (Stage 1 audit is reused via RESUME). Forwarded to verify agent. At the default cap of 1 with default `DIMENSIONS=model`, verify launches 1 × 1 = 1 variant run per `/auto` pass. |
@@ -52,7 +100,7 @@ Each stage runs in a dedicated agent (isolated context + configurable model). Th
 | `UNDERPOWER` | `tag` | **Active whenever the strict marker is absent** (ignored under `resource_fidelity: strict` — the reproduction combo — which already forbids subsetting). Guards against an under-powered cheap run's weak/negative verdict being mistaken for a *real* negative. After the experiment, a claim whose main-experiment verdict is weak (`not-supported` / `partial` / null) **and** whose realized scale is materially below the plan (`used_n` shortfall, fewer seeds, or fewer grid/checkpoint points than `EXPERIMENT_PLAN.md`) is flagged **suspected under-power**. `tag` (default): tag the claim `[suspected under-power: used_n X/Y, seeds A/B, grid P/Q]` (recorded as a **provisional** caveat carried into the ledger + verify + iteration, so the negative is treated as provisional, not a confirmed falsification) and proceed — respecting the cost-aware design; under `AUTO_PROCEED=false` the experiment agent instead asks (full re-run / targeted-milestone re-run / accept demo-scale). `stop`: treat a suspected-under-power claim as a **Round-End Decision** (`ended-needs-decision (experiment: suspected-under-power)`) even under `AUTO_PROCEED=true`, so you decide whether to re-run at full scale before verify trusts it. `off`: disable the check. Forwarded to experiment agent. |
 | `LEDGER_FIGURES` | `auto` | Whether the final ledger render should call `/paper-figure` to produce per-claim plots **and tables** embedded into `CLAIMS_LEDGER.md` (image figures = PNG inline + PDF link; tables = Markdown inline + `.tex` link). Tri-state: `auto` (default) generates figures only for claims with at least one plottable or tabulable data source; `true` forces an attempt for every non-deferred claim (an unsupported claim still degrades to a `skipped` entry, never a halt); `false` disables the hook entirely and the ledger renders without a `Figures` bullet. Fires **once per pipeline run**, at the final ledger hook only (`iteration:final`, or `verify` when `REVIEW_LOOP=false`); intermediate hooks never re-invoke `/paper-figure`. See [Ledger Figures hook](#ledger-figures-hook). |
 
-Override on the CLI, e.g. `/auto "direction" — auto-proceed: false, claim-model: opus, verify-model: sonnet, dimensions: method,dataset, code-review: false`. **Canonical CLI form is hyphen-separated** (`auto-proceed`, `claim-model`, `code-review`, ...). The parser also accepts underscore (`auto_proceed`) and uppercase env-style (`AUTO_PROCEED`) for compatibility — see "Argument parsing" below.
+Override at invocation, for example: Claude Code: `/auto "direction" — auto-proceed: false, claim-model: opus, verify-model: sonnet, dimensions: method,dataset, code-review: false`; Codex: `$auto "direction" — auto-proceed: false, claim-model: <Codex model ID>, verify-model: <Codex model ID>, dimensions: method,dataset, code-review: false`. **Canonical option form is hyphen-separated** (`auto-proceed`, `claim-model`, `code-review`, ...). The parser also accepts underscore (`auto_proceed`) and uppercase env-style (`AUTO_PROCEED`) for compatibility — see "Argument parsing" below.
 
 Pass each flag to the agent(s) listed in its "Forwarded to" hint as the corresponding arg in `agents/<name>.md`'s Invocation contract (e.g., `COMPACT` → `compact:`, `CODE_REVIEW` → `code_review:`).
 
@@ -63,7 +111,7 @@ Pass each flag to the agent(s) listed in its "Forwarded to" hint as the correspo
 1. **Direction (positional, optional)** — everything before the first ` — ` (em dash with spaces) or `--` is the research direction; pass it to the claim agent as `direction:`. When omitted (empty `$ARGUMENTS`, or `$ARGUMENTS` starts directly with ` — ` / `--`), pass `direction: ""` and rely on `task.md` (see "Direction source resolution" above). If both are absent, stop and report rather than inventing a direction.
 2. **Options (after ` — ` or `--`)** — comma-separated `key: value` pairs. Whitespace around `:` and `,` is ignored. Quoted strings keep their content.
 3. **Key normalization** — lower-case, hyphens → underscores, then upper-case for the env-style flag (`auto-proceed` / `auto_proceed` → `AUTO_PROCEED`; `verify-model` → `VERIFY_MODEL`).
-4. **Model values** — for both `MODEL` (global) and `<STAGE>_MODEL` (per-stage), the value must be one of the family aliases `opus` / `sonnet` / `haiku` (case-insensitive; lowercase before passing through). Anything else is a parse error — log `[arg-parse] <key>: "<value>" is not a family alias (opus|sonnet|haiku) — version pinning is managed in agents/<name>.md frontmatter, not on the CLI` and stop. To change the pinned version of a stage, edit that agent file directly.
+4. **Model values** — for both `MODEL` (global) and `<STAGE>_MODEL` (per-stage), accept any non-empty host-native model identifier and forward it unchanged. Claude aliases are case-insensitive and may be normalized to lowercase. Reject only an empty value or one containing control characters.
 5. **Bool values** — `true` / `false` / `1` / `0` / `yes` / `no`. Anything else is a parse error.
 6. **Enum string values** — documented set or fall back to default with a log line:
    - `BATCH_DISPATCH` accepts `auto` / `queue` / `direct` (case-insensitive; lowercase before passing through). On unknown value: log `[arg-parse] BATCH_DISPATCH: "<value>" not in {auto, queue, direct} — falling back to default 'auto'` and continue with the default.
@@ -89,7 +137,11 @@ All three of these invocations resolve to the same flags. The first (hyphen-sepa
 
 The claim agent's Phase 1 `research-lit` step must follow the requirements in `skills/research-lit/SKILL.md`, and `mechanic-db-search` must be executed, not skipable.
 
-In other subagents, they may freely choose any retrieval source — WebSearch, WebFetch, MCP tools, or their own bundled `scripts/` helpers. The orchestrator does **not** constrain the tool. 
+In other subagents, they may freely choose any retrieval source — the host's
+web retrieval capability (`WebSearch`/`WebFetch` on Claude Code, `web_search`
+on Codex), MCP tools, or their own bundled `scripts/` helpers. The orchestrator
+does **not** constrain the implementation. Never pass Claude-only tool names
+to a Codex subagent.
 
 ## Overview
 
@@ -185,25 +237,25 @@ Note: `RESUME=true` never deletes or overwrites pre-existing artifacts on its ow
 ### Resolve per-agent models
 
 Resolution order (per stage, evaluated independently for `claim` / `experiment` / `verify` / `iteration`):
-1. If the user passed `<STAGE>_MODEL=<alias>` on the CLI (`opus` / `sonnet` / `haiku` only), use it. Pass the alias **as-is** to the Agent tool's `model` parameter. The Agent tool then routes to the alias's current latest version.
-2. Else if the user passed the global `MODEL=<alias>` on the CLI, use that alias for this stage.
-3. Else omit the `model` parameter. The agent uses its frontmatter `model:` line if it pins one; with no `model:` line (the current default for all four agents) it inherits the session model (`claude --model …`). This is the only way to run a stage at *exactly* the session model — an alias like `opus` would resolve to the family's latest version instead.
+1. If the user passed `<STAGE>_MODEL=<model-id>`, use it and pass it unchanged to the active host's sub-agent model parameter when supported.
+2. Else if the user passed global `MODEL=<model-id>`, use that value for this stage.
+3. Else omit the model parameter and inherit the session model. Agent frontmatter pins remain a Claude Code compatibility mechanism; Codex uses the explicit model ID or session inheritance.
 
 | Agent | Frontmatter `model:` | Effective model when unpinned | CLI override accepted |
 |---|---|---|---|
-| claim      | _none_ | session model (`claude --model …`) | `claim-model: opus \| sonnet \| haiku` (or global `model:`)      |
-| experiment | _none_ | session model (`claude --model …`) | `experiment-model: opus \| sonnet \| haiku` (or global `model:`) |
-| verify     | _none_ | session model (`claude --model …`) | `verify-model: opus \| sonnet \| haiku` (or global `model:`)     |
-| iteration  | _none_ | session model (`claude --model …`) | `iteration-model: opus \| sonnet \| haiku` (or global `model:`)  |
+| claim      | _none_ | active session model | `claim-model: <host-model-id>` (or global `model:`)      |
+| experiment | _none_ | active session model | `experiment-model: <host-model-id>` (or global `model:`) |
+| verify     | _none_ | active session model | `verify-model: <host-model-id>` (or global `model:`)     |
+| iteration  | _none_ | active session model | `iteration-model: <host-model-id>` (or global `model:`)  |
 
 To pin a stage instead, add a `model:` line to that `agents/<name>.md` frontmatter.
 
 Log on entry:
 ```
-[models] claim=<pin | CLI-alias | session>  experiment=...  verify=...  iteration=...  (source: CLI-stage | CLI-global | frontmatter-pin | session)
+[models] claim=<pin | invocation-model-id | session>  experiment=...  verify=...  iteration=...  (source: invocation-stage | invocation-global | frontmatter-pin | session)
 ```
 
-Report the actual resolved model — a CLI alias, a frontmatter pin, or the inherited session model — never a stale documented pin.
+Report the actual resolved model — an invocation model ID, a frontmatter pin, or the inherited session model — never a stale documented pin.
 
 ### claim — Idea Discovery
 

@@ -1,7 +1,11 @@
 ---
 name: mechanism-behavior-discovery
-description: 'Mine behavioral regularities in neural-network (LLM / multimodal) models — the upstream half of the project''s mission (find a behavior worth explaining, then investigate the mechanism behind it). Use this skill when the task is open-ended: surface a *new* behavioral phenomenon — a candidate claim / research direction — rather than investigate an already-named mechanism. It gives strategies for choosing which behavior to probe and how to choose the data that validates it. The output is a candidate phenomenon that hands off to `/mechanism-explore` for mechanistic investigation. Domain-general: no assumption about model family, modality, or task.'
+description: "Discover or sharpen model-observable behavioral regularities before selecting a mechanism."
 ---
+
+## Host compatibility
+
+Before acting on a historical host tool name, read and apply the bundled `shared-references/host-compatibility.md`. Use the active host capability by meaning; never fabricate or call an unavailable literal tool name.
 
 # Mechanism — Behavior Discovery
 

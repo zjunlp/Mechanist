@@ -1,9 +1,12 @@
 ---
 name: notify
-description: "Draft a research-progress briefing and dispatch it through whatever notification service the user has already configured. Channel-agnostic — this skill only drafts the briefing text and scans for a configured service; it does not hard-code or recommend any particular channel or tool. Opt-in: it does nothing unless task.md asks for notifications (e.g. email reminders). Every briefing is saved to notification/ (never overwritten). Called by /auto on an hourly cadence and at progress / done / halted / approval-needed events, or manually via /notify."
-argument-hint: "[event: hourly|progress|done|halted|approval-needed] [free-form reason ...]"
+description: "Draft and send configured research notifications for hourly, progress, done, halted, or approval events."
 allowed-tools: Bash, Read, Write, Glob, Grep
 ---
+
+## Host compatibility
+
+Before acting on a historical host tool name, read and apply the bundled `shared-references/host-compatibility.md`. Use the active host capability by meaning; never fabricate or call an unavailable literal tool name.
 
 # Notify — Draft + Dispatch a Progress Briefing
 

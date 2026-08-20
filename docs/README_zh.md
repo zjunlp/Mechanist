@@ -56,7 +56,7 @@
 
 **Mechanist** 将关于大语言模型内部机理的研究问题转化为**有证据支持的科学发现**。它全流程自动协调：文献检索 → 假设提出 → 实验实现与执行 → 鲁棒性验证 → 迭代精炼。
 
-**Mechanist 以 Claude Code 插件形式分发**——无需克隆本仓库。几分钟内完成安装，交给它一个研究问题，它会在你自己的机器和 GPU 上跑实验，并交回一份可核验的研究报告。（Codex 支持即将推出。）
+**Mechanist 同时支持 Claude Code 与 Codex 插件。**安装后交给它一个研究问题，它会在你自己的机器和 GPU 上跑实验，并交回一份可核验的研究报告。Codex 的本地安装与兼容说明见 [Codex compatibility](codex_compatibility.md)。
 
 最新的安装步骤与上手教程见网站 [Quick Start](http://mechanist.openkg.cn/#/quick-start) 页面。
 
@@ -337,7 +337,7 @@ Mechanist 按顺序执行四个阶段——**claim → experiment → verify →
 /next-round
 ```
 
-归档前 `/next-round` 会打印哪些将被搬走、哪些将保留。产物进入 `rounds/round_<N>/`，而 `task.md`、`research_memory.*`、`.claude/`、`.mcp.json` 和 `.git` 留在根目录。`new-mechanism` 变体还会额外保留 `data/` 和 `cache/` 以复用同一现象的激活数据。
+归档前 `/next-round` 会打印哪些将被搬走、哪些将保留。产物进入 `rounds/round_<N>/`，而 `task.md`、`research_memory.*`、宿主配置（`.claude/`、`.codex/`、`.agents/`、`AGENTS.md`、`.mcp.json`）和 `.git` 留在根目录。`new-mechanism` 变体还会额外保留 `data/` 和 `cache/` 以复用同一现象的激活数据。
 
 **多轮守卫：**每轮 `/auto` 启动时检测根目录是否有上一轮未归档的产物。若存在则 halt，提示三选一：运行 `/next-round`（归档后继续，推荐）、`resume: true`（继续未完成的一轮）或手动删除列出的产物。即使是全自动模式也会触发此守卫——绝不会静默覆盖上一轮的工作。
 

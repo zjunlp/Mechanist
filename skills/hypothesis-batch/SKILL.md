@@ -1,9 +1,12 @@
 ---
 name: hypothesis-batch
-description: "Batch pipeline for research hypotheses. The positional argument is the user's whole INPUT INTENTION. Load the literature landscape plus behavior- and mechanism-discovery strategies once per run; generate a deduplicated, mechanism-aware behavior library over accumulating rounds; select with novelty verification and external review; then instantiate a mechanism and iteratively improve one reviewer-facing `claim.json` per selected behavior using independent novelty, impact, and testability judges. `WRITER` authors candidates and claims (`session` by default or `llm-chat`); evaluation uses the external reviewer."
-argument-hint: "<intention — what you want out of this topic> [— n-behaviors: N] [— rounds: R] [— top-n: K] [— cold-n: N] [— writer: session|llm-chat]"
-allowed-tools: Bash(*), Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Agent, Skill, mcp__llm-chat__chat
+description: "Generate and externally score atomic research hypotheses for novelty, impact, and testability."
+allowed-tools: Bash(*), Read, Write, Edit, Grep, Glob, Agent, Skill, mcp__llm-chat__chat
 ---
+
+## Host compatibility
+
+Before acting on a historical host tool name, read and apply the bundled `shared-references/host-compatibility.md`. Use the active host capability by meaning; never fabricate or call an unavailable literal tool name.
 
 # Workflow: Hypothesis Library → Selection → Claim Skeletons
 

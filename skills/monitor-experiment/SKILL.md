@@ -1,9 +1,12 @@
 ---
 name: monitor-experiment
-description: Monitor running experiments, check progress, collect results. Use when user says "check results", "is it done", "monitor", or wants experiment output.
-argument-hint: [server-alias or screen-name]
+description: "Monitor running experiments, report progress, and collect outputs. Use for status or result checks."
 allowed-tools: Bash(ssh *), Bash(echo *), Read, Write, Edit
 ---
+
+## Host compatibility
+
+Before acting on a historical host tool name, read and apply the bundled `shared-references/host-compatibility.md`. Use the active host capability by meaning; never fabricate or call an unavailable literal tool name.
 
 # Monitor Experiment Results
 

@@ -1,9 +1,12 @@
 ---
 name: novelty-check
-description: Verify research idea novelty against recent literature. Use when user says "novelty check", "check novelty", or wants to verify a research idea is novel before implementing.
-argument-hint: [method-or-idea-description]
-allowed-tools: WebSearch, WebFetch, Grep, Read, Glob, mcp__llm-chat__chat
+description: "Check a research idea's novelty against recent literature. Use for novelty verification."
+allowed-tools: Grep, Read, Glob, mcp__llm-chat__chat
 ---
+
+## Host compatibility
+
+Before acting on a historical host tool name, read and apply the bundled `shared-references/host-compatibility.md`. Use the active host capability by meaning; never fabricate or call an unavailable literal tool name.
 
 # Novelty Check Skill
 
@@ -36,7 +39,7 @@ Given a method description, systematically verify its novelty:
 ### Phase B: Multi-Source Literature Search
 For EACH core claim, search using ALL available sources:
 
-1. **Web Search** (via `WebSearch`):
+1. **Web Search** (via the active host's web retrieval capability):
    - Search arXiv, Google Scholar, Semantic Scholar
    - Use specific technical terms from the claim
    - Try at least 3 different query formulations per claim
@@ -46,7 +49,7 @@ For EACH core claim, search using ALL available sources:
    - ICLR 2025/2026, NeurIPS 2025, ICML 2025/2026
    - Recent arXiv preprints (2025-2026)
 
-3. **Read abstracts**: For each potentially overlapping paper, WebFetch its abstract and related work section
+3. **Read abstracts**: For each potentially overlapping paper, retrieve its abstract and related work section
 
 ### Phase C: Cross-Model Verification
 Call the external LLM reviewer via `mcp__llm-chat__chat`. Always ask the external reviewer for strict, high-rigor feedback.

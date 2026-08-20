@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "llm-chat": {
+      "cwd": ".",
+      "command": "python3",
+      "args": [
+        "mcp-servers/launch_server.py",
+        "llm-chat"
+      ]
+    },
+    "mechanic-db": {
+      "cwd": ".",
+      "command": "python3",
+      "args": [
+        "mcp-servers/launch_server.py",
+        "mechanic-db"
+      ]
+    }
+  }
+}

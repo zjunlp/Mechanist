@@ -1,7 +1,11 @@
 ---
 name: experiment-tips
-description: 'Routing entry point for experiment-protocol tips that prevent silent reproducibility / overclaim failures. Use when EXPERIMENT_PLAN.md is about to become runnable code and any of these is in scope: ImageNet / torchvision preprocessing, steering coefficient (α / dose / magnitude), steering block / layer / site selection, fine-tuning hyperparameters (full FT / LoRA / QLoRA / DoRA / PEFT — LR, capacity, target modules — across SFT / DPO / GRPO / PPO / RLHF objectives), or MCQ / A-B / A-D letter-parse evaluation of a free-form model generation. The **General Rule for mechanism/Interpretability** in this file is loaded on every mechanism / interpretability experiment (locate the target neuron/feature, then intervene without damaging general ability); the numbered tips load only as their symptom triggers apply, and after matching one you MUST load its own SKILL.md — never act on the preview. Universal data constraints (provenance, splits, sample-size floors) live in `skills/data-rule/`, not here.'
+description: "Route executable plans to protocol checks for fine-tuning, steering, ImageNet, or multiple-choice evaluation."
 ---
+
+## Host compatibility
+
+Before acting on a historical host tool name, read and apply the bundled `shared-references/host-compatibility.md`. Use the active host capability by meaning; never fabricate or call an unavailable literal tool name.
 
 # Experiment Tips
 
@@ -49,17 +53,17 @@ If none of these symptoms apply, the *symptom-triggered tips* are not the right 
 
 ## Loading Protocol (Mandatory)
 
-Tips cascade strictly top-down: **this routing file → tip `SKILL.md`**. The tip summaries in the next section are *previews only* — sweep procedures, collapse thresholds, fallback rules, and code patterns all live in the tip files, not here.
+Tips cascade strictly top-down: **this public routing Skill -> tip `WORKFLOW.md`**. The tip summaries in the next section are *previews only* - sweep procedures, collapse thresholds, fallback rules, and code patterns all live in the internal workflow files, not here.
 
 **Hard requirements** — these are not suggestions:
 
 1. **Match a tip** to the plan by reading the symptom triggers in [Tips](#tips) below. One scenario may match multiple tips; load all of them.
-2. **Once a tip matches, load `<tip>/SKILL.md` in full** before any reasoning, code, or recommendation in the affected pipeline. Acting on the preview from this file alone is forbidden — the previews are deliberately too thin to implement from.
+2. **Once a tip matches, load `<tip>/WORKFLOW.md` in full** before any reasoning, code, or recommendation in the affected pipeline. Acting on the preview from this file alone is forbidden - the previews are deliberately too thin to implement from.
 3. **Re-load on switch.** If the implementation pivots to a new scenario (e.g., the plan adds steering after originally only doing probing), re-run the matching against this file and load the new tips.
 
 ## Tips
 
-The tips below are organized by *symptom-level trigger*. Each tip has its own `SKILL.md` (the mandatory load target — see [Loading Protocol](#loading-protocol-mandatory)).
+The tips below are organized by *symptom-level trigger*. Each tip has its own internal `WORKFLOW.md` (the mandatory load target - see [Loading Protocol](#loading-protocol-mandatory)).
 
 ### 1. ImageNet Eval Preprocessing — `./image/`
 **Symptom trigger**: ImageNet / ImageNet-1k / ImageNet-val, torchvision backbones (ResNet, ViT, VGG, EfficientNet), `T.Compose` / `T.Resize` / `T.CenterCrop`, activation hooks on a vision backbone, top-k maximally activating images, neuron labeling on a CNN/ViT, "results differ from the paper" on a vision pipeline.
@@ -109,11 +113,11 @@ A typical tip folder follows this shape:
 
 ```text
 <tip-name>/
-├── SKILL.md                     # the tip itself — single source of truth
+├── WORKFLOW.md                  # internal tip protocol - single source of truth
 └── (optional: scripts/ or references/ if the tip ships runnable helpers or larger references)
 ```
 
-- **`SKILL.md`** — the authoritative description of the tip and the mandatory load target per [Loading Protocol](#loading-protocol-mandatory).
+- **`WORKFLOW.md`** - the authoritative description of the tip and the mandatory load target per [Loading Protocol](#loading-protocol-mandatory).
 - **`scripts/`** (optional) — runnable helper scripts (sweep harnesses, sanity checks, collapse detectors) when the tip ships executable code.
 - **`references/`** (optional) — extended reference material (papers, tables of conventions across libraries) when the tip's body would otherwise exceed ~500 lines.
 

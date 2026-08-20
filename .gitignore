@@ -1,5 +1,6 @@
-# Local secrets — never commit
-.mcp.json
+# Local secrets — never commit. The root .mcp.json is a committed plugin
+# descriptor containing environment-variable names only, never secret values.
+!.mcp.json
 .env
 .env.*
 *.local
@@ -18,9 +19,12 @@ venv/
 .vscode/
 *.swp
 
-# Per-experiment local state (don't ship)
+# Per-experiment local state (except project-scoped Codex custom agents)
 .claude/
 .codex/
+!.codex/
+!.codex/agents/
+!.codex/agents/*.toml
 
 exp/
 

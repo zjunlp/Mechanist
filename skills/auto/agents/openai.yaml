@@ -1,0 +1,7 @@
+interface:
+  display_name: "Mechanist Auto"
+  short_description: "Run the complete autonomous research pipeline"
+  brand_color: "#176B5B"
+  default_prompt: "Use $auto to run the Mechanist pipeline from task.md."
+policy:
+  allow_implicit_invocation: true

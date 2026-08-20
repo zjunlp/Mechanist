@@ -1,9 +1,12 @@
 ---
 name: experiment-queue
-description: SSH job queue for multi-seed / multi-config ML experiments with OOM-aware retry, stale-screen cleanup, wave-transition race prevention, and phase-dependency enforcement. Use when user says "batch experiments", "queue experiments", "run grid", "multi-seed sweep", "auto-chain experiments", or when `/run-experiment` is insufficient for ≥10 jobs that need orchestration. `/auto-experiment` Phase 4 auto-routes here when a milestone declares ≥10 jobs or has `depends_on`.
-argument-hint: [manifest-or-grid-spec]
+description: "Run dependency-aware ML experiment batches with concurrency, SSH, OOM retry, and resumable queue state."
 allowed-tools: Bash(*), Read, Grep, Glob, Edit, Write, Agent, Skill(run-experiment), Skill(monitor-experiment)
 ---
+
+## Host compatibility
+
+Before acting on a historical host tool name, read and apply the bundled `shared-references/host-compatibility.md`. Use the active host capability by meaning; never fabricate or call an unavailable literal tool name.
 
 # Experiment Queue
 

@@ -1,7 +1,11 @@
 ---
 name: mhistory
-description: "Generate a structured, publication-quality research-history markdown article for a given topic. Uses the cloud `mechanic_database` SEARCH service via skill `/mechanic-db-search` (TWO PARALLEL passes — `temporal_mode=history` for the long arc + `temporal_mode=recent` for the frontier), then supplements with WebSearch for pre-DB classics and the last 1–6 months of arXiv work. Triggers: 'research history', 'development history', 'survey of X', 'trace the evolution of …'."
+description: "Write a structured research-history article for a topic using multi-wave literature retrieval."
 ---
+
+## Host compatibility
+
+Before acting on a historical host tool name, read and apply the bundled `shared-references/host-compatibility.md`. Use the active host capability by meaning; never fabricate or call an unavailable literal tool name.
 
 # Research Development-History Generator
 
@@ -16,10 +20,10 @@ Produce a **fact-grounded, chronologically clear, classics-plus-frontier** devel
 
 1. **Retrieval goes through the cloud SEARCH service** via the `/mechanic-db-search` skill. The Agent submits an English query per pass; the service then return a paper list.
 2. **Two-track retrieval, run in parallel**: launch `/mechanic-db-search` twice **at the same time** — once with `temporal_mode=history` (5-year buckets, even coverage across eras) and once with `temporal_mode=recent` (recency-boosted, modern frontier).
-3. **Web supplementation** with `WebSearch`, for two purposes:
+3. **Web supplementation** with `web retrieval`, for two purposes:
    - **history gap-fill**: the DB may miss some foundational work.
    - **Frontier gap-fill**: DB indexing lags; arXiv work from the last 1–6 months is usually absent.
-4. **Graceful degradation**: If `/mechanic-db-search` does not work properly, both DB passes silently skip (the `search_papers` tool writes `{"papers": [], "skipped": true}` to each output) — the article is then built from WebSearch + Claude's own knowledge, and the final markdown explicitly notes "mechanic-db unavailable".
+4. **Graceful degradation**: If `/mechanic-db-search` does not work properly, both DB passes silently skip (the `search_papers` tool writes `{"papers": [], "skipped": true}` to each output) — the article is then built from + the active model's knowledge, and the final markdown explicitly notes "mechanic-db unavailable".
 
 ## Pipeline
 
@@ -31,7 +35,7 @@ Produce a **fact-grounded, chronologically clear, classics-plus-frontier** devel
         │  └──► [1b] /mechanic-db-search  (temporal_mode=recent,     top_k=100)  ┘
         │        → two cached final-JSON files
         │
-        ├──► [2] WebSearch × N
+        ├──► [2] × N
         │        - history gap-fill ("<topic> seminal paper", "<topic> foundational work pre-2018", …)
         │        - Last-1–6-months gap-fill ("<topic> arxiv 2026", "<topic> latest", …)
         │
@@ -72,9 +76,9 @@ search_papers:
 ```
 
 
-### Step 2 — WebSearch supplementation
+### Step 2 — supplementation
 
-Use the `WebSearch` tool. Fire 2–4 queries per purpose:
+Use the active host's capability. Fire 2–4 queries per purpose:
 
 **history gap-fill (find canonical references, anchor the timeline)**
 - `"<topic>" seminal foundational paper before 2020`
@@ -88,14 +92,14 @@ Use the `WebSearch` tool. Fire 2–4 queries per purpose:
 
 Assemble the returned (title / authors / year / URL / snippet) into a short markdown block in context — no need to write it to disk.
 
-> If WebSearch fails or is unavailable, skip this step and rely on DB retrieval + Claude's own knowledge. But the final markdown must explicitly state "WebSearch unavailable".
+> If fails or is unavailable, skip this step and rely on DB retrieval + the active model's knowledge. But the final markdown must explicitly state "web retrieval unavailable".
 
 ### Step 3 — Synthesise the markdown
 
 Write the article in this session. Material preparation:
 
 1. Load the two cached final-JSON files. Skip any that have `"skipped": true`. Merge the surviving `papers` lists, dedupe by `paper_id`. Keep every paper's `title / year / cited_by_count / abstract / doi / authors`.
-2. Organise the WebSearch results (title / authors / year / URL / snippet) into a parallel list, tagged as `[Web]`.
+2. Organise the results (title / authors / year / URL / snippet) into a parallel list, tagged as `[Web]`.
 3. **Internalise the writing brief below — it is the core authoring instruction of this skill, not optional flavour text.**
 
 ---

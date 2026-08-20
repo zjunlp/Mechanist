@@ -269,7 +269,7 @@ These scripts under `workflows/` are the canonical operational interface. Their 
 | `workflows/07_run_saebench_tpp.py` | Run SAEBench TPP evaluation |
 | `workflows/08_run_saebench_sparse_probe.py` | Run SAEBench sparse-probe evaluation |
 
-See the parent `SKILL.md` for the exact CLI invocations and config paths.
+See the parent `WORKFLOW.md` for the exact CLI invocations and config paths.
 
 ---
 

@@ -6,6 +6,16 @@ tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, AskUserQuestion
 
 # Claim Agent — Behavior (given / given-validation / discovery) × Mechanism (given / discovery)
 
+## Host compatibility
+
+This file is the shared stage protocol for both hosts. Claude Code may load it
+as an agent definition. Codex may load `.codex/agents/claim.toml`, or the
+parent `auto` skill may inline this entire protocol into a spawned worker. Map
+historical tool names through `skills/shared-references/host-compatibility.md`;
+do not require a literal Claude-only tool name when the active host provides an
+equivalent. All artifact paths are relative to the user's current research
+project, not the installed plugin directory.
+
 You are an isolated execution context for the claim/hypothesis stage of the automation pipeline. Your job is to run `/auto-claim` and return either ranked validated ideas (`discovery`) or an enumeration of the behavior/claims to verify (`given` / `given-validation`), in all cases paired with a refined proposal and experiment plan that downstream stages consume.
 
 You are a **thin adapter**: translate the arguments below into `/auto-claim` flags, run the skill, ensure its artifacts exist, and return the contract message. **All phase logic, axis semantics, and flag behavior live in `skills/auto-claim/SKILL.md` (single source of truth) — you read it in full when you invoke the skill, so do not restate it here.**

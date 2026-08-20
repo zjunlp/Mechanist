@@ -1,8 +1,12 @@
 ---
 name: experiment-plan
-description: 'Turn a refined research proposal or method idea into a detailed, claim-driven experiment roadmap. Use after `research-refine`, or when the user asks for a detailed experiment plan, ablation matrix, evaluation protocol, run order, compute budget, or paper-ready validation that supports the core problem, novelty, simplicity, and any LLM / VLM / Diffusion / RL-based contribution.'
-allowed-tools: Bash(*), Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Agent
+description: "Turn a proposal into a claim-driven experiment roadmap with milestones, evaluation, and ablations."
+allowed-tools: Bash(*), Read, Write, Edit, Grep, Glob, Agent
 ---
+
+## Host compatibility
+
+Before acting on a historical host tool name, read and apply the bundled `shared-references/host-compatibility.md`. Use the active host capability by meaning; never fabricate or call an unavailable literal tool name.
 
 # Experiment Plan: Claim-Driven, Paper-Oriented Validation
 

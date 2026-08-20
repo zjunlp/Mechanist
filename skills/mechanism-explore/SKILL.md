@@ -1,7 +1,11 @@
 ---
 name: mechanism-explore
-description: 'Macro-level strategic directions for investigating the *mechanism* behind a model behavior — the downstream half of the project''s mission (mine LLM behaviors, then explain the mechanism behind them). Use once a phenomenon is observed in a model — whether already established/known or freshly mined by `/mechanism-behavior-discovery` — and the task is to choose *how* to investigate the internal cause. It is the strategy layer above the concrete method families in `/mechanism-skills`, organized around six parallel research directions — **Location**, **Causal Intervention**, **Tuning & Editing**, **Formation Tracing**, **Unit Interpretation**, **Decision Auditing** — plus how to combine them into strategies. Domain-general: it prescribes strategy, not any single model, modality, or method.'
+description: "Propose strategies for explaining a fixed model behavior before choosing a concrete method."
 ---
+
+## Host compatibility
+
+Before acting on a historical host tool name, read and apply the bundled `shared-references/host-compatibility.md`. Use the active host capability by meaning; never fabricate or call an unavailable literal tool name.
 
 # Mechanism — Explore
 

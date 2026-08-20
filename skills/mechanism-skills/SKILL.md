@@ -1,11 +1,15 @@
 ---
 name: mechanism-skills
-description: 'Routing entry point for eleven families of mechanistic-interpretability methods that localize *which* internal object (layer, attention head, neuron, SAE feature, weight, or input feature) drives a model''s behavior, *how influential* it is, and *what changes* when it is intervened on. Use this skill whenever the question is about a model''s internal mechanism rather than its external metrics — for example, claims that a specific component is responsible for a behavior, mechanistic-evidence requests, circuit-discovery tasks, feature-attribution work (SHAP), or concept-level explanations of vision/VL models. The file lays out each family''s premise, signal, cost, advantages, limitations, and how to compose them into a cheap-screen → causal-verify pipeline. Loading is hierarchical and mandatory: after picking a family from this routing file you MUST load that family''s `SKILL.md`, and after picking a submethod you MUST load that submethod''s `SKILL.md` — never act on the previews in this file alone.'
+description: "Route a behavior and target object to the appropriate mechanistic-interpretability method family."
 ---
+
+## Host compatibility
+
+Before acting on a historical host tool name, read and apply the bundled `shared-references/host-compatibility.md`. Use the active host capability by meaning; never fabricate or call an unavailable literal tool name.
 
 # Mechanism Skills
 
-A curated set of eleven method families for analyzing the internal mechanisms of neural networks. Use this document as the routing entry point: read it first, pick the family that matches the question, then follow the link into the sub-skill for submethod detail, demos, and reference implementations.
+A curated set of eleven method families for analyzing the internal mechanisms of neural networks. Use this document as the routing entry point: read it first, pick the family that matches the question, then load that family's `WORKFLOW.md` for submethod detail, demos, and reference implementations.
 
 ## When to Use
 
@@ -21,21 +25,21 @@ If the research question is purely behavioral (accuracy, robustness, calibration
 
 ## Loading Protocol (Mandatory)
 
-Skills cascade strictly top-down: **this routing file → family `SKILL.md` → submethod `SKILL.md`**. Each level adds detail the level above only sketches. Never act on a summary from a higher level alone.
+Protocols cascade strictly top-down: **this public routing Skill -> family `WORKFLOW.md` -> submethod `WORKFLOW.md`**. Each level adds detail the level above only sketches. Never act on a summary from a higher level alone.
 
 **Hard requirements** — these are not suggestions:
 
 1. **Pick a family** based on the research question (use the [Selecting a Method](#selecting-a-method) table). The summaries below are *previews only* — they are intentionally insufficient to plan or run work.
-2. **Once a family is selected, you MUST load `<family>/SKILL.md` in full before any further reasoning, recommendation, or code in that family.** Assumed objects, exact signal definitions, scope conditions, composition rules across submethods, and known failure modes live in the family file, not here.
-3. **Once a submethod is selected, you MUST load `<family>/<submethod>/SKILL.md` in full before running, citing, choosing hyperparameters for, or recommending that submethod.** Runnable scripts, API conventions, defaults, and submethod-specific gotchas live there.
-4. **Do not skip levels.** Going from this file directly to a submethod without reading the family SKILL.md is forbidden, because cross-submethod composition (screen-then-verify pairings, shared metrics, layer/position conventions) is defined at the family level.
+2. **Once a family is selected, you MUST load `<family>/WORKFLOW.md` in full before any further reasoning, recommendation, or code in that family.** Assumed objects, exact signal definitions, scope conditions, composition rules across submethods, and known failure modes live in the family file, not here.
+3. **Once a submethod is selected, you MUST load `<family>/<submethod>/WORKFLOW.md` in full before running, citing, choosing hyperparameters for, or recommending that submethod.** Runnable scripts, API conventions, defaults, and submethod-specific gotchas live there.
+4. **Do not skip levels.** Going from this file directly to a submethod without reading the family `WORKFLOW.md` is forbidden, because cross-submethod composition (screen-then-verify pairings, shared metrics, layer/position conventions) is defined at the family level.
 5. **Re-load on switch.** If the analysis pivots to a different family or submethod, repeat the cascade for the new branch — do not carry assumptions across families.
 
-The cascade exists so that the small, focused submethod files can stay the single source of truth for execution detail. If something feels unfamiliar at any level, re-read the corresponding `SKILL.md` rather than guessing.
+The cascade exists so that the small, focused internal workflow files can stay the single source of truth for execution detail. If something feels unfamiliar at any level, re-read the corresponding `WORKFLOW.md` rather than guessing.
 
 ## Method Families
 
-The eleven families are organized by *what signal they use* to localize internal objects. Each family has its own parent `SKILL.md` with full submethod detail, runnable demo scripts, and paper references — see [Directory Layout](#directory-layout) for the exact file shape. The bullets below are routing previews; per the [Loading Protocol](#loading-protocol-mandatory), you must open the family's `SKILL.md` once selected, and the submethod's `SKILL.md` once a submethod is chosen.
+The eleven families are organized by *what signal they use* to localize internal objects. Each family has its own parent `WORKFLOW.md` with full submethod detail, runnable demo scripts, and paper references - see [Directory Layout](#directory-layout) for the exact file shape. The bullets below are routing previews; per the [Loading Protocol](#loading-protocol-mandatory), you must open the family's `WORKFLOW.md` once selected, and the submethod's `WORKFLOW.md` once a submethod is chosen.
 
 ### 1. Vocabulary Projection — `./vocabulary-projection/`
 **Premise**: the pre-trained unembedding matrix $\mathbf{W}_U$ can serve as a universal decoder for intermediate states, via $\mathbf{p} = \text{softmax}(\mathbf{z}\mathbf{W}_U)$.
@@ -120,7 +124,7 @@ Submethods: Patching · Ablation · Attribution Patching.
 
 Submethods: Intervention-based Edge Search (ACDC) · Attribution-based Edge Scoring (EAP-IG) · Feature-based Replacement Models (e.g. circuit-tracer; demo lives under `./feature-dictionary-learning/transcoder/`).
 
-### 9. SHAP — `./SHAP/`
+### 9. SHAP — `./shap/`
 **Premise**: feature attribution as a coalition game — assign each input feature its Shapley value, the unique attribution that satisfies local accuracy, missingness, and consistency.
 **Signal**: per-feature contributions $\phi_i$ to a single prediction $f(x)$, with $f(x) = \phi_0 + \sum_i \phi_i$.
 **Cost**: model-dependent. Exact polynomial-time for tree ensembles (TreeSHAP); sample-based for arbitrary models (KernelSHAP); amortized neural surrogate for real-time use (FastSHAP).
@@ -169,9 +173,9 @@ Match the question to the family:
 | "How does the model use each *input* feature for this prediction?" | SHAP | Game-theoretic input attribution, model-agnostic on a comparable scale |
 | "What named concepts drive this vision model's predictions?" | Multimodal-Specific Interpretability | Open-vocabulary concept labelling via CLIP-style alignment |
 
-If the question spans multiple granularities (prompt tokens, residual stream, attention heads, neurons, SAE features, parameters, weights), consult the submethod tables inside each family's `SKILL.md` — granularity is the primary axis along which submethods are organized.
+If the question spans multiple granularities (prompt tokens, residual stream, attention heads, neurons, SAE features, parameters, weights), consult the submethod tables inside each family's `WORKFLOW.md` - granularity is the primary axis along which submethods are organized.
 
-> **Reminder**: choosing a family in this table is step 1 of the [Loading Protocol](#loading-protocol-mandatory). Before doing anything else, open that family's `SKILL.md`. Before running a specific submethod, open the submethod's `SKILL.md`. No exceptions.
+> **Reminder**: choosing a family in this table is step 1 of the [Loading Protocol](#loading-protocol-mandatory). Before doing anything else, open that family's `WORKFLOW.md`. Before running a specific submethod, open the submethod's `WORKFLOW.md`. No exceptions.
 
 ### Cross-round family selection
 
@@ -245,7 +249,7 @@ A typical family folder follows this two-level shape:
 
 ```text
 <family>/
-├── SKILL.md                     # family-level routing skill
+├── WORKFLOW.md                  # internal family-level routing protocol
 ├── article_references.md        # canonical papers for the whole family
 └── <submethod>/
     ├── article_references.md    # narrower paper list for this submethod (when present)
@@ -254,7 +258,7 @@ A typical family folder follows this two-level shape:
         └── api_reference.md
 ```
 
-- **`SKILL.md`** — the authoritative description of the family or submethod, and the **mandatory** load target at each level of the cascade (see [Loading Protocol](#loading-protocol-mandatory)). Always read the family `SKILL.md` immediately after choosing a family, and the submethod `SKILL.md` immediately after choosing a submethod — the routing summaries in this file are deliberately too thin to plan from.
+- **`WORKFLOW.md`** - the authoritative description of the family or submethod, and the **mandatory** load target at each level of the cascade (see [Loading Protocol](#loading-protocol-mandatory)). Always read the family `WORKFLOW.md` immediately after choosing a family, and the submethod `WORKFLOW.md` immediately after choosing a submethod - the routing summaries in this file are deliberately too thin to plan from.
 - **`article_references.md`** — a curated list of the originating papers (with links). A family-level file gives the umbrella reading list; submethod-level files (where present) narrow it to that specific technique. Use these to ground methodological choices and to cite source work.
 - **`scripts/`** — reference implementations illustrating API usage and experimental patterns of the demo library bundled with this submethod. They are starting points, not turnkey pipelines: adapt them to the project's specific model, dataset, and metrics rather than copying verbatim.
 - **`references/`** — local documentation of the demo's underlying library (typically `api_reference.md`), kept alongside the scripts so the demo can be understood and reproduced without external lookup. Distinct from `article_references.md`: papers vs. library docs.

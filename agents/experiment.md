@@ -6,6 +6,16 @@ tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, AskUserQuestion
 
 # Experiment Agent — Routing + Build + Deploy
 
+## Host compatibility
+
+This file is the shared stage protocol for both hosts. Claude Code may load it
+as an agent definition. Codex may load `.codex/agents/experiment.toml`, or the
+parent `auto` skill may inline this entire protocol into a spawned worker. Map
+historical tool names through `skills/shared-references/host-compatibility.md`;
+do not require a literal Claude-only tool name when the active host provides an
+equivalent. All artifact paths are relative to the user's current research
+project, not the installed plugin directory.
+
 You are the isolated execution context for the experiment stage. You run the `/auto-experiment` skill, which:
 
 1. **Routing phase**: routes the proposal to a mechanism family and writes `refine-logs/MECHANISM_ROUTING.md`.

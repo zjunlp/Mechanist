@@ -1,9 +1,12 @@
 ---
 name: msearch
-description: "Standalone one-shot multi-source literature search. Takes a single query and returns one merged, ranked result set + synthesized landscape from the internet (web + arXiv), local channels (Zotero, Obsidian, local PDFs), and the cloud mechanic-db SEARCH service. Same retrieval engine as `/research-lit`, but standalone: it is NOT part of the `/auto` pipeline (nothing orchestrates it, nothing reads its files) and it writes its output into a dedicated `msearch/` folder. Use when the user says 'search everything for X', 'look X up for me / retrieve X', 'find papers on X across all sources', or invokes `/msearch <query>`."
-argument-hint: "[query]"
-allowed-tools: Bash(*), Read, Glob, Grep, WebSearch, WebFetch, Write, Agent, AskUserQuestion, mcp__zotero__*, mcp__obsidian-vault__*, mcp__mechanic-db__search_papers, mcp__llm-chat__chat
+description: "Search multiple literature sources once and return ranked papers plus a synthesized landscape."
+allowed-tools: Bash(*), Read, Glob, Grep, Write, Agent, AskUserQuestion, mcp__zotero__*, mcp__obsidian-vault__*, mcp__mechanic-db__search_papers, mcp__llm-chat__chat
 ---
+
+## Host compatibility
+
+Before acting on a historical host tool name, read and apply the bundled `shared-references/host-compatibility.md`. Use the active host capability by meaning; never fabricate or call an unavailable literal tool name.
 
 # msearch — One-Shot Multi-Source Literature Search
 
@@ -168,7 +171,7 @@ A search aimed at the wrong reading of the query wastes the slow cloud call and 
 
 > **Parallelism — the only place it is allowed.** This step has two lanes:
 > - **Lane A — mechanic-db cloud SEARCH** (slow, typically 5-7 min per call; the service kills any search that has not finished within 15 min of submission)
-> - **Lane B — external search** (WebSearch + arXiv + opt-in extras)
+> - **Lane B — external search** (web retrieval + arXiv + opt-in extras)
 >
 > **Launch Lane A first** — it is the slow cloud call — then, *without waiting for it to return*, run Lane B in parallel while Lane A is in flight. Both lanes must complete (or be marked "skipped: <reason>") before Step 2 begins. This concurrency is confined to Step 1; no other steps overlap. De-duplicate Lane A results against Lane B by normalized title once both lanes return.
 
@@ -186,7 +189,7 @@ This lane runs on every invocation **unless the cloud SEARCH service is unavaila
 
 #### Lane B: External search (web + arXiv + Semantic Scholar + DeepXiv + Exa)
 
-- Use WebSearch to find recent papers on the topic — **use 5+ different query formulations** (the distinct queries you ran are recorded in `RESEARCH_LIT.md`'s "Query formulations used" line)
+- Use to find recent papers on the topic — **use 5+ different query formulations** (the distinct queries you ran are recorded in `RESEARCH_LIT.md`'s "Query formulations used" line)
 - Check arXiv, Semantic Scholar, Google Scholar
 - Focus on papers from last 2 years unless studying foundational work; for the frontier, also pull arXiv preprints from the **last 6 months**
 - Read the abstracts and introductions of the **top 15-20 papers, ranked by relevance to the query**
@@ -204,9 +207,9 @@ SCRIPT="${CLAUDE_SKILL_DIR}/../arxiv/scripts/arxiv_fetch.py"
 [ -n "$SCRIPT" ] && python3 "$SCRIPT" search "QUERY" --max 10
 ```
 
-If `arxiv_fetch.py` is not found at the sibling skill path, use the **inline-Python arXiv-API fallback** documented in `/arxiv` (Step 2) — arXiv is a base source and must run, so do **not** silently drop to WebSearch-only.
+If `arxiv_fetch.py` is not found at the sibling skill path, use the **inline-Python arXiv-API fallback** documented in `/arxiv` (Step 2) — arXiv is a base source and must run, so do **not** silently drop to-only.
 
-The arXiv API returns structured metadata (title, abstract, full author list, categories, dates) — richer than WebSearch snippets. Merge these results with WebSearch findings and de-duplicate.
+The arXiv API returns structured metadata (title, abstract, full author list, categories, dates) — richer than snippets. Merge these results with findings and de-duplicate.
 
 **Semantic Scholar API search** (only when `semantic-scholar` is in sources):
 
@@ -277,7 +280,7 @@ EXA_SCRIPT="${CLAUDE_SKILL_DIR}/../research-lit/scripts/exa_search.py"
 
 If `../research-lit/scripts/exa_search.py` or the `exa-py` SDK is unavailable, skip this source gracefully and continue with the remaining requested sources.
 
-**Why use Exa?** Exa provides AI-powered search across the broader web (blogs, documentation, news, company pages) with built-in content extraction. It fills a gap between academic databases (arXiv, S2) and generic WebSearch by returning richer content with each result.
+**Why use Exa?** Exa provides AI-powered search across the broader web (blogs, documentation, news, company pages) with built-in content extraction. It fills a gap between academic databases (arXiv, S2) and generic by returning richer content with each result.
 
 **De-duplication against arXiv, S2, and DeepXiv**:
 - Match by URL first, then normalized title
@@ -363,14 +366,14 @@ Suggested file template:
 - **Authors**: <author list>
 - **Year**: <year>
 - **Venue**: <venue or "arXiv preprint">
-- **Source**: <mechanic-db / arXiv API / Semantic Scholar / Zotero / Obsidian / local PDF / WebSearch / Exa / DeepXiv>
+- **Source**: <mechanic-db / arXiv API / Semantic Scholar / Zotero / Obsidian / local PDF / / Exa / DeepXiv>
 - **Identifier**: <arXiv ID / DOI / file path>
 - **URL**: <link if available>
 
 **Abstract**:
 <full abstract text, verbatim>
 
-**Introduction / first pages** (only when available — local PDFs read first 3 pages; arXiv via WebFetch when fetched):
+**Introduction / first pages** (only when available — local PDFs read first 3 pages; arXiv via when fetched):
 <intro text, verbatim>
 
 ---
@@ -378,7 +381,7 @@ Suggested file template:
 ### Paper 2: ...
 ```
 
-Order papers by relevance to the topic (most relevant first) or by source priority (Zotero → Obsidian → local → mechanic-db results → arXiv API → WebSearch). Note papers de-duplicated across sources by listing all matched sources in the `Source` field (e.g., `Source: arXiv API + WebSearch`).
+Order papers by relevance to the topic (most relevant first) or by source priority (Zotero → Obsidian → local → mechanic-db results → arXiv API →). Note papers de-duplicated across sources by listing all matched sources in the `Source` field (e.g., `Source: arXiv API +`).
 
 **5.2 — Synthesized landscape (always, unconditional)**
 

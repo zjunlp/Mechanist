@@ -1,0 +1,7 @@
+interface:
+  display_name: "Mechanist Guide"
+  short_description: "Prepare a research task or route a literature workflow"
+  brand_color: "#176B5B"
+  default_prompt: "Use $mguide to help me prepare a Mechanist research task."
+policy:
+  allow_implicit_invocation: true

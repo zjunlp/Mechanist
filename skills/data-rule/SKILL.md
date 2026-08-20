@@ -1,7 +1,11 @@
 ---
 name: data-rule
-description: 'The single place for every data constraint an experiment must satisfy — dataset provenance (existing → adapted → constructed), clear train / validation / test splits, labels that reflect the target behavior, and the minimum data amount. Use whenever an experiment chooses, adapts, or constructs a dataset, defines splits, or sets a sample size — for phenomenon validation (M0), mechanism exploration, intervention, or tuning. Domain-general: no assumption about model family, modality, or task.'
+description: "Enforce dataset provenance, splits, leakage prevention, sample size, and reproducible preprocessing in experiments."
 ---
+
+## Host compatibility
+
+Before acting on a historical host tool name, read and apply the bundled `shared-references/host-compatibility.md`. Use the active host capability by meaning; never fabricate or call an unavailable literal tool name.
 
 # Data Rule
 

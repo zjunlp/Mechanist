@@ -6,6 +6,16 @@ tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, AskUserQuestion
 
 # Verify Agent — Claim Verification
 
+## Host compatibility
+
+This file is the shared stage protocol for both hosts. Claude Code may load it
+as an agent definition. Codex may load `.codex/agents/verify.toml`, or the
+parent `auto` skill may inline this entire protocol into a spawned worker. Map
+historical tool names through `skills/shared-references/host-compatibility.md`;
+do not require a literal Claude-only tool name when the active host provides an
+equivalent. All artifact paths are relative to the user's current research
+project, not the installed plugin directory.
+
 You are the isolated execution context for the verify stage. Your only job is to invoke `/auto-verify`, ensure its artifacts landed on disk, and report a per-claim robustness verdict back to the orchestrator.
 
 **Single source of truth.** The verify state machine — what PASS / FAIL / INCONCLUSIVE / ZERO_ELIGIBLE_VARIANTS / INTEGRITY_ONLY mean, how `robustness = #pass / N_eligible` is computed, the Phase 2 baseline-integrity gate, the Phase 3 step 0 Stage-2 pick (top-K by importance from the admitted pool), the Phase 9 variant-integrity gate, the within-family method-swap constraint, and the on-disk directory layout — all live in `skills/auto-verify/SKILL.md`. Do **not** re-derive or paraphrase that logic here or invent behavior the skill does not implement. This file is a thin forwarding wrapper.
@@ -38,7 +48,7 @@ There is **no** `max_method_retries` / cross-family "rescue" knob in the current
 
 ## What you do
 
-1. Invoke `/auto-verify` with the forwarded args. Internally it runs the three stages documented in `skills/auto-verify/SKILL.md`: Stage 1 (Phases 1–2: target selection + per-claim baseline integrity gate), Stage 2 (Phases 3–7: pick within-family swaps via `pick-alternatives` and run variants), Stage 3 (Phases 8–11: `/result-to-claim` judgment → per-claim variant integrity audit → robustness aggregation → report).
+1. Invoke `/auto-verify` with the forwarded args. Internally it runs the three stages documented in `skills/auto-verify/SKILL.md`: Stage 1 (Phases 1–2: target selection + per-claim baseline integrity gate), Stage 2 (Phases 3–7: pick within-family swaps via `verify-pick-alternatives` and run variants), Stage 3 (Phases 8–11: `/result-to-claim` judgment → per-claim variant integrity audit → robustness aggregation → report).
 2. Ensure these files exist non-empty when you finish (`<claim_dir>` = `<claim_id>_<short_claim>` — per-claim folder; expand with `verify/<claim_id>_*/`, never the bare flat `verify/baseline_audit/`):
    - `verify/VERIFY_REPORT.md` — per-claim verdicts + cross-claim summary + `## Stage-2 Selection` section (renders picked vs un-picked when `MAX_VERIFY_CLAIMS` cap bites)
    - `verify/INTEGRITY_AUDIT.md` — single file with both a `## Baseline integrity (Phase 2, per-claim)` section and a `## Variant integrity (Phase 9)` section (the latter may legitimately read `[skipped — all baseline audits FAIL]` or `[skipped — SWAP_VARIANTS=false]`)

@@ -1,9 +1,12 @@
 ---
 name: impact-check
-description: Assess whether the research problem/behavior is important — its potential value and reach. Use when user says "impact check", "check impact", or wants to judge whether an idea/behavior matters before committing.
-argument-hint: [idea-or-behavior-description]
-allowed-tools: WebSearch, WebFetch, Grep, Read, Glob, mcp__llm-chat__chat
+description: "Assess a research problem's importance, potential value, and reach. Use for impact or significance checks."
+allowed-tools: Grep, Read, Glob, mcp__llm-chat__chat
 ---
+
+## Host compatibility
+
+Before acting on a historical host tool name, read and apply the bundled `shared-references/host-compatibility.md`. Use the active host capability by meaning; never fabricate or call an unavailable literal tool name.
 
 # Impact Check Skill
 
@@ -36,7 +39,7 @@ Given an idea / behavior description, systematically assess its importance:
 3. State the single strongest one-line case for why it matters.
 
 ### Phase B: Assess Impact Along the Dimensions
-For EACH impact dimension below, judge how strongly the idea scores and gather supporting evidence (use `WebSearch` / `WebFetch` to check whether the problem is an open/active question, how much attention it gets, and where it would be used):
+For EACH impact dimension below, judge how strongly the idea scores and gather supporting evidence (use the active host's web retrieval capability to check whether the problem is an open/active question, how much attention it gets, and where it would be used):
 
 1. **Important problem** — Is this a problem the field (or a real application) actually needs solved, or a niche curiosity?
 2. **Uptake / citation** — Would follow-up research likely build on, use, or cite this? Does it produce a reusable artifact (dataset, method, finding, diagnostic)?

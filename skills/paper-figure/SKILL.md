@@ -1,9 +1,12 @@
 ---
 name: paper-figure
-description: "Generate publication-quality figures and tables from experiment results. Use when user says \"plot this\", \"make a figure\", \"generate figures\", \"paper figures\", or needs plots for a paper. Also invoked by `/auto`'s Ledger Figures hook to produce per-claim figures embedded into `CLAIMS_LEDGER.md`."
-argument-hint: [figure-plan-or-data-path | mode:auto-ledger ...]
+description: "Generate publication-quality figures and tables from experiment results."
 allowed-tools: Bash(*), Read, Write, Edit, Grep, Glob, Agent, mcp__llm-chat__chat
 ---
+
+## Host compatibility
+
+Before acting on a historical host tool name, read and apply the bundled `shared-references/host-compatibility.md`. Use the active host capability by meaning; never fabricate or call an unavailable literal tool name.
 
 # Paper Figure: Publication-Quality Plots from Experiment Data
 
