@@ -6,6 +6,12 @@
       "args": [
         "mcp-servers/launch_server.py",
         "llm-chat"
+      ],
+      "env_vars": [
+        "LLM_API_KEY",
+        "LLM_BASE_URL",
+        "LLM_MODEL",
+        "LLM_FALLBACK_MODEL"
       ]
     },
     "mechanic-db": {
@@ -14,6 +20,10 @@
       "args": [
         "mcp-servers/launch_server.py",
         "mechanic-db"
+      ],
+      "env_vars": [
+        "MECHANIC_DB_API_KEY",
+        "MECHANIC_DB_BASE_URL"
       ]
     }
   }

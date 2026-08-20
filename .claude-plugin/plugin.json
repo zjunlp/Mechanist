@@ -35,7 +35,8 @@
         "${CLAUDE_PLUGIN_ROOT}/mcp-servers/mechanic-db/server.py"
       ],
       "env": {
-        "MECHANIC_DB_API_KEY": "${MECHANIC_DB_API_KEY:-}"
+        "MECHANIC_DB_API_KEY": "${MECHANIC_DB_API_KEY:-}",
+        "MECHANIC_DB_BASE_URL": "${MECHANIC_DB_BASE_URL:-http://mechanist.openkg.cn}"
       }
     }
   }
