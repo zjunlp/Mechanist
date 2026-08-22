@@ -27,6 +27,6 @@ Do **not** set up special or different data for M0 or for different mechanism me
 - If the **user** or an incoming signal (e.g. uer input or `task.md` ) **states a data amount**, use exactly that amount.
 - Otherwise, apply the floor by what the experiment does:
   - **Inference-time mechanism exploration or intervention** (locate a component, then ablate / patch / steer it): **at least 50 examples** (n > 50). This floor applies to **every** run at this stage, including preliminary ones — e.g. when sweeping steering coefficients, each coefficient setting must still be evaluated on at least 50 examples. Smaller samples make the results too noisy to trust: the run-to-run variance swamps the effect, and a coefficient can look best purely by chance.
-  - **Tuning / editing** (training-time tuning, weight editing, learned steering directions): **thousand-level — on the order of thousands of examples** (i.e. at least ~100).
+  - **Tuning / editing** (training-time tuning, weight editing, learned steering directions): **hundred-level — on the order of hundreds of examples** (i.e. at least ~100).
 
 The floor is on **effective** sample size — the count after filtering for usable signal, capped by the number of unique source items (many derived examples from a few sources do not raise it).
