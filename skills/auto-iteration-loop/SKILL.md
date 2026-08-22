@@ -260,6 +260,8 @@ When this loop triggers a back-edge (variant re-run, main-experiment re-run, or 
 - For `/auto-verify`: pass `— resume: true` so completed phases skip. (Iteration-loop invocations are always single-claim — `/auto-verify <claim-id>` — so the claim scoping is already implicit.)
 - For `/auto-claim`: lightweight path is to write the rewritten claim text directly into `AUTO_REVIEW.md` and bypass the `/auto-claim` call entirely.
 
+**Write results back, every time.** A lightweight path skips the owning skill, so the skill's own supersede-in-place never fires — the iteration agent inherits it. Whenever a re-run changes a claim's numbers or verdict, update that stage's documents in place before calling anything downstream: `refine-logs/` for a main-experiment re-run, `verify/` for a verify re-run, `review-stage/` for this loop's own record. Keep a failed pre-registered test on the record as a failure; never relabel it.
+
 Each lightweight or full variant of these actions consumes **the same** iteration count (and the same claim-reentry sub-budget when applicable). The agent is given the choice for compute efficiency, not for budget gaming.
 
 ### Initialization
