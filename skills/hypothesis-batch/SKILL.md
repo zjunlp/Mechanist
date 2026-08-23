@@ -1,5 +1,5 @@
 ---
-name: hypothesis-batch-testability-ease_rank
+name: hypothesis-batch
 description: "Batch pipeline for research hypotheses. The positional argument is the user's whole INPUT INTENTION. P1 surveys the literature once. P2 generates candidates one at a time in a search-then-finalize loop — a seed pass with no priming, then one primed pass with the behavior/mechanism strategies and the landscape — all appended to `claim_0.json` in the seven-field idea schema. P2.5 rewrites each candidate's `Experiments` field in its own call. P3 assesses every candidate with three built-in external-reviewer prompts for novelty, impact, and research quality, then reranks. P4 improves every candidate from its assessment, one file per iteration (`claim_1.json` … `claim_<REFLECTIONS>.json`). P5 re-assesses, reranks, and ships the `TOP_N` to `claim.json`."
 argument-hint: "<intention — what you want out of this topic> [— n-behaviors: N] [— primed-multiplier: M] [— top-n: K|all] [— writer: session|llm-chat]"
 allowed-tools: Bash(*), Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Agent, Skill, mcp__llm-chat__chat, mcp__mechanic-db__search_papers
