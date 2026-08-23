@@ -151,7 +151,7 @@ Log every skip as `[resume] phase <N> skipped — <reason>`. Resume never delete
 
    ```
    if refine-logs/main-experiment-verdicts.json exists:
-       load it. Verify it covers every Cx in the plan; if any Cx is missing, treat as cache-miss and rebuild.
+       load it. Treat as cache-miss and rebuild if any Cx is missing, or if EXPERIMENT_RESULTS.md is newer (an iteration back-edge may have moved a verdict).
    else (cache-miss):
        Read refine-logs/EXPERIMENT_RESULTS.md (canonical post-hoc verdict source — written by /auto-experiment's final summary).
        Try to extract a per-claim verdict directly from its prose:

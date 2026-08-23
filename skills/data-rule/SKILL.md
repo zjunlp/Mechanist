@@ -13,7 +13,8 @@ All data constraints for an experiment live here. Apply them when you **design t
 
 ## 1. Provenance — existing dataset first
 
-Prefer an **existing** dataset that directly tests the target behavior. If none fits, **adapt** an existing one (relabel / filter / transform). Build **your own** only as a last resort. Record which of the three was used: `existing` / `adapted` / `constructed`.
+Prefer an **existing** dataset that directly tests the target behavior. All inputs, conditions, and intervention contexts should be derived from naturally occurring examples in the dataset, rather than from artificially constructed, random, reverse-engineered, or model-generated substitutes.
+If none fits, **adapt** an existing one (relabel / filter / transform). Build **your own** only as a last resort. Record which of the three was used: `existing` / `adapted` / `constructed`.
 
 ## 2. Clear splits
 
@@ -27,9 +28,9 @@ Labels must actually capture the **target behavior** the experiment is about, no
 
 Do **not** set up special or different data for M0 or for different mechanism methods — use one consistent dataset across them.
 
-- If the **user** or an incoming signal (e.g. `task.md`) **states a data amount**, use exactly that amount.
+- If the **user** or an incoming signal (e.g. uer input or `task.md` ) **states a data amount**, use exactly that amount.
 - Otherwise, apply the floor by what the experiment does:
-  - **Inference-time mechanism exploration or intervention** (locate a component, then ablate / patch / steer it): **at least 50 examples** (n > 50).
-  - **Tuning / editing** (training-time tuning, weight editing, learned steering directions): **thousand-level — on the order of thousands of examples** (i.e. at least ~1,000).
+  - **Inference-time mechanism exploration or intervention** (locate a component, then ablate / patch / steer it): **at least 50 examples** (n > 50). This floor applies to **every** run at this stage, including preliminary ones — e.g. when sweeping steering coefficients, each coefficient setting must still be evaluated on at least 50 examples. Smaller samples make the results too noisy to trust: the run-to-run variance swamps the effect, and a coefficient can look best purely by chance.
+  - **Tuning / editing** (training-time tuning, weight editing, learned steering directions): **hundred-level — on the order of hundreds of examples** (i.e. at least ~100).
 
 The floor is on **effective** sample size — the count after filtering for usable signal, capped by the number of unique source items (many derived examples from a few sources do not raise it).

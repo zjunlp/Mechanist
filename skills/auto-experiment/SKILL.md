@@ -114,7 +114,7 @@ Present a brief summary:
 Proceeding to implementation.
 ```
 
-**Data Rules — load and check now (data design).** Load `skills/data-rule/SKILL.md` and validate the plan's data against its four rules (provenance / splits / labels / sample-size floor). Loaded once here, it governs all data use through the rest of the workflow — unconditional, not the Phase 1.1 symptom routing. Surface any violation before proceeding.
+**Data Rules — load and check now (data design).** Must load `skills/data-rule/SKILL.md` and validate the plan's data against its four rules (provenance / splits / labels / sample-size floor). Loaded once here, it governs all data use through the rest of the workflow — unconditional, not the Phase 1.1 symptom routing. Surface any violation before proceeding.
 
 ### Phase 1.1: Experiment-Tips Routing 
 
