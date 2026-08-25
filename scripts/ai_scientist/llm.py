@@ -16,6 +16,7 @@ MAX_NUM_TOKENS = int(os.environ.get("MAX_NUM_TOKENS", "16384"))
 
 AVAILABLE_LLMS = [
     "claude-opus-4-8",
+    "claude-sonnet-5",
     "claude-opus-4-7",
     "gpt-5.4",
     "gpt-5.6-luna",

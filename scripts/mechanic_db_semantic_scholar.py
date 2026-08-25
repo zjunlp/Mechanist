@@ -15,6 +15,13 @@ from ai_scientist.tools.base_tool import BaseTool
 from ai_scientist.tools.mechanic_db import MechanicDBSearchTool
 from ai_scientist.tools.semantic_scholar import SemanticScholarSearchTool
 
+# Which half of mechanic-db a paper came from, shown on the paper's Source line
+# so the model can tell an interpretability hit from a cross-domain one.
+MECHANIC_SOURCE_NAMES = {
+    "interp_db": "mechanic-db (interpretability)",
+    "sciatlas_db": "mechanic-db (cross-domain)",
+}
+
 
 class CombinedMechanicDBSemanticScholarSearchTool(BaseTool):
     def __init__(
@@ -22,9 +29,11 @@ class CombinedMechanicDBSemanticScholarSearchTool(BaseTool):
         name: str = "SearchMechanicDB",
         description: str = (
             "Search for relevant literature using mechanic-db first and then "
-            "Semantic Scholar with the same query. mechanic-db returns up to "
-            "15 papers and Semantic Scholar returns up to 5 more papers. The "
-            "combined results are deduplicated before being shown."
+            "Semantic Scholar with the same query. mechanic-db searches both "
+            "of its halves - AI interpretability and an all-discipline "
+            "scientific graph - and returns the 15 most relevant papers of "
+            "each, 30 in total; Semantic Scholar returns up to 5 more papers. "
+            "The combined results are deduplicated before being shown."
         ),
         mechanic_max_results: Optional[int] = None,
         semantic_max_results: Optional[int] = None,
@@ -39,10 +48,12 @@ class CombinedMechanicDBSemanticScholarSearchTool(BaseTool):
         super().__init__(name, description, parameters)
         # How many papers each source contributes to the prompt. Env wins when the
         # caller passes nothing, so the quota is configurable without editing code.
+        # The mechanic-db number is PER DATABASE - the tool searches both halves
+        # and reranks them separately, so it yields up to 2x this many papers.
         self.mechanic_max_results = int(
             mechanic_max_results
             if mechanic_max_results is not None
-            else os.getenv("MECHANIC_DB_MAX_RESULTS", 15)
+            else os.getenv("MECHANIC_DB_MAX_RESULTS_PER_DB", 15)
         )
         self.semantic_max_results = int(
             semantic_max_results
@@ -65,16 +76,21 @@ class CombinedMechanicDBSemanticScholarSearchTool(BaseTool):
 
         try:
             mechanic_result = self.mechanic_tool.search_for_papers(query)
-            mechanic_papers = (mechanic_result.get("papers") or [])[
-                : self.mechanic_max_results
-            ]
-            merged_papers.extend(
-                self._dedupe_and_mark(
-                    mechanic_papers,
-                    seen_titles=seen_titles,
-                    source_name="mechanic-db",
+            # select_papers owns the truncation: it splits the pool by database,
+            # reranks each half against the query, and keeps the top
+            # mechanic_max_results of each. Slicing here instead would throw one
+            # of the two halves away.
+            mechanic_papers = self.mechanic_tool.select_papers(query, mechanic_result)
+            for paper in mechanic_papers:
+                merged_papers.extend(
+                    self._dedupe_and_mark(
+                        [paper],
+                        seen_titles=seen_titles,
+                        source_name=MECHANIC_SOURCE_NAMES.get(
+                            paper.get("db"), "mechanic-db"
+                        ),
+                    )
                 )
-            )
         except Exception as exc:
             notes.append(f"mechanic-db search failed: {type(exc).__name__}: {exc}")
 

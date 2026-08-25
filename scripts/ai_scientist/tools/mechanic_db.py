@@ -1,27 +1,45 @@
 """Mechanic-DB literature search tool.
 
 Thin wrapper around the standalone script `ai_scientist/mechanic_db_search.py`,
-which is invoked exactly as documented:
+which is invoked as:
 
-    python mechanic_db_search.py "<one-sentence query, free form>"
+    python mechanic_db_search.py "<one-sentence query, free form>" \
+        --top-k 300 --target-dbs interp_db sciatlas_db
 
 The script submits the flat (undecomposed) query to the mechanic-db SEARCH
 service, writes the full server response JSON to disk, and prints a compact
-{count, output, skipped, tier} summary on stdout. This tool runs it as a
-subprocess, reads the papers back from the `output` path in that summary, and
-formats the top-ranked ones for the ideation prompt.
+{count, db_counts, output, skipped, tier} summary on stdout.
+
+This tool runs it as a subprocess and then narrows the wide candidate pool down
+to what the ideation prompt actually gets:
+
+    search (300: 150 interp_db + 150 sciatlas_db)
+      → split by the per-paper `db` label the script recovers
+      → LLM rerank, each database independently
+      → top 15 of each → 30 papers to the caller
+
+Both databases are searched on every call and the two halves are truncated
+separately, so an all-discipline query cannot crowd the interpretability half
+out of the prompt (or vice versa). Reranking each half on its own also keeps
+the two prompts small and comparable.
 
 All transport/auth config (base URL, API key) lives in that script - this
 module deliberately holds none of it.
 
 Environment variables:
-    MECHANIC_DB_MAX_RESULTS - how many papers get formatted into the prompt
-                              (default 15).
-    MECHANIC_DB_TOP_K       - `--top-k` passed to the script (default 20; the
-                              service reads it as a per-database k).
-    MECHANIC_DB_TIMEOUT     - subprocess timeout in seconds (default 1300).
-    MECHANIC_DB_CACHE_DIR   - working dir for the script, where its result JSON
-                              lands (default ./mechanic_db_cache).
+    MECHANIC_DB_MAX_RESULTS_PER_DB - papers PER DATABASE that get formatted into
+                                     the prompt, after reranking (default 15,
+                                     so 30 total).
+    MECHANIC_DB_TOP_K              - `--top-k` passed to the script (default
+                                     300; the service reads it as a TOTAL split
+                                     across the databases searched, 150 each).
+    MECHANIC_DB_TARGET_DBS         - comma-separated databases to search
+                                     (default "interp_db,sciatlas_db"). "auto"
+                                     hands routing back to the server's splitter.
+    MECHANIC_DB_TIMEOUT            - subprocess timeout in seconds (default 1300).
+    MECHANIC_DB_CACHE_DIR          - working dir for the script, where its result
+                                     JSON lands (default ./mechanic_db_cache).
+    MECHANIC_DB_RERANK*            - reranker knobs; see ai_scientist.tools.rerank.
 """
 
 import json
@@ -30,15 +48,25 @@ import os.path as osp
 import shutil
 import subprocess
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from ai_scientist.tools.base_tool import BaseTool
+from ai_scientist.tools.rerank import rerank_papers
 
 # ai_scientist/tools/mechanic_db.py -> ai_scientist/mechanic_db_search.py
 SEARCH_SCRIPT = osp.join(
     osp.dirname(osp.dirname(osp.abspath(__file__))), "mechanic_db_search.py"
 )
+
+# Order matters: it is the order the two halves are concatenated in for the
+# prompt, interpretability first.
+DB_ORDER = ("interp_db", "sciatlas_db")
+DB_LABELS = {
+    "interp_db": "mechanic-db / interpretability",
+    "sciatlas_db": "mechanic-db / cross-domain",
+}
 
 
 class MechanicDBSearchTool(BaseTool):
@@ -50,7 +78,9 @@ class MechanicDBSearchTool(BaseTool):
             "covers AI interpretability papers (internal mechanisms of LLMs / "
             "Transformers / CNNs) as well as an all-discipline scientific graph "
             "(neuroscience, psychology, cognitive science, computer science, "
-            "biology, physics, chemistry, materials, humanities). "
+            "biology, physics, chemistry, materials, humanities). Both halves "
+            "are searched on every call and the most relevant 15 of each are "
+            "returned. "
             "Provide a one-sentence search query in English, packed with the "
             "field's real terminology and any model / method / dataset names "
             "you care about, to find relevant papers."
@@ -59,6 +89,7 @@ class MechanicDBSearchTool(BaseTool):
         top_k: Optional[int] = None,
         timeout: Optional[int] = None,
         cache_dir: Optional[str] = None,
+        target_dbs: Optional[List[str]] = None,
         script_path: str = SEARCH_SCRIPT,
     ):
         parameters = [
@@ -69,15 +100,17 @@ class MechanicDBSearchTool(BaseTool):
             }
         ]
         super().__init__(name, description, parameters)
+        # PER DATABASE, not a total: with both databases on, the caller gets up
+        # to 2x this many papers.
         self.max_results = int(
             max_results
             if max_results is not None
-            else os.getenv("MECHANIC_DB_MAX_RESULTS", 15)
+            else os.getenv("MECHANIC_DB_MAX_RESULTS_PER_DB", 15)
         )
-        # The service reads `top_k` as a per-database k (it shows up server side
-        # as top_k_interp / top_k_sciatlas), so this is not a total.
+        # The service reads `top_k` as a TOTAL retrieval budget and splits it
+        # evenly across the databases it searches, so 300 means 150 + 150.
         self.top_k = int(
-            top_k if top_k is not None else os.getenv("MECHANIC_DB_TOP_K", 20)
+            top_k if top_k is not None else os.getenv("MECHANIC_DB_TOP_K", 300)
         )
         self.timeout = int(
             timeout if timeout is not None else os.getenv("MECHANIC_DB_TIMEOUT", 1300)
@@ -85,6 +118,11 @@ class MechanicDBSearchTool(BaseTool):
         self.cache_dir = cache_dir or os.getenv(
             "MECHANIC_DB_CACHE_DIR", osp.join(os.getcwd(), "mechanic_db_cache")
         )
+        self.target_dbs = target_dbs or [
+            db.strip()
+            for db in os.getenv("MECHANIC_DB_TARGET_DBS", ",".join(DB_ORDER)).split(",")
+            if db.strip()
+        ]
         self.script_path = script_path
 
     # ------------------------------------------------------------------
@@ -102,10 +140,10 @@ class MechanicDBSearchTool(BaseTool):
             # back to the model so it can retry or move on.
             return f"mechanic-db search failed: {type(e).__name__}: {e}"
 
-        papers = result.get("papers") or []
+        papers = self.select_papers(query, result)
         if not papers:
             return "No papers found."
-        return self.format_papers(papers[: self.max_results])
+        return self.format_papers(papers)
 
     # ------------------------------------------------------------------
     # Subprocess call: python mechanic_db_search.py "<query>"
@@ -116,7 +154,12 @@ class MechanicDBSearchTool(BaseTool):
         os.makedirs(self.cache_dir, exist_ok=True)
 
         cmd = [sys.executable, self.script_path, query, "--top-k", str(self.top_k)]
-        print(f"Running mechanic-db search: {query!r} (top-k {self.top_k})")
+        if self.target_dbs:
+            cmd += ["--target-dbs", *self.target_dbs]
+        print(
+            f"Running mechanic-db search: {query!r} "
+            f"(top-k {self.top_k} across {', '.join(self.target_dbs) or 'auto'})"
+        )
         # cwd = cache_dir because the script writes its result JSON to a fixed
         # name relative to the working directory.
         proc = subprocess.run(
@@ -144,11 +187,63 @@ class MechanicDBSearchTool(BaseTool):
         if not result.get("papers") and isinstance(result.get("result"), dict):
             result["papers"] = result["result"].get("papers", [])
         result.setdefault("papers", [])
-        print(f"mechanic-db returned {len(result['papers'])} papers")
+        print(
+            f"mechanic-db returned {len(result['papers'])} papers "
+            f"({result.get('db_counts') or 'unlabelled'})"
+        )
         # The script always writes the same filename, so keep a stamped copy
         # before the next call overwrites it.
         self._archive(output_path)
         return result
+
+    # ------------------------------------------------------------------
+    # Pool -> prompt: split by database, rerank each, take the top of each
+    # ------------------------------------------------------------------
+    @staticmethod
+    def group_by_db(papers: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
+        """Bucket papers by the `db` label mechanic_db_search.py wrote on them.
+
+        Papers keep their retrieval order within a bucket. An unlabelled result
+        (an older cached JSON, or a response whose routing metadata was missing)
+        lands in a single bucket, which the caller then treats as one database.
+        """
+        grouped: Dict[str, List[Dict[str, Any]]] = {}
+        for paper in papers:
+            grouped.setdefault(paper.get("db") or "unlabelled", []).append(paper)
+        # interp first, then sciatlas, then anything unexpected.
+        return {
+            db: grouped[db]
+            for db in list(DB_ORDER) + [d for d in grouped if d not in DB_ORDER]
+            if db in grouped
+        }
+
+    def select_papers(self, query: str, result: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Rerank each database's half and return the top `max_results` of each."""
+        grouped = self.group_by_db(result.get("papers") or [])
+        if not grouped:
+            return []
+
+        # One LLM call per database, run concurrently: they are independent and
+        # each is a single round-trip over ~150 candidates.
+        def _rerank(item):
+            db, papers = item
+            return db, rerank_papers(
+                query, papers, self.max_results, label=DB_LABELS.get(db, db)
+            )
+
+        if len(grouped) == 1:
+            ranked = [_rerank(item) for item in grouped.items()]
+        else:
+            with ThreadPoolExecutor(
+                max_workers=len(grouped), thread_name_prefix="rerank"
+            ) as ex:
+                ranked = list(ex.map(_rerank, grouped.items()))
+
+        selected: List[Dict[str, Any]] = []
+        for db, papers in ranked:
+            print(f"selected {len(papers)}/{len(grouped[db])} papers from {db}")
+            selected.extend(papers)
+        return selected
 
     @staticmethod
     def _parse_summary(stdout: str) -> Dict[str, Any]:
@@ -190,7 +285,7 @@ class MechanicDBSearchTool(BaseTool):
 
     @staticmethod
     def _clip(value: Any, limit: int) -> str:
-        """Flatten a str/list field and cap it, so 15 papers stay promptable."""
+        """Flatten a str/list field and cap it, so 30 papers stay promptable."""
         if isinstance(value, (list, tuple)):
             value = "; ".join(str(v) for v in value)
         text = " ".join(str(value or "").split())

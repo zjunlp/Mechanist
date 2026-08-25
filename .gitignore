@@ -33,3 +33,6 @@ next-round.md
 backup.md
 example.json
 gate.md
+
+# Live credentials — template is scripts/ideation_config.example.json
+scripts/ideation_config.json

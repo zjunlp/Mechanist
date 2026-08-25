@@ -56,7 +56,7 @@ ACTION:
 <The action to take, exactly one of {base.tool_names_str}>
 
 ARGUMENTS:
-<If ACTION is "SearchMechanicDB", provide the search query as {{"query": "your search query"}}. This tool will search mechanic-db for up to 15 papers and Semantic Scholar for up to 5 more papers, then deduplicate the combined results before returning them. If ACTION is "FinalizeIdea", provide the idea details as {{"idea": {{ ... }}}} with the IDEA JSON specified below.>
+<If ACTION is "SearchMechanicDB", provide the search query as {{"query": "your search query"}}. This tool will search both halves of mechanic-db - AI interpretability and an all-discipline scientific graph - and return the 15 most relevant papers of each (30 in total), plus up to 5 more from Semantic Scholar, then deduplicate the combined results before returning them. If ACTION is "FinalizeIdea", provide the idea details as {{"idea": {{ ... }}}} with the IDEA JSON specified below.>
 
 If you choose to finalize your idea, provide the IDEA JSON in the arguments:
 
@@ -84,7 +84,7 @@ if __name__ == "__main__":
     _configure_base_module()
 
     parser = argparse.ArgumentParser(
-        description="Generate AI scientist proposals - template free + mechanism guides + mechanic-db(15) + semantic scholar(5)"
+        description="Generate AI scientist proposals - template free + mechanism guides + mechanic-db(15 per database, 30 total) + semantic scholar(5)"
     )
     parser.add_argument(
         "--model",
