@@ -116,8 +116,8 @@ Inside a Claude Code session:
 Then activate and verify it:
 
 ```text
-/reload-plugins   # only if the install summary asked for it
-/help             # listed as /mechanist:auto, /mechanist:msearch, /mechanist:mhistory
+/reload-plugins
+/mechanist        # listed as /mechanist:auto, /mechanist:msearch, /mechanist:mhistory ...
 /mcp              # llm-chat and mechanic-db should both be "connected"
 ```
 

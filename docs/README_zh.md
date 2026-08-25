@@ -116,8 +116,8 @@ uv --version
 然后激活并验证：
 
 ```text
-/reload-plugins   # 仅当安装摘要提示时需要
-/help             # 应列出 /mechanist:auto、/mechanist:msearch、/mechanist:mhistory
+/reload-plugins
+/mechanist        # 应列出 /mechanist:auto、/mechanist:msearch、/mechanist:mhistory ...
 /mcp              # llm-chat 与 mechanic-db 均应为 "connected"
 ```
 
