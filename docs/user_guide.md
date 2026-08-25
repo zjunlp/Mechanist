@@ -1,6 +1,153 @@
 # Mechanist — User Guide
 
-**This document covers advanced usage tips for user's work.**
+**This document covers advanced usage — the commands behind `/mguide`, the full parameter reference, and day-to-day tips.**
+
+---
+
+## The Commands Behind `/mguide`
+
+`/mguide` is the front door — it works out what you want, prepares the inputs, and dispatches to one of three commands. You can also call them directly:
+
+| Command | What it does |
+|:---|:---|
+| `/auto` | The autonomous research pipeline: claim → experiment → verify → iteration. |
+| `/msearch` | Literature search across the 14k-paper interpretability corpus, the 157M-node citation graph, and web sources. |
+| `/mhistory` | Developmental history of a research field — key papers, turning points, and how ideas evolved. |
+
+```text
+/msearch "sparse autoencoder feature absorption in large language models"
+/mhistory "the evolution of circuit-level interpretability"
+```
+
+---
+
+## `/auto` — The Autonomous Pipeline
+
+`/auto` is driven by **two orthogonal parameter axes**, each controlling one stage:
+
+| Axis | Values | Purpose |
+|:---|:---|:---|
+| **`behavior-source`** | `given` / `given-validation` / `discovery` | Controls where the behavior comes from and whether M0 (phenomenon validation) runs. |
+| **`mechanism`** | `given` / `discovery` | Controls who selects the mechanistic method — you or the system. |
+
+> Running `/auto` without arguments defaults to `behavior-source: given, mechanism: discovery`, and reads the task from `task.md` in the project root.
+
+### Pipeline Modes
+
+The two axes are orthogonal — all 3 × 2 = 6 combinations are valid. The four most common patterns are listed below.
+
+| Mode | Command | When to Use |
+|:---|:---|:---|
+| **Reproduction** | `/auto — behavior-source: given, mechanism: given` | Reproduce a paper: you specify the behavior, mechanism method, model, and data. Strict resource fidelity enforced. |
+| **Given Behavior + Discover Mechanism** | `/auto — behavior-source: given, mechanism: discovery` | The behavior is already verified; the system explores which mechanism explains it. |
+| **Validate Behavior + Discover Mechanism** | `/auto — behavior-source: given-validation, mechanism: discovery` | You propose a behavior but want it validated first (M0 gate) before mechanism exploration. |
+| **Full Discovery** | `/auto — behavior-source: discovery, mechanism: discovery` | Fully autonomous: the pipeline discovers the phenomenon and routes to the appropriate mechanism. |
+
+### Stage Artifacts
+
+Each stage writes its documents to disk before the next stage begins:
+
+| Stage | Key artifacts |
+|:---|:---|
+| **claim** | `idea-stage/IDEA_REPORT.md` — ranked candidate ideas, or the behavior and claims from `task.md`<br>`refine-logs/FINAL_PROPOSAL.md` — refined method proposal<br>`refine-logs/EXPERIMENT_PLAN.md` — per-claim milestones, models, data, success criteria |
+| **experiment** | `refine-logs/MECHANISM_ROUTING.md` — chosen interpretability method and why<br>`refine-logs/EXPERIMENT_RESULTS.md` — per-claim results and baseline verdicts<br>`runs/` — per-run code, logs, and GPU cost records |
+| **verify** | `verify/VERIFY_REPORT.md` — robustness verdicts and cross-claim summary<br>`verify/INTEGRITY_AUDIT.md` — honesty audits on original and swap runs |
+| **iteration** | `review-stage/AUTO_REVIEW.md` — round-by-round review log<br>`review-stage/AUTO_ITERATION_FINAL_REPORT.md` — what changed across fix loops |
+
+> [!NOTE]
+> **Reviewing results:** After each `/auto` run, start with `CLAIMS_LEDGER.md` (per-claim scoreboard) and `AUTO_PIPELINE_REPORT.md` (run journey, artifact index, and Open Items) at the project root.
+
+---
+
+## Writing `task.md`
+
+`task.md` is the **task specification** placed in each project directory. It is free-form natural language — there is no fixed schema. `/mguide` writes it for you; write it by hand when you want full control or plan to call `/auto` directly.
+
+**What you can ask for:**
+
+| What you can ask | Idea |
+|:---|:---|
+| **Explore a mechanism** | A known model behavior — find which internal component causes it. |
+| **Reproduce a paper** | Both the finding and the method are already known — re-run them faithfully. |
+| **Validate a suspected phenomenon** | You have a concrete hypothesis, but no paper (or prior run) has confirmed it yet. |
+| **Open-ended discovery** | Only a research direction — let Mechanist mine a new phenomenon, then investigate it. |
+
+**What `task.md` should contain:**
+
+| Content | When Required | Notes |
+|:---|:---|:---|
+| **behavior** | `behavior-source: given` / `given-validation` | A specific, falsifiable phenomenon to investigate. |
+| **topic** | `behavior-source: discovery` | A broad research direction; Mechanist will discover specific phenomena within it. |
+| **family** | `mechanism: given` | A specific mechanistic method to use (e.g., Fisher information, steering vectors). |
+| **model / data** | Recommended | The model and dataset for experiments (specify full paths). Required in reproduction mode. |
+| **claim list / goal** | Optional | Assertions you want verified and the objective for this round. |
+
+### Declaring Compute Resources
+
+Specify GPU budget and card limits in natural language within `task.md`:
+
+```text
+You have 8 hours of GPU budget. Do not pause or simplify experiments
+due to GPU budget before reaching it. You may use at most 4 of the
+8 available GPUs simultaneously.
+```
+
+- **A generous budget increases the agent's experimental ambition** — it tells the agent "don't cut corners," not just "don't exceed this."
+- You can also allocate resources to specific stages (e.g., "main experiments up to 4 GPUs, verify variants up to 2").
+- GPU budgets are **hard constraints**: the agent scales each experiment within budget before launching, and halts with a report if truly insufficient.
+
+### Declaring Hard Constraints
+
+Use natural language in `task.md` to declare inviolable requirements. The orchestrator automatically classifies and dispatches each constraint to the relevant stage.
+
+```text
+Must strictly use Llama-3-8B for all experiments. Do not use Pythia 2.8B.
+When verifying claim 3, only use Pythia 1B and 410M; do not run 2.8B yet.
+```
+
+The agent treats hard constraints as red lines. If genuinely impossible under the constraints, it halts and reports rather than silently breaking them.
+
+### Progress Notifications
+
+Express notification intent in `task.md`:
+
+```text
+Send progress updates to example@gmail.com, syncing once per hour.
+```
+
+When enabled, the pipeline pushes briefings at key touchpoints (experiment completed / verify completed / pipeline finished / halted / needs human input) and syncs progress hourly. Without a notification statement, the feature is fully silent with zero pipeline impact.
+
+> [!NOTE]
+> You must configure your own notification channel. Mechanist only scans locally configured channels and sends through them; it does not install or recommend any specific notification tool.
+
+---
+
+## Multi-Round Research
+
+After a `/auto` run completes, use `/next-round` to archive the round's artifacts into `rounds/round_<N>/` and draft the next round's `task.md`. It reads `research_memory.json` to avoid re-exploring settled phenomena or mechanism directions.
+
+```bash
+# Explore a brand-new phenomenon
+/next-round new-behavior
+#   Recommended next: /auto — behavior-source: discovery, mechanism: discovery
+
+# Keep the same behavior, explore a new mechanism
+/next-round new-mechanism B1
+#   Recommended next: /auto — behavior-source: given, mechanism: discovery
+
+# Let it recommend based on the previous round's conclusions
+/next-round
+```
+
+Before archiving, `/next-round` prints what will be moved and what will stay. Artifacts go into `rounds/round_<N>/`, while `task.md`, `research_memory.*`, `.claude/`, `.mcp.json`, and `.git` remain in the root. The `new-mechanism` variant additionally preserves `data/` and `cache/` to reuse activations from the same behavior.
+
+**Multi-round guard:** Each `/auto` start checks for unarchived artifacts from the previous round in the root directory. If found, it halts and prompts you to either run `/next-round` (archive and proceed — recommended), `resume: true` (continue the unfinished round), or manually delete the listed artifacts. This guard fires even in fully automatic mode — it will never silently overwrite a previous round's work.
+
+**Revisiting settled directions:** By default, `/auto` avoids re-exploring behaviors or mechanisms already marked as settled in `research_memory.json`. If you pin a settled direction in `task.md` without authorization, the pipeline treats it as a probable oversight and silently picks a fresh alternative (in auto mode) or asks you to confirm (in interactive mode). To force a re-run, add to `task.md`:
+
+```markdown
+retry-settled: true
+```
 
 ---
 
