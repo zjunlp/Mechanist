@@ -34,14 +34,14 @@
 - [🔄 工作流程](#-工作流程)
 - [🔧 安装](#-安装)
   - [1. 安装 Claude Code 与 uv](#1-安装-claude-code-与-uv)
-  - [2. 安装 Mechanist 插件](#2-安装-mechanist-插件)
+  - [2. 为 Claude Code 安装 Mechanist 插件](#2-为-claude-code-安装-mechanist-插件)
   - [3. 配置外部评审模型](#3-配置外部评审模型)
-  - [4. 准备 Python 实验环境](#4-准备-python-实验环境可选)
+  - [4. 准备跑实验用的 Python 环境](#4-准备跑实验用的-python-环境可选)
 - [🚀 快速开始](#-快速开始)
   - [1. 创建工作目录](#1-创建工作目录)
   - [2. 启动 Claude Code](#2-启动-claude-code)
-  - [3. 告诉 `/mguide` 你想做什么](#3-告诉-mguide-你想做什么)
-  - [4. 阅读结果](#4-阅读结果)
+  - [3. 把你想做的事告诉 `/mguide`](#3-把你想做的事告诉-mguide)
+  - [4. 跟踪运行，然后阅读结果](#4-跟踪运行然后阅读结果)
 - [📖 进一步阅读](#-进一步阅读)
 - [🙏 致谢](#-致谢)
 - [📄 引用](#-引用)
@@ -88,7 +88,7 @@
 
 ### 1. 安装 Claude Code 与 uv
 
-Mechanist 运行在 Claude Code 之内——请先安装 Claude Code CLI：
+Mechanist 运行在 Claude Code 之内——请先安装 Claude Code CLI。
 
 ```bash
 # 安装 Claude Code，重启终端后验证
@@ -96,7 +96,7 @@ curl -fsSL https://claude.ai/install.sh | bash
 claude --version
 ```
 
-Mechanist 的 MCP 服务使用 `uv` 管理 Python 环境——接着安装 uv：
+Mechanist 的 MCP 服务使用 uv 管理 Python 环境——接着安装 uv。
 
 ```bash
 # Mechanist 的 MCP 服务用 uv 启动临时 Python 环境
@@ -104,7 +104,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 uv --version
 ```
 
-### 2. 安装 Mechanist 插件
+### 2. 为 Claude Code 安装 Mechanist 插件
 
 在 Claude Code 会话中执行：
 
@@ -117,7 +117,7 @@ uv --version
 
 ```text
 /reload-plugins   # 仅当安装摘要提示时需要
-/help             # 应出现 /mechanist:mguide
+/help             # 应列出 /mechanist:auto、/mechanist:msearch、/mechanist:mhistory
 /mcp              # llm-chat 与 mechanic-db 均应为 "connected"
 ```
 
@@ -125,7 +125,7 @@ uv --version
 
 ### 3. 配置外部评审模型
 
-Mechanist 在每一阶段都会用**外部评审模型**交叉验证自己的 idea、实验设计与结论——该模型须独立于 Claude，避免同模型自评。**不要使用 Claude 系列模型担任此角色。** 推荐通过 [platform.openai.com](https://platform.openai.com) 使用 GPT-5.4（`gpt-5.4`）；填入标准 OpenAI key 后，下方默认值即可。若使用 Azure、DeepSeek、通义千问或第三方中转，请将三个变量都指向 OpenAI 兼容端点。
+Mechanist 在每一阶段都会用外部评审模型交叉验证自己的 idea、实验设计与结论——该模型须独立于 Claude，避免同模型自评。**不要使用 Claude 系列模型担任此角色。** 推荐通过 [platform.openai.com](https://platform.openai.com) 使用 GPT-5.4——填入标准 OpenAI key 后，下方默认值即可。若使用 Azure、DeepSeek、通义千问或第三方中转，请将三个变量都指向 OpenAI 兼容端点。
 
 | 环境变量 | 是否必填 | 默认 / 示例 | 用途 |
 |:---|:---|:---|:---|
@@ -133,7 +133,7 @@ Mechanist 在每一阶段都会用**外部评审模型**交叉验证自己的 id
 | `LLM_MODEL` | 可选 | `gpt-5.4` | 外部评审模型名称。 |
 | `LLM_BASE_URL` | 可选 | `https://api.openai.com/v1` | LLM 服务端点；使用中转时填中转 URL。 |
 
-将以下内容写入 `~/.bashrc`（或 `~/.zshrc`）：
+要设置上述变量，请将以下内容写入 `~/.bashrc`（或 `~/.zshrc`）：
 
 ```bash
 # --- Mechanist（写入 ~/.bashrc 或 ~/.zshrc）---
@@ -152,9 +152,9 @@ echo "$LLM_API_KEY"         # 应打印你的 key，而不是空行
 > [!NOTE]
 > **环境变量只在 Claude Code 启动时读取。** 在已运行的会话里 `export` 不会生效。请编辑 `~/.bashrc` → `source`（或新开终端）→ 再重启 Claude Code。
 
-### 4. 准备 Python 实验环境（可选）
+### 4. 准备跑实验用的 Python 环境（可选）
 
-Mechanist 在启动 Claude 会话时所在的 Python 环境中跑实验。若尚未安装实验常用包（PyTorch、NumPy、scikit-learn 等），可用下面命令创建 conda 环境。我们提供的 `scientist` 环境覆盖了 Mechanist 跑实验时常用的工具：
+Mechanist 在启动 Claude 会话时所在的 Python 环境中跑实验。若尚未安装实验常用包（PyTorch、NumPy、scikit-learn 等），可用下面的命令创建 conda 环境。我们提供的 `scientist` 环境覆盖了 Mechanist 跑实验时可能用到的常用工具。
 
 ```bash
 # 示例：名为 scientist 的专用 conda 环境
@@ -169,11 +169,11 @@ pip install -r <(curl -sSL https://raw.githubusercontent.com/zjunlp/Mechanist/ma
 
 ## 🚀 快速开始
 
-新建一个空文件夹，在其中启动 Claude Code，然后用自然语言告诉 **`/mguide`** 你想做什么。它会通过对话帮你理清研究需求，替你写好 `task.md`——描述本次实验任务的说明文档，也是后续整条流水线的起点——你确认后直接跑起来。
+创建一个文件夹作为工作目录，在其中启动 Claude Code，然后用自然语言把你想做的事告诉 `/mguide`。它会与你一起厘清研究需求，并替你写出 `task.md`——下游一切工作都以这份任务说明书为基础——待你确认后启动自主流水线。以下是具体步骤：
 
 ```
  /mguide "你想做的事"
-     │   它帮你理清你的研究需求
+     │   它与你一起厘清你的研究需求
      ▼
  task.md
      │   它替你写好的任务说明书，你确认后开跑
@@ -187,62 +187,96 @@ pip install -r <(curl -sSL https://raw.githubusercontent.com/zjunlp/Mechanist/ma
 
 ### 1. 创建工作目录
 
+为本次研究任务新建一个空文件夹。Mechanist 会在此目录内工作，并将所有产出写入其中。
+
 ```bash
 mkdir my-experiment && cd my-experiment   # 每个研究问题对应一个目录
 ```
 
-Mechanist 会在此目录内工作，并将所有产出写入其中。
-
 ### 2. 启动 Claude Code
 
 > [!NOTE]
-> 推荐使用 `claude-opus-4-8` 以获得良好表现。较弱模型会拖累整条流水线。
+> **请使用 Opus 系列模型。** 推荐 `claude-opus-4-8` 以获得良好表现——在已运行的会话中可用 `/model claude-opus-4-8` 切换。较弱模型会拖累整条流水线。
+
+在项目根目录（即第 1 步创建的文件夹）中启动 Claude Code：
 
 ```bash
 claude --model claude-opus-4-8
 ```
 
-### 3. 告诉 `/mguide` 你想做什么
+### 3. 把你想做的事告诉 `/mguide`
 
-`/mguide` 是唯一入口——不需要学参数，也不需要记文件格式，用你自己的话描述目标即可：
+`/mguide` 是 Mechanist 的入口。在 Claude Code 提示符下输入它，并用自然语言描述你的任务——剩下的它会与你一起厘清。
 
-**跑一次研究**——探索机理、复现论文、验证可疑现象，或者只给一个大方向、让它自己挖出现象：
+你可以让它做这些事：
 
-```text
-/mguide Reproduce this paper: LLMs encode harmfulness and refusal separately
-```
+#### 研究运行 *（运行完整研究流水线）*
 
-**检索文献**——在 14k 篇可解释性论文语料库、157M 节点引用网络及网络资源中搜索：
+- **探索机理**  
+  已知模型行为——找出哪个内部组件导致了它。
 
-```text
-/mguide 帮我找找 sparse autoencoder feature absorption in large language models 相关的论文
-```
+- **复现论文**  
+  发现与方法均已知——按既定规模忠实复现。
 
-**了解一个领域的发展**——关键论文、转折点、主要争论与开放问题的时间线：
+  ```text
+  /mguide Reproduce this paper: LLMs encode harmfulness and refusal separately
+  ```
 
-```text
-/mguide 我想知道 circuit-level interpretability 是怎么一步步走到今天的
-```
+- **验证可疑现象**  
+  已有具体假设，但尚无论文（或先前实验）确认。
 
-对于研究任务，`/mguide` 只会问它无法推断的信息——用哪个模型和数据集、权重放在哪里、可以花多少 GPU 时间——然后把 `task.md` 写入当前目录、拿给你过目，待你确认后启动运行。
+- **开放式发现**  
+  只有研究方向——让 Mechanist 先挖出新现象，再深入调查。
 
-### 4. 阅读结果
+#### 文献 *（仅返回答案，不启动流水线）*
 
-运行会按顺序执行四个阶段——**claim → experiment → verify → iteration**——并在进入下一阶段前将本阶段文档写入磁盘（`idea-stage/`、`refine-logs/`、`verify/`、`review-stage/`、`runs/`）。结束后，优先阅读项目根目录下的这两个文件：
+- **检索文献**  
+  在 14k 篇可解释性论文语料库、157M 节点引用网络及网络资源中搜索。
+
+  ```text
+  /mguide find me papers on sparse autoencoder feature absorption in large language models
+  ```
+
+- **了解一个领域的发展**  
+  关键论文、转折点、主要争论与开放问题的时间线。
+
+  ```text
+  /mguide I'd like to know how circuit-level interpretability got to where it is today
+  ```
+
+### 4. 跟踪运行，然后阅读结果
+
+如果 Mechanist 接下的是一次**研究运行**，就会进入下面的完整科研流水线；文献类请求直接返回答案，不会走到这一步。
+
+Mechanist 按顺序执行四个阶段：**claim → experiment → verify → iteration**，并在进入下一阶段前将本阶段相关文档写入磁盘。阅读这些文档可以让你跟踪已完成的工作、下一步的计划以及已有的发现：
+
+| 阶段 | 产物 | 内容 |
+|:---|:---|:---|
+| **claim** | `idea-stage/IDEA_REPORT.md` | 候选 idea 排序，或从你的 task.md 中捕获的行为与断言。 |
+| | `refine-logs/FINAL_PROPOSAL.md` | 精炼后的方法提案——这些断言将如何被检验。 |
+| | `refine-logs/EXPERIMENT_PLAN.md` | 各断言里程碑：模型、数据、样本量与成功标准。 |
+| **experiment** | `refine-logs/MECHANISM_ROUTING.md` | 选用了哪种可解释性方法、考虑过哪些候选，以及为什么。 |
+| | `refine-logs/EXPERIMENT_RESULTS.md` | 各断言结果、一句话结论与基线判决（支持 / 不支持）。 |
+| | `runs/` | 各次实验任务的代码、日志与 GPU 开销记录。 |
+| **verify** | `verify/VERIFY_REPORT.md` | 各断言鲁棒性判决与跨断言摘要。 |
+| | `verify/INTEGRITY_AUDIT.md` | 诚实性审计在原始结果与各 swap 跑上的发现。 |
+| **iteration** | `review-stage/AUTO_REVIEW.md` | 逐轮审稿记录：评分、被标记的问题，以及采取的修复。 |
+| | `review-stage/AUTO_ITERATION_FINAL_REPORT.md` | 修复循环中各断言的变化，以及末尾仍未解决的事项。 |
+
+结束后，优先阅读项目根目录下的这两个文件：
 
 | 文件 | 内容 |
 |:---|:---|
 | `CLAIMS_LEDGER.md` | 各断言记分板：最终判决、鲁棒性与注意事项。 |
 | `AUTO_PIPELINE_REPORT.md` | 本轮旅程、全部产物索引，以及仍需你处理的 Open Items。 |
 
-> 想自己驾驶流水线——流水线模式、手写 `task.md`、GPU 预算、硬约束、多轮研究？见[用户指南](user_guide_zh.md)。
-
 ---
 
 ## 📖 进一步阅读
 
-- **[用户指南](user_guide_zh.md)**——`/mguide` 背后的命令、流水线模式与完整参数参考、手写 `task.md`、GPU 预算与硬约束、多轮研究、文献管理、批量假设生成与实验隔离。
-- **[开发者指南](developer_guide_zh.md)**——面向需要本地修改 skill 提示词、agent 定义或 MCP 服务代码的贡献者。
+**想更深入了解 Mechanist？** 阅读 Mechanist 文档，了解：如何归档本轮结果并开启下一轮、Mechanist 的进阶用法、如何写好 `task.md`，以及流水线是如何设计的。
+
+**[阅读 Mechanist 文档 →](http://mechanist.openkg.cn/docs/index.html)**
 
 ---
 
