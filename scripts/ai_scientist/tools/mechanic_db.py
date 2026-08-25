@@ -26,20 +26,20 @@ the two prompts small and comparable.
 All transport/auth config (base URL, API key) lives in that script - this
 module deliberately holds none of it.
 
+The retrieval shape - TOP_K and which databases are searched - is fixed in this
+module rather than configurable. Both are load-bearing: the pipeline assumes two
+halves to truncate separately, and the rerank needs a pool wide enough to be
+worth ranking. They are properties of the tool, not per-run knobs.
+
 Environment variables:
-    MECHANIC_DB_MAX_RESULTS_PER_DB - papers PER DATABASE that get formatted into
-                                     the prompt, after reranking (default 15,
-                                     so 30 total).
-    MECHANIC_DB_TOP_K              - `--top-k` passed to the script (default
-                                     300; the service reads it as a TOTAL split
-                                     across the databases searched, 150 each).
-    MECHANIC_DB_TARGET_DBS         - comma-separated databases to search
-                                     (default "interp_db,sciatlas_db"). "auto"
-                                     hands routing back to the server's splitter.
-    MECHANIC_DB_TIMEOUT            - subprocess timeout in seconds (default 1300).
-    MECHANIC_DB_CACHE_DIR          - working dir for the script, where its result
-                                     JSON lands (default ./mechanic_db_cache).
-    MECHANIC_DB_RERANK*            - reranker knobs; see ai_scientist.tools.rerank.
+    MECHANIC_DB_MAX_RESULTS_INTERP   - interp_db papers that reach the prompt,
+                                       after reranking (default 15).
+    MECHANIC_DB_MAX_RESULTS_SCIATLAS - sciatlas_db papers that reach the prompt,
+                                       after reranking (default 15).
+    MECHANIC_DB_TIMEOUT              - subprocess timeout in seconds (default 1300).
+    MECHANIC_DB_CACHE_DIR            - working dir for the script, where its
+                                       result JSON lands (./mechanic_db_cache).
+    MECHANIC_DB_RERANK_MODEL         - see ai_scientist.tools.rerank.
 """
 
 import json
@@ -60,12 +60,25 @@ SEARCH_SCRIPT = osp.join(
     osp.dirname(osp.dirname(osp.abspath(__file__))), "mechanic_db_search.py"
 )
 
-# Order matters: it is the order the two halves are concatenated in for the
-# prompt, interpretability first.
+# The databases searched on every call, in the order the two halves are
+# concatenated for the prompt: interpretability first. Fixed, not configurable.
 DB_ORDER = ("interp_db", "sciatlas_db")
 DB_LABELS = {
     "interp_db": "mechanic-db / interpretability",
     "sciatlas_db": "mechanic-db / cross-domain",
+}
+
+# TOTAL retrieval budget. The service splits it evenly across the databases it
+# searches, so 300 means 150 candidates per database feeding each rerank.
+TOP_K = 300
+
+# Papers per database that survive the rerank and reach the prompt. Split per
+# database so the two halves can be weighted independently - an interp-heavy
+# run can starve the cross-domain half without touching retrieval.
+DEFAULT_MAX_RESULTS = {"interp_db": 15, "sciatlas_db": 15}
+MAX_RESULTS_ENV = {
+    "interp_db": "MECHANIC_DB_MAX_RESULTS_INTERP",
+    "sciatlas_db": "MECHANIC_DB_MAX_RESULTS_SCIATLAS",
 }
 
 
@@ -79,17 +92,15 @@ class MechanicDBSearchTool(BaseTool):
             "Transformers / CNNs) as well as an all-discipline scientific graph "
             "(neuroscience, psychology, cognitive science, computer science, "
             "biology, physics, chemistry, materials, humanities). Both halves "
-            "are searched on every call and the most relevant 15 of each are "
-            "returned. "
+            "are searched on every call and the most relevant papers of each "
+            "are returned. "
             "Provide a one-sentence search query in English, packed with the "
             "field's real terminology and any model / method / dataset names "
             "you care about, to find relevant papers."
         ),
-        max_results: Optional[int] = None,
-        top_k: Optional[int] = None,
+        max_results: Optional[Dict[str, int]] = None,
         timeout: Optional[int] = None,
         cache_dir: Optional[str] = None,
-        target_dbs: Optional[List[str]] = None,
         script_path: str = SEARCH_SCRIPT,
     ):
         parameters = [
@@ -100,30 +111,28 @@ class MechanicDBSearchTool(BaseTool):
             }
         ]
         super().__init__(name, description, parameters)
-        # PER DATABASE, not a total: with both databases on, the caller gets up
-        # to 2x this many papers.
-        self.max_results = int(
-            max_results
-            if max_results is not None
-            else os.getenv("MECHANIC_DB_MAX_RESULTS_PER_DB", 15)
-        )
-        # The service reads `top_k` as a TOTAL retrieval budget and splits it
-        # evenly across the databases it searches, so 300 means 150 + 150.
-        self.top_k = int(
-            top_k if top_k is not None else os.getenv("MECHANIC_DB_TOP_K", 300)
-        )
+        # One quota per database, each independently overridable.
+        overrides = max_results or {}
+        self.max_results = {
+            db: int(overrides.get(db, os.getenv(MAX_RESULTS_ENV[db],
+                                                DEFAULT_MAX_RESULTS[db])))
+            for db in DB_ORDER
+        }
         self.timeout = int(
             timeout if timeout is not None else os.getenv("MECHANIC_DB_TIMEOUT", 1300)
         )
         self.cache_dir = cache_dir or os.getenv(
             "MECHANIC_DB_CACHE_DIR", osp.join(os.getcwd(), "mechanic_db_cache")
         )
-        self.target_dbs = target_dbs or [
-            db.strip()
-            for db in os.getenv("MECHANIC_DB_TARGET_DBS", ",".join(DB_ORDER)).split(",")
-            if db.strip()
-        ]
         self.script_path = script_path
+        # Say what the model will actually receive, so a changed quota cannot
+        # leave the tool description (and the ideation prompt built from it)
+        # advertising a stale number.
+        self.description = self.description.replace(
+            "the most relevant papers of each",
+            f'the most relevant {self.max_results["interp_db"]} interpretability '
+            f'and {self.max_results["sciatlas_db"]} cross-domain papers',
+        )
 
     # ------------------------------------------------------------------
     # Tool entry point
@@ -153,12 +162,11 @@ class MechanicDBSearchTool(BaseTool):
             raise FileNotFoundError(f"search script not found: {self.script_path}")
         os.makedirs(self.cache_dir, exist_ok=True)
 
-        cmd = [sys.executable, self.script_path, query, "--top-k", str(self.top_k)]
-        if self.target_dbs:
-            cmd += ["--target-dbs", *self.target_dbs]
+        cmd = [sys.executable, self.script_path, query,
+               "--top-k", str(TOP_K), "--target-dbs", *DB_ORDER]
         print(
             f"Running mechanic-db search: {query!r} "
-            f"(top-k {self.top_k} across {', '.join(self.target_dbs) or 'auto'})"
+            f"(top-k {TOP_K} across {', '.join(DB_ORDER)})"
         )
         # cwd = cache_dir because the script writes its result JSON to a fixed
         # name relative to the working directory.
@@ -217,8 +225,18 @@ class MechanicDBSearchTool(BaseTool):
             if db in grouped
         }
 
+    def limit_for(self, db: str) -> int:
+        """How many papers this database contributes to the prompt.
+
+        An `unlabelled` bucket is one group standing in for the whole result, so
+        it gets the combined quota rather than one database's share.
+        """
+        if db in self.max_results:
+            return self.max_results[db]
+        return sum(self.max_results.values())
+
     def select_papers(self, query: str, result: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Rerank each database's half and return the top `max_results` of each."""
+        """Rerank each database's half and return its share of the prompt."""
         grouped = self.group_by_db(result.get("papers") or [])
         if not grouped:
             return []
@@ -228,7 +246,7 @@ class MechanicDBSearchTool(BaseTool):
         def _rerank(item):
             db, papers = item
             return db, rerank_papers(
-                query, papers, self.max_results, label=DB_LABELS.get(db, db)
+                query, papers, self.limit_for(db), label=DB_LABELS.get(db, db)
             )
 
         if len(grouped) == 1:

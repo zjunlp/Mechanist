@@ -31,11 +31,11 @@ class CombinedMechanicDBSemanticScholarSearchTool(BaseTool):
             "Search for relevant literature using mechanic-db first and then "
             "Semantic Scholar with the same query. mechanic-db searches both "
             "of its halves - AI interpretability and an all-discipline "
-            "scientific graph - and returns the 15 most relevant papers of "
-            "each, 30 in total; Semantic Scholar returns up to 5 more papers. "
+            "scientific graph - and returns the most relevant papers of each; "
+            "Semantic Scholar returns a few more. "
             "The combined results are deduplicated before being shown."
         ),
-        mechanic_max_results: Optional[int] = None,
+        mechanic_max_results: Optional[Dict[str, int]] = None,
         semantic_max_results: Optional[int] = None,
     ):
         parameters = [
@@ -48,22 +48,26 @@ class CombinedMechanicDBSemanticScholarSearchTool(BaseTool):
         super().__init__(name, description, parameters)
         # How many papers each source contributes to the prompt. Env wins when the
         # caller passes nothing, so the quota is configurable without editing code.
-        # The mechanic-db number is PER DATABASE - the tool searches both halves
-        # and reranks them separately, so it yields up to 2x this many papers.
-        self.mechanic_max_results = int(
-            mechanic_max_results
-            if mechanic_max_results is not None
-            else os.getenv("MECHANIC_DB_MAX_RESULTS_PER_DB", 15)
-        )
+        # mechanic-db owns its own per-database quotas (MECHANIC_DB_MAX_RESULTS_
+        # INTERP / _SCIATLAS); pass a {db: n} dict only to override them here.
         self.semantic_max_results = int(
             semantic_max_results
             if semantic_max_results is not None
             else os.getenv("S2_MAX_RESULTS", 5)
         )
-        self.mechanic_tool = MechanicDBSearchTool(max_results=self.mechanic_max_results)
+        self.mechanic_tool = MechanicDBSearchTool(max_results=mechanic_max_results)
+        self.mechanic_max_results = self.mechanic_tool.max_results
         self.semantic_tool = SemanticScholarSearchTool(
             max_results=self.semantic_max_results
         )
+        # Carry mechanic-db's real numbers into this tool's own description, so
+        # the ideation prompt never advertises a stale count.
+        counts = self.mechanic_max_results
+        self.description = self.description.replace(
+            "the most relevant papers of each",
+            f'the {counts["interp_db"]} most relevant interpretability papers '
+            f'and the {counts["sciatlas_db"]} most relevant cross-domain ones',
+        ).replace("a few more", f"up to {self.semantic_max_results} more")
 
     def use_tool(self, query: str = "", **kwargs: Any) -> str:
         query = (query or "").strip()

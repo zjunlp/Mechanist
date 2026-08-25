@@ -12,8 +12,6 @@ gateway error, unparseable reply, hallucinated indices) falls back to the
 retrieval order, so a bad rerank can only cost relevance, not the search.
 
 Environment variables:
-    MECHANIC_DB_RERANK        - "0"/"false"/"off" disables reranking entirely,
-                                leaving the retrieval order untouched.
     MECHANIC_DB_RERANK_MODEL  - model for the rerank pass (default
                                 claude-sonnet-5). Deliberately NOT tied to
                                 IDEATION_MODEL: reranking spends ~30k input
@@ -64,12 +62,6 @@ Return the {top_n} most useful candidates, best first, as their integer ids. Rep
 ```json
 {{"ranking": [<id>, <id>, ...]}}
 ```"""
-
-
-def rerank_enabled() -> bool:
-    return os.getenv("MECHANIC_DB_RERANK", "1").strip().lower() not in (
-        "0", "false", "off", "no",
-    )
 
 
 def rerank_model() -> str:
@@ -153,7 +145,8 @@ def rerank_papers(
     """
     if not papers:
         return []
-    if top_n >= len(papers) or not rerank_enabled():
+    if top_n >= len(papers):
+        # Nothing to choose between - every candidate reaches the prompt anyway.
         return papers[:top_n]
 
     tag = f"[{label}] " if label else ""
