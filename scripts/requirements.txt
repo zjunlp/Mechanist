@@ -1,0 +1,12 @@
+# Python environment for the hypothesis-batch-v3 P1 ideation scripts.
+#   conda create -n mechanist-ideation python=3.11 -y
+#   conda activate mechanist-ideation
+#   pip install -r requirements.txt
+#
+# Versions are lower bounds — the pipeline was developed against these.
+anthropic>=0.116.0
+openai>=2.45.0
+backoff>=2.2.1
+httpx>=0.28.1
+requests>=2.32.0
+tiktoken>=0.13.0
