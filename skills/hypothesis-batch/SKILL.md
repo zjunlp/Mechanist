@@ -1,6 +1,6 @@
 ---
 name: hypothesis-batch
-description: "Batch pipeline for research hypotheses. The positional argument is the user's whole INPUT INTENTION. P1 generates candidates into `claim_0.json` in two serial passes by running two packaged ideation scripts: first the no-guide script, then the with-guide script. P2 rewrites each candidate's `Experiments` field in its own call, into `claim_1.json`. P3 assesses every candidate in `claim_1.json` with three built-in external-reviewer prompts for novelty, impact, and research quality, then reranks. P4 improves every candidate from its assessment, one file per iteration (`claim_2.json` … `claim_<REFLECTIONS+1>.json`). P5 is the Orchestrator's own rerank of the improved pool on impact first and novelty second — no scores, no model call — and ships the `TOP_N` to `claim.json`."
+description: "Batch pipeline for research hypotheses. The positional argument is the user's whole INPUT INTENTION. P1 generates candidates into `claim_0.json` in two serial passes by running two packaged ideation scripts: first the no-guide script, then the with-guide script. P2 rewrites each candidate's `Experiments` field in its own call, into `claim_1.json`. P3 assesses every candidate in `claim_1.json` with one built-in external-reviewer prompt that scores novelty, impact, and research quality in a single call; it does not reorder the pool. P4 improves every candidate from its assessment, one file per iteration (`claim_2.json` … `claim_<REFLECTIONS+1>.json`). P5 is the Orchestrator's own rerank of the improved pool on impact first and novelty second — no scores, no model call — and ships the `TOP_N` to `claim.json`."
 argument-hint: "<intention — what you want out of this topic> [— n-behaviors: N] [— primed-multiplier: M] [— top-n: K|all] [— writer: session|llm-chat]"
 allowed-tools: Bash(*), Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Agent, Skill, mcp__llm-chat__chat, mcp__mechanic-db__search_papers
 ---
@@ -32,9 +32,8 @@ P1  generation via packaged scripts ──────────────�
 
 P2  improve the experiments (one candidate/call) ──── WRITER        → claim_1.json
 
-P3  assess + rerank ───────────────────────────────── llm-chat ★    → claim_1.json (in place)
-    ├─ P3.1  novelty / impact / review prompts per idea + revision notes
-    └─ P3.2  rerank, write `rank` back
+P3  assess ────────────────────────────────────────── llm-chat ★    → claim_1.json (in place)
+    └─ one reviewer call per idea — novelty / impact / review + revision notes
 
 P4  improve from the assessment ───────────────────── WRITER        → claim_2.json … claim_<REFLECTIONS+1>.json
     (one file per iteration)
@@ -50,7 +49,7 @@ P5  rerank on impact ▸ novelty, then cut to TOP_N ──── Orchestrator �
 ```
 topic.md          # P1's input — the INTENTION, verbatim
 claim_0.json      # P1's pool — every generated candidate, seven fields each
-claim_1.json      # P2's experiment rewrite + P3's assessment and rank
+claim_1.json      # P2's experiment rewrite + P3's assessment
 claim_2.json      # P4 iteration 1
 …
 claim_<R+1>.json  # P4 iteration REFLECTIONS, reranked by P5
@@ -66,18 +65,18 @@ search_cache/     # P1 mechanic-db responses, one timestamped archive per search
 | `INTENTION` | positional arg, verbatim | the whole user intention — direction + angle + constraint + wanted result | required; no flag |
 | `TOPIC` / `topic_slug` | distilled from `INTENTION` | library identity only — the cross-topic guard when a run is filed alongside others | not passable |
 | `N_BEHAVIORS` | 10 | seed candidates in P1.1 | `— n-behaviors: N` |
-| `PRIMED_MULTIPLIER` | 3 | P1.2 candidate-count multiplier; P1.2 generates `PRIMED_MULTIPLIER × N_BEHAVIORS` | `— primed-multiplier: M` |
+| `PRIMED_MULTIPLIER` | 1 | P1.2 candidate-count multiplier; P1.2 generates `PRIMED_MULTIPLIER × N_BEHAVIORS` | `— primed-multiplier: M` |
 | `GEN_REFLECTIONS` | 1 | **inner reflection** — reflection turns allowed on one candidate *after* its first generation turn, inside the P1 scripts' loop; total turns per candidate = `1 + GEN_REFLECTIONS` | not passable |
 | `REFLECTIONS` | 1 | **outer reflection** — maximum number of P4 improvement iterations over the whole pool | not passable |
 | `TOP_N` | 10 | ranked behaviors that get into `claim.json`; fixes `01`…`NN` ordering | `— top-n: K` or `all` |
 | `WRITER` | **session** | authors the improvements in P2 and P4 — **not** the candidates | `— writer: session\|llm-chat` |
 | `IDEATION_MODEL` | `claude-opus-4-8` | the model the P1 scripts run on | `export IDEATION_MODEL` |
-| `MAX_SUBAGENTS` | `max(3, ⌊(PRIMED_MULTIPLIER + 1) × N_BEHAVIORS / 10⌋)` — **4** at the defaults | ceiling on how many subagents any single phase from P2 on may open | derived; not passable |
+| `MAX_SUBAGENTS` | `max(2, ⌊(PRIMED_MULTIPLIER + 1) × N_BEHAVIORS / 10⌋)` — **2** at the defaults | ceiling on how many subagents any single phase from P2 on may open, counted at every depth | derived; not passable |
 | `OUTPUT_DIR` | `.` | where `topic.md`, every `claim_*.json`, `p1_logs/`, and `search_cache/` land | — |
 
 Argument shape: `"<intention>" — <key>: <value>, <key>: <value>`. Only a ` — ` immediately followed by `key: value` opens the option list; an em dash followed by prose belongs to the intention.
 
-Total candidates generated by P1 = `N_BEHAVIORS` (P1.1) + `PRIMED_MULTIPLIER × N_BEHAVIORS` (P1.2) — 40 at the defaults. Nothing is eliminated before P5; the pool only gets scored, reranked, and rewritten.
+Total candidates generated by P1 = `N_BEHAVIORS` (P1.1) + `PRIMED_MULTIPLIER × N_BEHAVIORS` (P1.2) — 20 at the defaults. Nothing is eliminated before P5; the pool only gets scored, reranked, and rewritten.
 
 **Two reflection levels, not one.** Both count *iterations after the thing they iterate on*, never the first pass:
 
@@ -117,15 +116,15 @@ Every element of every `claim_*.json` carries **these seven fields, exactly thes
 - **`Experiments`** — A list of experiments that would be conducted to validate the proposal. Ensure these are simple and feasible. Be specific in exactly how you would test the hypothesis, and detail precise algorithmic changes. Include the evaluation metrics you would use.
 - **`Risk Factors and Limitations`** — A list of potential risks and limitations of the proposal.
 
-Working files (`claim_0.json` … `claim_<R+1>.json`) carry bookkeeping **after** the seven fields, never renaming or reordering them. There is no id: **a candidate's identity is its position in the array.** Every phase rewrites the pool as a whole and preserves order, so position `k` is the same idea in every file; only P3.2 and P5 reorder, and they reorder the entire array at once. Which script produced a candidate is likewise positional — the first `N_BEHAVIORS` records are P1.1's, the rest are P1.2's.
+Working files (`claim_0.json` … `claim_<R+1>.json`) carry bookkeeping **after** the seven fields, never renaming or reordering them. There is no id: **a candidate's identity is its position in the array.** Every phase rewrites the pool as a whole and preserves order, so position `k` is the same idea in every file; only P5 reorders, and it reorders the entire array at once. Which script produced a candidate is likewise positional — the first `N_BEHAVIORS` records are P1.1's, the rest are P1.2's.
 
 | field | written by | contents |
 |---|---|---|
-| `novelty` | P3.1 | `{score, reasoning}` from the novelty prompt |
-| `impact` | P3.1 | `{score, reasoning}` from the impact prompt |
-| `review` | P3.1 | `{score, reasoning}` from the research-quality prompt |
-| `revision_notes` | P3.1 | merged, deduplicated field-level edits synthesized from the three reviewer prompts — P4's input |
-| `rank` | P3.2 / P5 | 1-based position in the current ranking |
+| `novelty` | P3 | `{score, reasoning, revision_notes}` — the reviewer's novelty axis |
+| `impact` | P3 | `{score, reasoning, revision_notes}` — the reviewer's impact axis |
+| `review` | P3 | `{score, reasoning, revision_notes}` — the reviewer's research-quality axis |
+| `revision_notes` | P3 | the three axes' `revision_notes`, concatenated and deduplicated — P4's input |
+| `rank` | P5 | 1-based position in the final ranking |
 
 `claim.json` (P5) carries **only the seven fields**, in rank order.
 
@@ -290,98 +289,34 @@ Respond with ACTION: FinalizeIdea and the complete idea JSON.
 
 Flush each candidate as it finalizes.
 
-## P3: Assess and rerank
+## P3: Assess
 
-Runs on **llm-chat** using three built-in reviewer prompts. Nothing is eliminated here.
+Runs on **llm-chat** using one built-in reviewer prompt, one call per candidate. Nothing is eliminated here, and **nothing is reordered** — P3 only annotates, so position `k` in `claim_1.json` is still the candidate P2 left there. Ranking happens once, in P5.
 
-### P3.1: Three reviewer prompts per idea
+Read `claim_1.json` and, for **every** candidate, call the external reviewer once, carrying the full seven fields.
 
-Read `claim_1.json` and, for **every** candidate, call the same external reviewer three times, once per prompt.
-
-**Prompt A: novelty**
-
-Carry `Title`, `Short Hypothesis`, `Related Work`, and `Experiments`.
-
-Before the reviewer call, use `WebSearch` as needed based on the candidate's contents to gather information that helps judge novelty, especially the closest overlapping work, baseline families, and the likely delta. Pass a short search brief into the reviewer prompt together with the proposal text.
+Before the call, use `WebSearch` as needed based on the candidate's contents to gather what helps judge novelty and impact — the closest overlapping work and the likely delta, who cares about the problem, and where the result would land. Pass a short search brief into the reviewer prompt together with the proposal text.
 
 ```
-You are reviewing a research idea for novelty. Judge from the proposal text alone.
+You are reviewing a research idea on three axes — novelty, impact, and research quality. Judge from the proposal text alone.
 
-If a search summary is provided, use it as additional context when identifying the closest prior work and the actual delta.
+If a search summary is provided, use it as additional context for the closest prior work, the actual delta, and who would care about the result.
 
-First extract the 3-5 core technical claims that would need to be novel:
-- What problem does it solve?
-- What is the proposed mechanism or explanation?
-- What makes it different from obvious baselines?
-- Is the novelty in the finding, the mechanism, the setting, the dataset, or the problem definition?
-
-Then judge the proposal against the novelty standard used in research triage:
+NOVELTY. First extract the 3-5 core technical claims that would need to be novel: the problem solved, the proposed mechanism or explanation, what separates it from the obvious baselines, and whether the novelty lives in the finding, the mechanism, the setting, the dataset, or the problem definition. Then judge:
 1. Does it propose a genuinely new theory, task, explanation, mechanism, finding, setting, dataset, or problem definition?
 2. If it studies an existing idea in a new setting, is that setting meaningfully different enough that the result itself could be novel?
 3. Relative to the proposal's own related work, is the core claim non-trivial rather than an obvious next step?
 4. What is the closest prior work family or baseline, and what is the actual delta?
 
-Return strict JSON:
-{
-  "novelty": {
-  "score": <integer 1-10>,
-    "reasoning": "<brief justification>"
-  },
-  "revision_notes": [
-    "<field-level edit 1>",
-    "<field-level edit 2>"
-  ]
-}
-```
-
-**Prompt B: impact**
-
-Carry `Title`, `Short Hypothesis`, and a one-line description of the behavior/problem being studied.
-
-Before the reviewer call, use `WebSearch` as needed based on the candidate's contents to gather information that helps judge impact, especially who cares about the problem, where it matters, and whether the result would likely influence follow-up research or practice. Pass a short search brief into the reviewer prompt together with the proposal text.
-
-```
-You are reviewing a research idea for impact. Judge from the proposal text alone.
-
-If a search summary is provided, use it as additional context when judging importance, reach, and the strongest "so what?" objection.
-
-First identify the impact-bearing claims:
-- What behavior, phenomenon, or problem is actually under study? Focus on the problem, not the method.
-- Who would have this problem or care about the result?
-- What downstream research, applications, or practices would change if the result holds?
-- Is the reach narrow, field-wide, real-world, or cross-disciplinary?
-- What is the single strongest one-line case for why this matters?
-
-Then assess the idea along these five impact dimensions:
-1. Important problem — is this a real need or mostly a niche curiosity?
+IMPACT. First identify what behavior, phenomenon, or problem is actually under study — the problem, not the method — who would have it or care about the result, what downstream research or practice would change if the result holds, and the single strongest one-line case for why it matters. Then judge:
+1. Important problem — a real need, or mostly a niche curiosity?
 2. Uptake / citation — would follow-up work build on, use, or cite this?
 3. Direction-shifting — could it change how people think about or approach an area?
 4. Real-world reach — does it matter for applications, industry, society, or cross-disciplinary use?
 5. Phenomenon value — even if the method is simple, does it reveal an important phenomenon?
-
 Apply the "so what?" test explicitly: if the result came out either way, would serious researchers or practitioners change what they do?
 
-Return strict JSON:
-{
-  "impact": {
-    "score": <integer 1-10>,
-    "reasoning": "<brief justification>"
-  },
-  "revision_notes": [
-    "<field-level edit 1>",
-    "<field-level edit 2>"
-  ]
-}
-```
-
-**Prompt C: research quality**
-
-Carry the full seven fields.
-
-```
-You are reviewing a research proposal for technical quality and testability. Judge from the proposal text alone.
-
-Act like a strict senior ML reviewer. Evaluate:
+RESEARCH QUALITY — technical quality and testability. Act like a strict senior ML reviewer:
 1. Logical gaps or unjustified claims.
 2. Whether the core hypothesis is precise, falsifiable, and appropriately scoped.
 3. Whether the related work is specific enough to position the contribution.
@@ -391,31 +326,43 @@ Act like a strict senior ML reviewer. Evaluate:
 7. Whether the contribution seems strong enough for a serious ML venue if executed well.
 8. What the minimum viable edits are to make the proposal fundable or submission-ready.
 
+Score the three axes independently — a weak axis must not drag the others down — and give each axis its own `revision_notes`: the concrete field-level edits that would raise *that* axis's score.
+
 Return strict JSON:
 {
+  "novelty": {
+    "score": <integer 1-10>,
+    "reasoning": "<brief justification>",
+    "revision_notes": [
+      "<field-level edit that would raise novelty>",
+      "..."
+    ]
+  },
+  "impact": {
+    "score": <integer 1-10>,
+    "reasoning": "<brief justification>",
+    "revision_notes": [
+      "<field-level edit that would raise impact>",
+      "..."
+    ]
+  },
   "review": {
     "score": <integer 1-10>,
-    "reasoning": "<brief justification>"
-  },
-  "revision_notes": [
-    "<field-level edit 1>",
-    "<field-level edit 2>"
-  ]
+    "reasoning": "<brief justification>",
+    "revision_notes": [
+      "<field-level edit that would raise research quality>",
+      "..."
+    ]
+  }
 }
 ```
 
 Write back into that candidate's record:
 
-- `novelty` — the novelty prompt's `score` and `reasoning`.
-- `impact` — the impact prompt's `score` and `reasoning`.
-- `review` — the research-quality prompt's `score` and `reasoning`.
-- `revision_notes` — merge the three prompts' `revision_notes`, deduplicate them, and keep them as a concrete field-level edit list. This is the only field P4 is required to act on, so it must be actionable rather than evaluative.
+- `novelty` / `impact` / `review` — each axis's `score`, `reasoning`, and its own `revision_notes`, verbatim.
+- `revision_notes` — the three axes' lists concatenated in `novelty` → `impact` → `review` order and deduplicated. This is the only field P4 is required to act on, so it must be actionable rather than evaluative.
 
 Flush after each candidate is scored.
-
-### P3.2: Rerank
-
-Order the pool by **impact first, reviewer score second, novelty last** — impact dominates because a less-novel idea on an important problem outranks a novel idea nobody needs; the research-quality score breaks impact ties; novelty is the final tiebreak. Write the 1-based position into each record's `rank` and rewrite `claim_1.json` in rank order.
 
 ## P4: Improve
 
@@ -425,7 +372,7 @@ This is the **outer** reflection level. `WRITER` rewrites every candidate from i
 
 ```
 for r = 1 … REFLECTIONS:
-    assessment on claim_<r>.json      # P3's procedure: P3.1 three reviewer prompts + P3.2 rerank
+    assessment on claim_<r>.json      # P3's procedure: one reviewer call per candidate
     improve into claim_<r+1>.json     # this phase
 then P5: rerank claim_<REFLECTIONS+1>.json, then cut to TOP_N → claim.json
 ```
@@ -455,7 +402,7 @@ Results from your last action (if any):
 - **The final iteration** (`r == REFLECTIONS`) appends the forcing sentence: *"This is the FINAL round for this proposal. You MUST now finalize: respond with ACTION: FinalizeIdea and the complete idea JSON in ARGUMENTS."*
 - **P4 issues no searches.** The input for this phase is the latest assessment material already condensed into `revision_notes`. That is what fills the `Results from your last action` slot.
 - **Stick to the spirit of the original idea.** An improvement that replaces the phenomenon is a new candidate, not a repair — position `k` must still hold the idea it started as.
-- `novelty` / `impact` / `review` / `revision_notes` / `rank` are dropped from the new file and rewritten by the next assessment; order is preserved so position still identifies the candidate. The final iteration's file gets no new assessment — it carries the seven fields only, and P5 adds `rank`.
+- `novelty` / `impact` / `review` / `revision_notes` / `rank` are dropped from the new file and rewritten by the next assessment; order is preserved so position still identifies the candidate. The final iteration's file gets no new assessment — it carries the seven fields only, and P5 adds `rank`. No file before P5 carries a `rank` at all.
 
 Flush each rewritten candidate as it finalizes.
 
@@ -480,9 +427,10 @@ Log one line per shipped claim: `[claim] <NN> — "<Title>"`.
 - **One candidate per call, from a fresh context**, in P2 and P4. P1 needs no such rule — the packaged scripts are serial by construction, one candidate loop at a time. Batching is what makes a pool of near-duplicates.
 - **`WRITER` never splits across P2 and P4.** Those two phases must run on the same model; if they did not, the improvements have more than one author. P1 is exempt by design — the packaged scripts run on `IDEATION_MODEL`, and that is not a defect to repair.
 - **The packaged scripts' logic is frozen.** Paths, environment, model, endpoint, timeouts, retries, and logging are adjustable; the generation loop, the prompts, the tool set, the retrieval quota, and the append/flush semantics are not. See P1.
-- **Every phase from P2 on has a subagent budget.** No phase may open more than `MAX_SUBAGENTS` subagents — `max(3, ⌊(PRIMED_MULTIPLIER + 1) × N_BEHAVIORS / 10⌋)`, 4 at the defaults. Split the pool into at most that many slices, one subagent per slice, each working its slice **one candidate at a time**; the per-candidate rules above hold inside a slice, so a slice is a queue, never a batch. The budget is per phase, not per run — P3 spends its own, P4 spends its own. P1 spends none: it runs two scripts.
+- **Every phase from P2 on has a subagent budget.** No phase may open more than `MAX_SUBAGENTS` subagents — `max(2, ⌊(PRIMED_MULTIPLIER + 1) × N_BEHAVIORS / 10⌋)`, 2 at the defaults. Split the pool into at most that many slices, one subagent per slice, each working its slice **one candidate at a time**; the per-candidate rules above hold inside a slice, so a slice is a queue, never a batch. The budget is per phase, not per run — P3 spends its own, P4 spends its own. P1 spends none: it runs two scripts.
+- **No nesting around the budget.** `MAX_SUBAGENTS` counts **every** subagent alive in a phase, at every depth — a slice worker may not open subagents of its own to fan its slice out further. The budget is a total, not a per-level allowance, so a phase is exactly one level of `MAX_SUBAGENTS` workers over the Orchestrator, never a tree. A slice that is too large is worked through as a longer queue, never split into more agents.
 - **Assessment is never routed through `WRITER`.** P3 runs on llm-chat so that the model scoring did not write what it scores. P5 is exempt — it assigns no scores, only an ordering.
 - **Flush after every finalized idea**, atomically. An interrupted run keeps its finished work.
-- **Nothing is eliminated before P5.** P3 scores and reranks; P4 repairs; only the `TOP_N` cut removes anything, and it removes it from `claim.json`, not from the working files.
+- **Nothing is eliminated before P5.** P3 scores; P4 repairs; P5 is the only phase that orders or removes anything, and the `TOP_N` cut removes it from `claim.json`, not from the working files.
 - **A long pass is monitored, never waited on.** P1's two passes run detached and get checked every 15 minutes; a repair fixes the environment and relaunches on the shortfall, and never lowers a target to declare a pass finished.
 - **File suffixes are the version history.** `claim_0.json` is generation, `claim_1.json` is the experiment rewrite, `claim_<r+1>.json` is improvement iteration `r`, `claim.json` is the deliverable. Never overwrite an earlier iteration.
