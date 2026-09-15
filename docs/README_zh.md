@@ -264,10 +264,33 @@ Mechanist 按顺序执行四个阶段：**claim → experiment → verify → it
 
 ## 🏆 贡献者
 
-
-|                                                      |                                                        |                                                    |
-| ---------------------------------------------------- | ------------------------------------------------------ | -------------------------------------------------- |
-| **[mengru wang** ](https://github.com/mengrusun) 组织者 | **[Zhenqian Xu](https://github.com/luguoxiguazhuang)** | **[Haoxiong Wang](https://github.com/WangHX2024)** |
+<table>
+  <tr>
+    <td align="center" width="140">
+      <a href="https://github.com/mengrusun">
+        <img src="https://avatars.githubusercontent.com/mengrusun?v=4" width="80" style="border-radius:50%" alt="mengru wang"/>
+        <br />
+        <sub><b>mengru wang</b></sub>
+      </a>
+      <br />
+      <sub>组织者</sub>
+    </td>
+    <td align="center" width="140">
+      <a href="https://github.com/luguoxiguazhuang">
+        <img src="https://avatars.githubusercontent.com/luguoxiguazhuang?v=4" width="80" style="border-radius:50%" alt="Zhenqian Xu"/>
+        <br />
+        <sub><b>Zhenqian Xu</b></sub>
+      </a>
+    </td>
+    <td align="center" width="140">
+      <a href="https://github.com/WangHX2024">
+        <img src="https://avatars.githubusercontent.com/WangHX2024?v=4" width="80" style="border-radius:50%" alt="Haoxiong Wang"/>
+        <br />
+        <sub><b>Haoxiong Wang</b></sub>
+      </a>
+    </td>
+  </tr>
+</table>
 
 
 欢迎社区贡献！如果您想参与贡献，请 fork 本仓库并提交 pull request；如需进行较大改动，请先提交 issue 讨论。
@@ -293,4 +316,3 @@ Mechanist 按顺序执行四个阶段：**claim → experiment → verify → it
   year={2026}
 }
 ```
-
