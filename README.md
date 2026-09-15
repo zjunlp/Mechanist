@@ -43,6 +43,7 @@
   - [3. Tell `/mguide` what you want](#3-tell-mguide-what-you-want)
   - [4. Follow the run, then read the results](#4-follow-the-run-then-read-the-results)
 - [📖 Further Reading](#-further-reading)
+- [🏆 Contributors](#-contributors)
 - [🙏 Acknowledgements](#-acknowledgements)
 - [📄 Citation](#-citation)
 
@@ -277,6 +278,40 @@ When it finishes, read these two files at the project root:
 **Want to know more about Mechanist?** Read Mechanist documentation to learn: how to archive the current results and start the next round, explore advanced usage of Mechanist, learn how to write a good `task.md`, or see how the pipeline is designed.
 
 **[Read Mechanist documentation →](http://mechanist.openkg.cn/docs/index.html)**
+
+---
+
+## 🏆 Contributors
+
+<table>
+  <tr>
+    <td align="center" width="140">
+      <a href="https://github.com/mengrusun">
+        <img src="https://avatars.githubusercontent.com/mengrusun?v=4" width="80" style="border-radius:50%" alt="mengru wang"/>
+        <br />
+        <sub><b>mengru wang</b></sub>
+      </a>
+      <br />
+      <sub>Organizer</sub>
+    </td>
+    <td align="center" width="140">
+      <a href="https://github.com/luguoxiguazhuang">
+        <img src="https://avatars.githubusercontent.com/luguoxiguazhuang?v=4" width="80" style="border-radius:50%" alt="Zhenqian Xu"/>
+        <br />
+        <sub><b>Zhenqian Xu</b></sub>
+      </a>
+    </td>
+    <td align="center" width="140">
+      <a href="https://github.com/WangHX2024">
+        <img src="https://avatars.githubusercontent.com/WangHX2024?v=4" width="80" style="border-radius:50%" alt="Haoxiong Wang"/>
+        <br />
+        <sub><b>Haoxiong Wang</b></sub>
+      </a>
+    </td>
+  </tr>
+</table>
+
+We welcome contributions from the community! If you'd like to contribute, please fork the repository and submit a pull request. For major changes, please open an issue first to discuss what you would like to change.
 
 ---
 
