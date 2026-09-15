@@ -1,30 +1,10 @@
-<p align="center">
-  <img src="mechanist-logo.png" alt="Mechanist Logo" width="413" height="100">
-</p>
 
-<p align="center">
-  <strong>LLM 机理可解释性自主研究智能体</strong>
-</p>
 
-<p align="center">
-  <a href="http://mechanist.openkg.cn">项目网站</a> ·
-  <a href="../README.md">English</a>
-</p>
+**LLM 机理可解释性自主研究智能体**
 
-<p align="center">
-  <a href="https://github.com/zjunlp/Mechanist/blob/main/LICENSE">
-    <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT">
-  </a>
-  <a href="https://claude.ai/code">
-    <img src="https://img.shields.io/badge/Claude%20Code-Plugin-orange?logo=anthropic" alt="Claude Code Plugin">
-  </a>
-  <a href="https://www.python.org/downloads/">
-    <img src="https://img.shields.io/badge/python-3.11+-blue?logo=python" alt="Python 3.11+">
-  </a>
-  <a href="https://github.com/zjunlp/Mechanist">
-    <img src="https://img.shields.io/badge/status-active-brightgreen" alt="Status: Active">
-  </a>
-</p>
+[项目网站](http://mechanist.openkg.cn) · [English](../README.md)
+
+
 
 ---
 
@@ -40,9 +20,10 @@
 - [🚀 快速开始](#-快速开始)
   - [1. 创建工作目录](#1-创建工作目录)
   - [2. 启动 Claude Code](#2-启动-claude-code)
-  - [3. 把你想做的事告诉 `/mguide`](#3-把你想做的事告诉-mguide)
+  - [3. 把你想做的事告诉 `/mguide](#3-把你想做的事告诉-mguide)`
   - [4. 跟踪运行，然后阅读结果](#4-跟踪运行然后阅读结果)
 - [📖 进一步阅读](#-进一步阅读)
+- [🏆 贡献者](#-贡献者)
 - [🙏 致谢](#-致谢)
 - [📄 引用](#-引用)
 
@@ -56,13 +37,15 @@
 
 ### 核心能力
 
-| 阶段 | 描述 |
-|:---|:---|
+
+| 阶段       | 描述                                     |
+| -------- | -------------------------------------- |
 | **文献综述** | 检索 14k 篇可解释性论文语料库、157M 节点跨学科引用网络及网络资源。 |
-| **假设提出** | 生成经过新颖性检验的断言，或从用户提供的材料中抽取断言。 |
-| **实验执行** | 生成实验代码，运行评估，按机理感知计划记录结果。 |
-| **验证** | 在替代模型、数据集和方法下评估断言的鲁棒性。 |
-| **迭代** | 审视失败或薄弱的结果，更新计划并重跑相关阶段。 |
+| **假设提出** | 生成经过新颖性检验的断言，或从用户提供的材料中抽取断言。           |
+| **实验执行** | 生成实验代码，运行评估，按机理感知计划记录结果。               |
+| **验证**   | 在替代模型、数据集和方法下评估断言的鲁棒性。                 |
+| **迭代**   | 审视失败或薄弱的结果，更新计划并重跑相关阶段。                |
+
 
 ---
 
@@ -127,11 +110,13 @@ uv --version
 
 Mechanist 在每一阶段都会用外部评审模型交叉验证自己的 idea、实验设计与结论——该模型须独立于 Claude，避免同模型自评。**不要使用 Claude 系列模型担任此角色。** 推荐通过 [platform.openai.com](https://platform.openai.com) 使用 GPT-5.4——填入标准 OpenAI key 后，下方默认值即可。若使用 Azure、DeepSeek、通义千问或第三方中转，请将三个变量都指向 OpenAI 兼容端点。
 
-| 环境变量 | 是否必填 | 默认 / 示例 | 用途 |
-|:---|:---|:---|:---|
-| `LLM_API_KEY` | **必填** | `sk-…` | 外部评审模型 API key（交叉验证）。 |
-| `LLM_MODEL` | 可选 | `gpt-5.4` | 外部评审模型名称。 |
-| `LLM_BASE_URL` | 可选 | `https://api.openai.com/v1` | LLM 服务端点；使用中转时填中转 URL。 |
+
+| 环境变量           | 是否必填   | 默认 / 示例                     | 用途                     |
+| -------------- | ------ | --------------------------- | ---------------------- |
+| `LLM_API_KEY`  | **必填** | `sk-…`                      | 外部评审模型 API key（交叉验证）。  |
+| `LLM_MODEL`    | 可选     | `gpt-5.4`                   | 外部评审模型名称。              |
+| `LLM_BASE_URL` | 可选     | `https://api.openai.com/v1` | LLM 服务端点；使用中转时填中转 URL。 |
+
 
 要设置上述变量，请将以下内容写入 `~/.bashrc`（或 `~/.zshrc`）：
 
@@ -213,33 +198,26 @@ claude --model claude-opus-4-8
 #### 研究运行 *（运行完整研究流水线）*
 
 - **探索机理**  
-  已知模型行为——找出哪个内部组件导致了它。
-
+已知模型行为——找出哪个内部组件导致了它。
 - **复现论文**  
-  发现与方法均已知——按既定规模忠实复现。
-
+发现与方法均已知——按既定规模忠实复现。
   ```text
   /mguide Reproduce this paper: LLMs encode harmfulness and refusal separately
   ```
-
 - **验证可疑现象**  
-  已有具体假设，但尚无论文（或先前实验）确认。
-
+已有具体假设，但尚无论文（或先前实验）确认。
 - **开放式发现**  
-  只有研究方向——让 Mechanist 先挖出新现象，再深入调查。
+只有研究方向——让 Mechanist 先挖出新现象，再深入调查。
 
 #### 文献 *（仅返回答案，不启动流水线）*
 
 - **检索文献**  
-  在 14k 篇可解释性论文语料库、157M 节点引用网络及网络资源中搜索。
-
+在 14k 篇可解释性论文语料库、157M 节点引用网络及网络资源中搜索。
   ```text
   /mguide find me papers on sparse autoencoder feature absorption in large language models
   ```
-
 - **了解一个领域的发展**  
-  关键论文、转折点、主要争论与开放问题的时间线。
-
+关键论文、转折点、主要争论与开放问题的时间线。
   ```text
   /mguide I'd like to know how circuit-level interpretability got to where it is today
   ```
@@ -250,25 +228,29 @@ claude --model claude-opus-4-8
 
 Mechanist 按顺序执行四个阶段：**claim → experiment → verify → iteration**，并在进入下一阶段前将本阶段相关文档写入磁盘。阅读这些文档可以让你跟踪已完成的工作、下一步的计划以及已有的发现：
 
-| 阶段 | 产物 | 内容 |
-|:---|:---|:---|
-| **claim** | `idea-stage/IDEA_REPORT.md` | 候选 idea 排序，或从你的 task.md 中捕获的行为与断言。 |
-| | `refine-logs/FINAL_PROPOSAL.md` | 精炼后的方法提案——这些断言将如何被检验。 |
-| | `refine-logs/EXPERIMENT_PLAN.md` | 各断言里程碑：模型、数据、样本量与成功标准。 |
-| **experiment** | `refine-logs/MECHANISM_ROUTING.md` | 选用了哪种可解释性方法、考虑过哪些候选，以及为什么。 |
-| | `refine-logs/EXPERIMENT_RESULTS.md` | 各断言结果、一句话结论与基线判决（支持 / 不支持）。 |
-| | `runs/` | 各次实验任务的代码、日志与 GPU 开销记录。 |
-| **verify** | `verify/VERIFY_REPORT.md` | 各断言鲁棒性判决与跨断言摘要。 |
-| | `verify/INTEGRITY_AUDIT.md` | 诚实性审计在原始结果与各 swap 跑上的发现。 |
-| **iteration** | `review-stage/AUTO_REVIEW.md` | 逐轮审稿记录：评分、被标记的问题，以及采取的修复。 |
-| | `review-stage/AUTO_ITERATION_FINAL_REPORT.md` | 修复循环中各断言的变化，以及末尾仍未解决的事项。 |
+
+| 阶段             | 产物                                            | 内容                                 |
+| -------------- | --------------------------------------------- | ---------------------------------- |
+| **claim**      | `idea-stage/IDEA_REPORT.md`                   | 候选 idea 排序，或从你的 task.md 中捕获的行为与断言。 |
+|                | `refine-logs/FINAL_PROPOSAL.md`               | 精炼后的方法提案——这些断言将如何被检验。              |
+|                | `refine-logs/EXPERIMENT_PLAN.md`              | 各断言里程碑：模型、数据、样本量与成功标准。             |
+| **experiment** | `refine-logs/MECHANISM_ROUTING.md`            | 选用了哪种可解释性方法、考虑过哪些候选，以及为什么。         |
+|                | `refine-logs/EXPERIMENT_RESULTS.md`           | 各断言结果、一句话结论与基线判决（支持 / 不支持）。        |
+|                | `runs/`                                       | 各次实验任务的代码、日志与 GPU 开销记录。            |
+| **verify**     | `verify/VERIFY_REPORT.md`                     | 各断言鲁棒性判决与跨断言摘要。                    |
+|                | `verify/INTEGRITY_AUDIT.md`                   | 诚实性审计在原始结果与各 swap 跑上的发现。           |
+| **iteration**  | `review-stage/AUTO_REVIEW.md`                 | 逐轮审稿记录：评分、被标记的问题，以及采取的修复。          |
+|                | `review-stage/AUTO_ITERATION_FINAL_REPORT.md` | 修复循环中各断言的变化，以及末尾仍未解决的事项。           |
+
 
 结束后，优先阅读项目根目录下的这两个文件：
 
-| 文件 | 内容 |
-|:---|:---|
-| `CLAIMS_LEDGER.md` | 各断言记分板：最终判决、鲁棒性与注意事项。 |
+
+| 文件                        | 内容                               |
+| ------------------------- | -------------------------------- |
+| `CLAIMS_LEDGER.md`        | 各断言记分板：最终判决、鲁棒性与注意事项。            |
 | `AUTO_PIPELINE_REPORT.md` | 本轮旅程、全部产物索引，以及仍需你处理的 Open Items。 |
+
 
 ---
 
@@ -277,6 +259,18 @@ Mechanist 按顺序执行四个阶段：**claim → experiment → verify → it
 **想更深入了解 Mechanist？** 阅读 Mechanist 文档，了解：如何归档本轮结果并开启下一轮、Mechanist 的进阶用法、如何写好 `task.md`，以及流水线是如何设计的。
 
 **[阅读 Mechanist 文档 →](http://mechanist.openkg.cn/docs/index.html)**
+
+---
+
+## 🏆 贡献者
+
+
+|                                                      |                                                        |                                                    |
+| ---------------------------------------------------- | ------------------------------------------------------ | -------------------------------------------------- |
+| **[mengru wang** ](https://github.com/mengrusun) 组织者 | **[Zhenqian Xu](https://github.com/luguoxiguazhuang)** | **[Haoxiong Wang](https://github.com/WangHX2024)** |
+
+
+欢迎社区贡献！如果您想参与贡献，请 fork 本仓库并提交 pull request；如需进行较大改动，请先提交 issue 讨论。
 
 ---
 
@@ -299,3 +293,4 @@ Mechanist 按顺序执行四个阶段：**claim → experiment → verify → it
   year={2026}
 }
 ```
+
