@@ -17,7 +17,7 @@ python /path/to/model-consultation/scripts/chat.py --prompt "Compare these two e
 python /path/to/model-consultation/scripts/chat.py --prompt-file - --output /path/to/answer.json
 ```
 
-Set `LLM_API_KEY` in the environment inherited by the script. `LLM_BASE_URL` defaults to `https://api.openai.com/v1`; `LLM_MODEL` defaults to `gpt-5.4`. An optional `LLM_FALLBACK_MODEL` permits an explicitly selected fallback after failed retries. No key is accepted as a command-line argument.
+Set `LLM_API_KEY` in the environment inherited by the script. `LLM_BASE_URL` defaults to `https://api.openai.com/v1`; `LLM_MODEL` defaults to `gpt-6.1-sol`. An optional `LLM_FALLBACK_MODEL` permits an explicitly selected fallback after failed retries. No key is accepted as a command-line argument.
 
 Send the actual relevant text, constraints, weaknesses, and question. The external model cannot read local paths and has no conversation memory; include prior discussion needed for a follow-up. `--system` or `--system-file` supplies an optional role instruction. `--timeout` is per attempt; `--max-tokens` controls the response limit.
 

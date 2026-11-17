@@ -26,7 +26,7 @@ For another host, use [the Mechanist skill](skills/mechanist/SKILL.md) as the sc
 - [Mechanism methods](skills/mechanism-methods/SKILL.md): method routing, eleven families, thirty-two submethods, papers, API references, and code templates, loaded as needed.
 - [Model consultation](skills/model-consultation/SKILL.md): optional external consultation about uncertain questions, code, explanations, and designs. Calls are stateless; send relevant text because the model cannot read local files.
 - [Information retrieval](skills/information-retrieval/SKILL.md): one entry for finding and obtaining papers, blog posts, GitHub projects, documentation, and other web information. Use host search/browsing tools or the bundled source-specific scripts as appropriate.
-- [Human expertise](skills/human-expertise/SKILL.md): a discoverable skill with a short situation-based index and eight supporting notes on feature selection, interventions, measurement, evidence, and other research judgments. Relevant notes load on demand rather than all at once.
+- [Human expertise](skills/human-expertise/SKILL.md): a discoverable skill with a short situation-based index and eleven supporting notes. Detailed Experiment tips cover feature selection, steering strength and sites, fine-tuning LR sweeps, answer measurement, and image preprocessing, alongside broader research experience. Relevant notes load on demand rather than all at once.
 
 Method scripts are reference templates with model and library assumptions, not a universally tested execution API. Unimplemented measurement paths report that limitation. Install dependencies for selected methods in suitable environments; root requirements are a small common starting point, not every method's environment.
 
@@ -38,7 +38,7 @@ Set variables in the environment inherited by the scripts:
 | --- | --- |
 | `LLM_API_KEY` | Enable Model consultation with your provider key. |
 | `LLM_BASE_URL` | Compatible API base URL; default `https://api.openai.com/v1`. |
-| `LLM_MODEL` | External consultation model; default `gpt-5.4`. |
+| `LLM_MODEL` | External consultation model; default `gpt-6.1-sol`. |
 | `LLM_FALLBACK_MODEL` | Optional explicit fallback; no model substitution unless configured. |
 | `MECHANIC_DB_API_KEY` | Optional key for higher retrieval limits. |
 | `MECHANIC_DB_BASE_URL` | Optional search-service URL override. |
@@ -86,7 +86,7 @@ Mechanist Light 不规定科研流水线。基模自主决定研究路线、任�
 - 完整保留机理方法选择与路由、11 个家族、32 个具体方法、论文、API 资料与代码模板，按需读取。
 - 保留 [Model consultation](skills/model-consultation/SKILL.md)，通过附属脚本自主咨询外部模型。接口无会话记忆，也不能读取本地路径，需要发送实际文本。
 - 外部信息检索与获取统一为 [Information retrieval](skills/information-retrieval/SKILL.md) 一个入口，覆盖论文、博客、GitHub 项目、文档和其他网页；按需使用宿主检索/浏览能力或内置来源脚本，提供信息获取与综合指导。
-- [Human expertise](skills/human-expertise/SKILL.md) 作为可发现的 Skill，提供情境索引和八份经验资料；按需读取正文，不一次性注入，也不规定科研阶段。
+- [Human expertise](skills/human-expertise/SKILL.md) 作为可发现的 Skill，提供情境索引和十一份经验资料；恢复展开的 Experiment tips，涵盖特征选择、干预强度与位置、微调学习率搜索、答案测量和图像预处理，以及其他研究经验。按需读取正文，不一次性注入，也不规定科研阶段。
 
 按需在脚本继承的执行环境中设置上表变量。未配置外部模型不影响方法库；文献服务支持较低限额的匿名检索。方法脚本是需核对依赖、模型和数据后适配的参考模板，不代表对所有环境验证。通用文件、终端、网络及委派能力由宿主提供。
 

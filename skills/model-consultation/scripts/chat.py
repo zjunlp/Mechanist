@@ -31,7 +31,7 @@ def consult(prompt, *, system="", model=None, timeout=300, max_tokens=4096):
     except ImportError as exc:
         raise RuntimeError("Install this skill's scripts/requirements.txt before consultation.") from exc
 
-    requested = model or os.environ.get("LLM_MODEL") or "gpt-5.4"
+    requested = model or os.environ.get("LLM_MODEL") or "gpt-6.1-sol"
     fallback = os.environ.get("LLM_FALLBACK_MODEL", "").strip()
     endpoint = (os.environ.get("LLM_BASE_URL") or "https://api.openai.com/v1").rstrip("/")
     messages = ([{"role": "system", "content": system}] if system else [])

@@ -1,15 +1,33 @@
 # Data, measurement, and evidence
 
-Existing datasets can reduce construction artifacts; adapted or synthetic stimuli can be appropriate for controlled questions. Choose data that tests the question. Distinguish natural observations, constructed stimuli, model judgments, and experimental ground truth.
+## Choose data for the behavior
 
-Prevent leakage between feature discovery, fitting, tuning, and confirmation. Group or deduplicate related entities when needed. Training-set probe performance is not held-out recoverability. Methods may need different inputs; align populations and measurement conditions for comparisons rather than mechanically reusing one dataset.
+Start by looking for an existing dataset that directly tests the target behavior. An established source can save work and reduce accidental artifacts from constructing convenient examples. If none fits, adapt one by relabeling, filtering, or transforming it. Controlled or synthetic stimuli can be appropriate when the question needs a tightly matched contrast; choose them deliberately rather than because random or model-generated examples are easiest to obtain.
 
-Sample size depends on effect, noise, dependence, unit of analysis, and budget. Tokens or derivatives from a few sources are not independent examples. Small runs can diagnose code; uncertainty limits the conclusion. Compare realized data, seeds, and configurations with what the inference needs.
+Distinguish naturally observed examples, adapted stimuli, constructed stimuli, model judgments, and experimental ground truth. A source label or a dataset topic does not establish that its examples exhibit the behavior being studied. For feature selection, inspect the actual behavior-positive examples and build negatives that match topic, format, language, length, and difficulty where those might otherwise drive the signal. See [feature selection](interventions.md).
 
-Report raw effects and uncertainty against a matched baseline. Relative improvement can be undefined or misleading for zero or signed baselines. Non-significance is not equivalence: equivalence needs a justified margin and adequate precision. Consider support, refutation, and the range the measurement cannot decide. Give thresholds a rationale rather than adjusting them to observed outcomes.
+Ground truth should reflect the property the experiment claims to measure. Comparing a model with another model's generated reference can measure proxy agreement; it does not automatically measure correctness. Use dataset labels or a suitable established scorer when they answer the question. Where judgment is necessary, a judge is a measurement instrument with errors, not automatic ground truth.
 
-Trace consequential metrics to actual execution, outputs, populations, and aggregation. A function defined but never called supplies no measurement. Normalization can be legitimate but can conceal failures; compare raw and transformed quantities when interpretation depends on it.
+## Separate discovery, fitting, tuning, and confirmation
 
-Judges and prediction systems are instruments with errors, not automatic ground truth. Predictor agreement is not experimental verification. Match scope to tested conditions, including failures and negative results. Absence of support and evidence against a hypothesis are different conclusions.
+Keep the inputs used to find a feature or fit a predictor separate from those used to confirm its effect. A direction selected because it produced a large change on a few examples can be fitted to those examples even without gradient-based training. Training-set probe performance is not held-out recoverability.
 
-Separate observations, explanations, remaining alternatives, and discriminating follow-ups. Correlation, recoverability, and intervention effects establish different things. Interventions still need suitable counterfactual and off-target controls before a specific mechanism claim follows.
+Deduplicate related examples and consider splitting by source, entity, or template. Many paraphrases or token-level derivatives of a few source items do not create the same amount of independent evidence as new source items. Preserve the intended contrast across splits rather than letting a source or formatting difference become the label.
+
+Different methods can require different inputs: a supervised probe needs labeled examples, while a clean/corrupted patching comparison needs matched counterfactuals. Compare methods on aligned questions, populations, and measurement conditions instead of forcing every method to consume an identical data representation.
+
+## Read effects in their measurement units
+
+Compare the raw target measure against an appropriate matched baseline. Report variation when it matters: repeated seeds, dependence between items, and noisy measurements can change what an effect means. Sample size depends on effect, noise, dependence, and the unit being analyzed. A small diagnostic run can help fix code without resolving the behavioral question.
+
+Relative improvements can be misleading for zero or signed baselines. For example, dividing a small change by a near-zero baseline can make an ordinary difference look enormous. Normalization can be useful, but inspect the raw and transformed values when the interpretation depends on it.
+
+A non-significant difference is not evidence of equivalence. An equivalence claim needs a meaningful margin and enough precision to distinguish negligible effects from ones the current measurement cannot resolve. Give a threshold a scientific basis, such as baseline variability, an established benchmark convention, or an effect large enough to matter, rather than selecting it to suit an observed result.
+
+## Distinguish what the evidence establishes
+
+Correlation, recoverability, and intervention effects answer different questions. A probe can decode a property that the model does not use; a feature can be active without controlling the behavior; an intervention can change the target by degrading general ability. Counterfactual and off-target comparisons help distinguish those possibilities.
+
+Check measurement assumptions when outputs change. Fine-tuning or steering can produce refusals, repetition, or broken answer formatting while a scalar scorer still returns a plausible number. [Answer measurement](answer-measurement.md) explains the concrete multiple-choice parsing pitfalls and alternative extraction procedures.
+
+An absent effect may reflect an unsuitable contrast, ineffective feature, wrong site, insufficient strength, a training problem, or an unreliable scorer. Use these possibilities to choose the next experiment. Absence of support and evidence against a hypothesis are different conclusions; an unsuccessful implementation or search does not establish a scientific negative.
