@@ -17,7 +17,7 @@ Your method knowledge may lack the detail and systematic coverage of a specialis
 
 ## Human expertise
 
-You may lack the practical research intuition that human scientists develop through experience. The [human expertise index](../human-expertise/SKILL.md) offers detailed experience on behavior discovery, strategy choice, feature selection, steering strength and sites, fine-tuning, data and evidence, answer measurement, image preprocessing, training diagnosis, and research judgment. Read the matching topic into your context when it helps the current decision or failure. These resources support your judgment; you decide when to use them.
+You may lack the practical research intuition that human scientists develop through experience. The [human expertise index](../human-expertise/SKILL.md) offers detailed experience on behavior discovery, strategy choice, feature selection, steering strength and sites, fine-tuning, data and evidence, answer measurement, image preprocessing, training diagnosis, and research judgment. Its index describes when each note applies. It is especially worth opening when a practical choice is unclear — which features, layers, coefficients, or learning rates to use, how to build data or score answers — or when an experiment behaves unexpectedly: an intervention has no effect or degrades outputs, a fine-tune trains but does not learn the behavior, or a run fails. Read the matching topic into your context when it helps the current decision or failure. These resources support your judgment; you decide when to use them.
 
 ## Information retrieval
 
@@ -25,4 +25,4 @@ Your knowledge and context may be incomplete or outdated, and your information r
 
 ## Model consultation
 
-Your perspective may be incomplete or one-sided. When useful, use [model consultation](../model-consultation/SKILL.md) to ask other AI models questions, seek alternatives, or request independent critique.
+Your perspective may be incomplete or one-sided. When useful, use [model consultation](../model-consultation/SKILL.md) to discuss research with other AI models — for example, to talk through what to do next when you are unsure, or to discuss a claim's novelty, an experiment design, code and measurements, or how far a result supports a conclusion. How you use these discussions is up to you.

@@ -18,7 +18,7 @@ Keep the following in mind:
    - **Escalate before abandoning.** At a given layer, if a small coefficient does not work, try a larger one. Only when raising the coefficient *still* does not work **and** the side effects have become severe — the generated text is entirely worthless — should you switch the feature, switch the layer, or switch to a different method.
    - **Then narrow.** Once a promising range is located, progressively shrink it to find the optimum.
 
-4. **Score every sweep point on a target metric *and* a fluency / general-ability / specific-function metric**; keep the Pareto-optimal candidates.
+4. **Score every sweep point on a target metric *and* a fluency / general-ability / specific-function metric**; keep the Pareto-optimal candidates. Also read sampled generations at a few points — the unsteered baseline, the promising range, and near collapse. A target metric can rise because degraded output happens to satisfy its scoring rule, and only the text shows whether the model is expressing the behavior or simply breaking down. Among working coefficients, prefer one well inside the usable range over one at its edge, where a new prompt set or seed can push the effect out of range.
 
 5. **Do not give up on an ineffective coefficient and call it a negative finding.** If no coefficient meets the criteria, widen the plausible range and keep working on the feature, layer, or method within the user's authorized resources. If you must stop, explain that no working coefficient was found in the tested range and that insufficient tuning may be responsible. State the bounds tried and what a further search should change. A search that you could not make work does not establish that the behavior cannot be controlled.
 

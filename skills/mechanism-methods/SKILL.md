@@ -11,21 +11,21 @@ Consult it when selecting or comparing methods, adapting an implementation, or j
 
 ## When to Use
 
-Consult these skills whenever the research question is about **how the model computes internally**, not just how it performs externally. Typical triggers:
+Consult this library whenever the research question is about **how the model computes internally**, not just how it performs externally. Typical triggers:
 
-- A reviewer asks for mechanistic evidence behind a claim
+- A finding needs mechanistic evidence, not only behavioral evidence
 - A claim attributes a behavior to a specific component (layer, head, neuron, feature, weight)
 - An experiment needs to isolate *which* internal object drives a behavior
-- A method swap is under consideration and the candidate pool should include mechanism-level tools (e.g., swapping a magnitude-based screen for a causal-intervention method)
+- A different method could test the same question more directly (e.g., following a magnitude-based screen with a causal intervention)
 - A vision or vision-language model needs concept-level explanations rather than raw saliency
 
 For a purely behavioral question (accuracy, robustness, calibration), decide whether internal analysis would add useful evidence before consulting this library.
 
 ## Using the library
 
-Compare methods by question, internal object, signal, cost, and evidence limits. Read relevant family and submethod details when useful; a selected method can be opened directly. Consult scripts and API references before adapting an implementation.
+Compare methods by question, internal object, signal, cost, and evidence limits. Read relevant family and submethod details when useful; a selected method can be opened directly. Consult scripts and API references before adapting an implementation. Selection guidance, practical rules, and defaults throughout the library are starting points to adapt to the question, not fixed requirements.
 
-Scripts are reference templates, not a tested universal execution interface. Inspect dependencies and demonstration assumptions. Unimplemented measurements report their limitation rather than return fabricated effects. No research-wide file layout or history schema is required.
+Scripts are reference templates, not a tested universal execution interface. Inspect dependencies and demonstration assumptions. Where a template leaves a measurement unimplemented, it raises an error instead of returning placeholder values; connect the actual model and method backend before measuring.
 
 ## Method Families
 
@@ -164,10 +164,6 @@ Match the question to the family:
 | "What named concepts drive this vision model's predictions?" | Multimodal-Specific Interpretability | Open-vocabulary concept labelling via CLIP-style alignment |
 
 If the question spans multiple granularities (prompt tokens, residual stream, attention heads, neurons, SAE features, parameters, weights), consult the submethod tables inside each family's `SKILL.md` — granularity is the primary axis along which submethods are organized.
-
-### Previous findings
-
-Use available previous findings to choose informative follow-ups. A tried family can still help replication, another question, or better measurement. No required history file or automatic family ban applies.
 
 ## Practical Tips
 

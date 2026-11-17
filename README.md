@@ -1,115 +1,107 @@
-<p align="center"><img src="docs/mechanist-logo.png" alt="Mechanist" width="413" height="100"></p>
+<p align="center"><img src="docs/mechanist-light-logo.png" alt="Mechanist" width="778" height="150"></p>
 
-# Mechanist Light
+<p align="center">
+  <strong>为自主机理研究提供方法库、人类经验、信息检索与外部模型讨论</strong>
+</p>
 
-**Autonomous mechanistic research, supported by tools and human expertise.**
+Mechanist Light 是 Mechanist 的轻量版本，以 Claude Code 插件的形式提供。你用自然语言交给它一个关于神经网络内部机理的研究问题，基模会自主规划并推进研究，最后汇报有证据支撑的发现、不确定性与局限。
 
-Mechanist Light supplies research resources without prescribing a pipeline. The model chooses strategy, task organization, method combinations, and whether and how to keep information. There are no required stages, step types, memory schemas, or experimental record files.
+## 设计理念
 
-## Start
+完整版 Mechanist 把研究组织成固定的流水线（claim → experiment → verify → iteration），配有台账、审计关卡和多轮外部评审。这套流程保证了可追溯性，但也把很多本该灵活的判断固定了下来。
 
-Mechanist is a Claude Code plugin. In Claude Code:
+Light 版的出发点是：**当前基模已经足够强，与其规定流程，不如给它自由度和好用的资源。** 因此：
+
+- **不规定流程**：没有必经阶段、步骤类型、全局记忆格式或实验记录文件。研究路线、任务拆分、方法组合，以及是否和如何记录信息，都由基模自主决定。
+- **只提供资源**：把完整版中真正有价值的内容——方法知识、实践经验、检索渠道、外部视角，整理成按需取用的能力，在基模需要时补上它的短板。
+- **建议而非规范**：各项能力中的经验与规则都是供参考的建议，基模结合具体问题和证据自行取舍。
+
+## 安装
+
+### 1. 克隆仓库
+
+```bash
+git clone -b Mechanist-Light https://github.com/zjunlp/Mechanist.git Mechanist-Light
+cd Mechanist-Light
+pip install -r requirements.txt
+```
+
+### 2. 启动 Claude Code
+
+启动 Claude Code 时用 `--plugin-dir` 指向克隆下来的 `Mechanist-Light` 目录（需要使用绝对路径）：
+
+```bash
+claude --plugin-dir /绝对路径/Mechanist-Light
+```
+
+进入会话后输入 `/mechanist`，能看到 `/mechanist:mechanist` 等技能，就说明本插件加载成功。
+
+### 3. 配置外部服务
+
+外部模型交互功能支持使用 OpenAI 兼容的 Chat Completions 接口。若要启用外部模型交互功能，需将下述变量写进 `~/.bashrc`（或 `~/.zshrc`）：
+
+```bash
+# --- Mechanist Light (Example) ---
+export LLM_API_KEY="sk-..."
+export LLM_BASE_URL="https://api.openai.com/v1"
+export LLM_MODEL="gpt-6.1-sol"
+```
+
+> [!NOTE]
+> 与外部模型讨论的价值在于为 Agent 引入不同的视角，建议选用与基模不同系列的模型。
+
+## 快速开始
+
+1. 为每个研究问题新建一个工作目录，在其中启动 Claude Code：
+
+   ```bash
+   mkdir my-research && cd my-research
+   conda activate scientist
+   claude --plugin-dir /绝对路径/Mechanist-Light
+   ```
+
+2. 在会话中输入技能名称，后面接上你的研究指令：
+
+   ```text
+   /mechanist:mechanist 研究 Qwen3-1.7B 为什么会陷入重复推理。请选择能区分"特定内部信号"和"普遍生成抑制"的方法，在单卡 A100 的预算内自主推进，并说明证据支持什么结论。
+   ```
+
+3. 基模会自主决定研究路线、方法组合、何时查阅经验或文献等，最后汇报发现、不确定性与局限。
+
+写指令时，交代清楚研究目标、目标模型、数据或资源约束（如期望使用的数据集、可用 GPU、时间预算）以及你关心的结论类型即可。如果有特别的要求，比如指定方法、指定数据集，或者希望它在某个环节与外部模型讨论，也可以直接写进指令。
+
+## 架构
+
+```
+              /mechanist:mechanist  <你的研究指令>
+                           │
+                 ┌─────────▼─────────┐
+                 │   Mechanist 入口   │   科学家角色提示
+                 └─────────┬─────────┘
+       ┌───────────────┬───┴───────────┬────────────────┐
+       ▼               ▼               ▼                ▼
+  机理方法库        人类经验库      信息检索工具   外部模型交互工具
+```
+
+入口是一段科学家提示词，介绍四项可供 Agent 调用的能力：
+
+| 能力 | 目录 | 提供什么 |
+| --- | --- | --- |
+| 机理方法库 | `skills/mechanism-methods/` | 11 个方法家族、32 个具体方法的选择指引、论文、API 文档与代码模板 |
+| 人类经验库 | `skills/human-expertise/` | 一份按情境组织的索引和 11 篇经验笔记，涵盖现象发现、研究策略、特征选择、steering 层位与强度、微调学习率、数据与证据、答案测量、图像预处理、训练诊断和研究判断 |
+| 信息检索工具 | `skills/information-retrieval/` | 查找和获取论文、博客、GitHub 项目、文档等外部信息；可结合宿主自带的检索工具，以及内置的 Mechanic DB、arXiv、Semantic Scholar、DeepXiv、Exa 脚本 |
+| 外部模型交互工具 | `skills/model-consultation/` | Agent 可使用此工具，与其他 AI 模型讨论研究中的问题，例如拿不定主意时一起商量下一步，或讨论主张的新颖性、实验设计、代码和结论；使用时机由 Agent 自己决定 |
+
+## 目录结构
 
 ```text
-/plugin marketplace add zjunlp/Mechanist
-/plugin install mechanist@mechanist
-/reload-plugins
-/mechanist:mechanist Investigate the internal mechanism behind this behavior: ...
+Mechanist-Light/
+├── skills/
+│   ├── mechanist/               # 入口：科学家提示词
+│   ├── mechanism-methods/       # 机理方法库
+│   ├── human-expertise/         # 人类经验库
+│   ├── information-retrieval/   # 信息检索工具
+│   └── model-consultation/      # 外部模型交互工具
+├── docs/
+└── requirements.txt
 ```
-
-For this checkout of the Light branch, launch Claude Code with `claude --plugin-dir /absolute/path/to/Mechanist`; do not assume the marketplace contains these changes. Skills invoke their attached Python scripts directly. Install each script's dependencies in the Python environment used by the host terminal when needed.
-
-For another host, use [the Mechanist skill](skills/mechanist/SKILL.md) as the scientist prompt and resource entry, expose the desired tools, and make the linked files accessible. This is a prompt and resource library, not a standalone research daemon.
-
-## Resources
-
-- [Mechanism methods](skills/mechanism-methods/SKILL.md): method routing, eleven families, thirty-two submethods, papers, API references, and code templates, loaded as needed.
-- [Model consultation](skills/model-consultation/SKILL.md): optional external consultation about uncertain questions, code, explanations, and designs. Calls are stateless; send relevant text because the model cannot read local files.
-- [Information retrieval](skills/information-retrieval/SKILL.md): one entry for finding and obtaining papers, blog posts, GitHub projects, documentation, and other web information. Use host search/browsing tools or the bundled source-specific scripts as appropriate.
-- [Human expertise](skills/human-expertise/SKILL.md): a discoverable skill with a short situation-based index and eleven supporting notes. Detailed Experiment tips cover feature selection, steering strength and sites, fine-tuning LR sweeps, answer measurement, and image preprocessing, alongside broader research experience. Relevant notes load on demand rather than all at once.
-
-Method scripts are reference templates with model and library assumptions, not a universally tested execution API. Unimplemented measurement paths report that limitation. Install dependencies for selected methods in suitable environments; root requirements are a small common starting point, not every method's environment.
-
-## External services
-
-Set variables in the environment inherited by the scripts:
-
-| Variable | Purpose |
-| --- | --- |
-| `LLM_API_KEY` | Enable Model consultation with your provider key. |
-| `LLM_BASE_URL` | Compatible API base URL; default `https://api.openai.com/v1`. |
-| `LLM_MODEL` | External consultation model; default `gpt-6.1-sol`. |
-| `LLM_FALLBACK_MODEL` | Optional explicit fallback; no model substitution unless configured. |
-| `MECHANIC_DB_API_KEY` | Optional key for higher retrieval limits. |
-| `MECHANIC_DB_BASE_URL` | Optional search-service URL override. |
-
-Missing consultation credentials do not prevent using the prompt or method library. Mechanic DB supports anonymous access with lower limits; availability and quotas depend on the service. It writes retrievals to caller-selected absolute paths without imposing a research-wide directory. Ordinary file, terminal, web, and delegation tools are supplied by the host when available.
-
-## Script calls
-
-Resolve scripts from their skill directories; the host's terminal runs them directly:
-
-```text
-python /path/to/skills/model-consultation/scripts/chat.py --prompt-file /path/to/question.txt
-python /path/to/skills/information-retrieval/sources/mechanic_db/search.py --query "feature steering" --output /path/to/papers.json
-```
-
-Each skill links its scripts and any required dependencies. Both commands return JSON, report failures with a nonzero exit status, and use environment variables for credentials. Saving an LLM response is optional; retrieval writes its full paper bundle to the caller's chosen output file.
-
-## Example
-
-“Investigate why this model enters repetitive reasoning. Choose methods that distinguish a specific internal signal from generic generation suppression. Use available resources within my compute budget and explain what the evidence supports.”
-
-The model chooses the investigation, method combinations, external consultations, experiments, and notes.
-
-
----
-
-## 中文
-
-**为自主机理研究提供工具、人类经验和完整方法库。**
-
-Mechanist Light 不规定科研流水线。基模自主决定研究路线、任务拆分、方法组合，以及是否和如何记录信息；不要求 Stage、Step、全局记忆格式或实验记录文件。
-
-### 使用
-
-在 Claude Code 中安装插件后，通过 `/mechanist:mechanist` 交付自然语言目标。使用本地 Light 分支时，以 `claude --plugin-dir /仓库绝对路径` 加载当前仓库；市场版本不一定包含本分支修改。工具直接调用所属 Skill 的 Python 脚本，按需在宿主终端所用的 Python 环境安装对应依赖。
-
-其他宿主可将 [Mechanist Skill](skills/mechanist/SKILL.md) 用作科学家提示和资源入口，提供需要的工具并开放资料访问。它是提示词与资源库，不是独立科研服务。
-
-### 脚本调用
-
-从对应 Skill 目录定位脚本，用宿主终端执行上面的 Python 命令即可。两个脚本返回 JSON，失败时以非零状态退出，凭证从环境变量读取。LLM 回答按需保存，数据库检索的完整结果写入调用者指定的文件。
-
-### 能力
-
-- 完整保留机理方法选择与路由、11 个家族、32 个具体方法、论文、API 资料与代码模板，按需读取。
-- 保留 [Model consultation](skills/model-consultation/SKILL.md)，通过附属脚本自主咨询外部模型。接口无会话记忆，也不能读取本地路径，需要发送实际文本。
-- 外部信息检索与获取统一为 [Information retrieval](skills/information-retrieval/SKILL.md) 一个入口，覆盖论文、博客、GitHub 项目、文档和其他网页；按需使用宿主检索/浏览能力或内置来源脚本，提供信息获取与综合指导。
-- [Human expertise](skills/human-expertise/SKILL.md) 作为可发现的 Skill，提供情境索引和十一份经验资料；恢复展开的 Experiment tips，涵盖特征选择、干预强度与位置、微调学习率搜索、答案测量和图像预处理，以及其他研究经验。按需读取正文，不一次性注入，也不规定科研阶段。
-
-按需在脚本继承的执行环境中设置上表变量。未配置外部模型不影响方法库；文献服务支持较低限额的匿名检索。方法脚本是需核对依赖、模型和数据后适配的参考模板，不代表对所有环境验证。通用文件、终端、网络及委派能力由宿主提供。
-
-例：“研究这个模型为什么陷入重复推理，区分特定内部信号和普遍生成抑制。在授权预算内自主选择方法，并说明证据支持什么。”
-
-
-## Credits / 致谢
-
-Mechanist contributors include Mengru Wang, Zhenqian Xu, and Haoxiong Wang. This project incorporates work from ARIS and the method libraries cited alongside the retained examples. Thanks to the community for its contributions and technical support.
-
-感谢 Mechanist 贡献者、ARIS、方法库原作者及社区支持；各方法的论文与来源保留在对应目录。
-
-## Citation / 引用
-
-```bibtex
-@article{wang2026mechanist,
-  title={Mechanist: AI as a Scientific Instrument for Discovering the Mechanisms of Intelligence},
-  author={Wang, Mengru and Fang, Junfeng and Qiao, Shuofei and Xu, Zhenqian and Xu, Haoming and Wang, Haoxiong and Deng, Shumin and Yang, Linyi and Cui, Zhixiang and Xu, Xin and others},
-  journal={arXiv preprint arXiv:2608.12036},
-  year={2026}
-}
-```
-
-## License / 许可证
-
-[MIT](LICENSE)
