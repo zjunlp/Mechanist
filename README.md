@@ -1,7 +1,7 @@
 <p align="center"><img src="docs/mechanist-light-logo.png" alt="Mechanist" width="778" height="150"></p>
 
 <p align="center">
-  <strong>为自主机理研究提供方法库、人类经验、信息检索与外部模型讨论</strong>
+  <strong>为自主机理研究提供方法库、人类经验与工具支持</strong>
 </p>
 
 Mechanist Light 是 Mechanist 的轻量版本，以 Claude Code 插件的形式提供。你用自然语言交给它一个关于神经网络内部机理的研究问题，基模会自主规划并推进研究，最后汇报有证据支撑的发现、不确定性与局限。
