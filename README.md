@@ -1,330 +1,105 @@
-<p align="center">
-  <img src="docs/mechanist-logo.png" alt="Mechanist Logo" width="413" height="100">
-</p>
+<p align="center"><img src="docs/mechanist-logo.png" alt="Mechanist" width="413" height="100"></p>
 
-<p align="center">
-  <strong>Autonomous Research Agent for LLM Mechanistic Interpretability</strong>
-</p>
+# Mechanist Light
 
-<p align="center">
-  <a href="http://mechanist.openkg.cn">Website</a> ·
-  <a href="docs/README_zh.md">中文</a>
-</p>
+**Autonomous mechanistic research, supported by tools and human expertise.**
 
-<p align="center">
-  <a href="https://github.com/zjunlp/Mechanist/blob/main/LICENSE">
-    <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT">
-  </a>
-  <a href="https://claude.ai/code">
-    <img src="https://img.shields.io/badge/Claude%20Code-Plugin-orange?logo=anthropic" alt="Claude Code Plugin">
-  </a>
-  <a href="https://www.python.org/downloads/">
-    <img src="https://img.shields.io/badge/python-3.11+-blue?logo=python" alt="Python 3.11+">
-  </a>
-  <a href="https://github.com/zjunlp/Mechanist">
-    <img src="https://img.shields.io/badge/status-active-brightgreen" alt="Status: Active">
-  </a>
-</p>
+Mechanist Light supplies research resources without prescribing a pipeline. The model chooses strategy, task organization, method combinations, and whether and how to keep information. There are no required stages, step types, memory schemas, or experimental record files.
 
----
+## Start
 
-## 📖 Table of Contents
-
-- [📖 Overview](#-overview)
-- [🔄 How It Works](#-how-it-works)
-- [🔧 Installation](#-installation)
-  - [1. Install Claude Code and uv](#1-install-claude-code-and-uv)
-  - [2. Install Mechanist plugin for Claude Code](#2-install-mechanist-plugin-for-claude-code)
-  - [3. Configure the external review model](#3-configure-the-external-review-model)
-  - [4. Prepare the Python environment where experiments run](#4-prepare-the-python-environment-where-experiments-run-optional)
-- [🚀 Quick Start](#-quick-start)
-  - [1. Create a working directory](#1-create-a-working-directory)
-  - [2. Start Claude Code](#2-start-claude-code)
-  - [3. Tell `/mguide` what you want](#3-tell-mguide-what-you-want)
-  - [4. Follow the run, then read the results](#4-follow-the-run-then-read-the-results)
-- [📖 Further Reading](#-further-reading)
-- [🏆 Contributors](#-contributors)
-- [🙏 Acknowledgements](#-acknowledgements)
-- [📄 Citation](#-citation)
-
----
-
-## 📖 Overview
-
-**Mechanist** converts a research question about the internal mechanisms of large language models into **evidence-backed findings**. It coordinates a complete research workflow: literature retrieval, hypothesis formulation, experiment implementation and execution, robustness validation, and iterative refinement — all within a single autonomous pipeline.
-
-**Mechanist ships as a Claude Code plugin** — no repository clone required. Install it in minutes, hand it a research question, and it runs the experiments on your own machine and GPUs, then hands back a verifiable research report. (Codex support is coming soon.)
-
-### Key Capabilities
-
-| Stage | Description |
-|:---|:---|
-| **Literature Review** | Queries a 14k-paper interpretability corpus, a 157M-node cross-disciplinary citation graph, and web sources. |
-| **Hypothesis Formulation** | Proposes novelty-checked claims, or extracts claims from user-provided material. |
-| **Experiment Execution** | Generates experiment code, runs evaluations, and records results against a mechanism-aware plan. |
-| **Verification** | Evaluates claims under alternate models, datasets, and methods for robustness. |
-| **Iteration** | Reviews failed or weak results, updates the plan, and reruns the relevant stages. |
-
----
-
-## 🔄 How It Works
-
-```
- research question ──▶ claim ──▶ experiment ──▶ verify ──▶ iterate ──▶ findings
-                    (hypothesis)  (execution) (validation) (refinement)
-```
-
-The research pipeline consists of an **orchestrator** that dispatches four sequential stages, each running in an independent sub-agent:
-
-1. **Claim** — Searches literature, generates or captures hypotheses, assesses novelty and impact, and produces a detailed experiment plan.
-2. **Experiment** — Routes to the appropriate mechanistic method, generates experiment code, runs sanity checks, deploys experiments, and collects results.
-3. **Verify** — Tests robustness by swapping along method, dataset, and model axes; runs integrity audits on both main experiments and variants.
-4. **Iteration** — External LLM review with structured repair routing (up to 6 rounds), converging claims toward publication-ready conclusions.
-
-All results are tracked in a **Claim Ledger** (`CLAIMS_LEDGER.md`) that records every claim's journey from hypothesis to final verdict.
-
----
-
-## 🔧 Installation
-
-### 1. Install Claude Code and uv
-
-Mechanist runs inside Claude Code — install Claude Code CLI.
-
-```bash
-# Install Claude Code, restart your terminal, then verify
-curl -fsSL https://claude.ai/install.sh | bash
-claude --version
-```
-
-Mechanist's MCP servers use uv to manage Python environments — install uv next.
-
-```bash
-# Mechanist's MCP servers use uv to bootstrap temporary Python environments
-curl -LsSf https://astral.sh/uv/install.sh | sh
-uv --version
-```
-
-### 2. Install Mechanist plugin for Claude Code
-
-Inside a Claude Code session:
+Mechanist is a Claude Code plugin. In Claude Code:
 
 ```text
 /plugin marketplace add zjunlp/Mechanist
 /plugin install mechanist@mechanist
+/reload-plugins
+/mechanist:mechanist Investigate the internal mechanism behind this behavior: ...
 ```
 
-Then activate and verify it:
+For this checkout of the Light branch, launch Claude Code with `claude --plugin-dir /absolute/path/to/Mechanist`; do not assume the marketplace contains these changes. Skills invoke their attached Python scripts directly. Install each script's dependencies in the Python environment used by the host terminal when needed.
+
+For another host, use [the Mechanist skill](skills/mechanist/SKILL.md) as the scientist prompt and resource entry, expose the desired tools, and make the linked files accessible. This is a prompt and resource library, not a standalone research daemon.
+
+## Resources
+
+- [Mechanism methods](skills/mechanism-methods/SKILL.md): method routing, eleven families, thirty-two submethods, papers, API references, and code templates, loaded as needed.
+- [Model consultation](skills/model-consultation/SKILL.md): optional external consultation about uncertain questions, code, explanations, and designs. Calls are stateless; send relevant text because the model cannot read local files.
+- [Information retrieval](skills/information-retrieval/SKILL.md): one entry for finding and obtaining papers, blog posts, GitHub projects, documentation, and other web information. Use host search/browsing tools or the bundled source-specific scripts as appropriate.
+- [Human expertise](skills/human-expertise/SKILL.md): a discoverable skill with a short situation-based index and eight supporting notes on feature selection, interventions, measurement, evidence, and other research judgments. Relevant notes load on demand rather than all at once.
+
+Method scripts are reference templates with model and library assumptions, not a universally tested execution API. Unimplemented measurement paths report that limitation. Install dependencies for selected methods in suitable environments; root requirements are a small common starting point, not every method's environment.
+
+## External services
+
+Set variables in the environment inherited by the scripts:
+
+| Variable | Purpose |
+| --- | --- |
+| `LLM_API_KEY` | Enable Model consultation with your provider key. |
+| `LLM_BASE_URL` | Compatible API base URL; default `https://api.openai.com/v1`. |
+| `LLM_MODEL` | External consultation model; default `gpt-5.4`. |
+| `LLM_FALLBACK_MODEL` | Optional explicit fallback; no model substitution unless configured. |
+| `MECHANIC_DB_API_KEY` | Optional key for higher retrieval limits. |
+| `MECHANIC_DB_BASE_URL` | Optional search-service URL override. |
+
+Missing consultation credentials do not prevent using the prompt or method library. Mechanic DB supports anonymous access with lower limits; availability and quotas depend on the service. It writes retrievals to caller-selected absolute paths without imposing a research-wide directory. Ordinary file, terminal, web, and delegation tools are supplied by the host when available.
+
+## Script calls
+
+Resolve scripts from their skill directories; the host's terminal runs them directly:
 
 ```text
-/reload-plugins
-/mechanist        # listed as /mechanist:auto, /mechanist:msearch, /mechanist:mhistory ...
-/mcp              # llm-chat and mechanic-db should both be "connected"
+python /path/to/skills/model-consultation/scripts/chat.py --prompt-file /path/to/question.txt
+python /path/to/skills/information-retrieval/sources/mechanic_db/search.py --query "feature steering" --output /path/to/papers.json
 ```
 
-> Commands still missing after that? Restart Claude Code and try again.
+Each skill links its scripts and any required dependencies. Both commands return JSON, report failures with a nonzero exit status, and use environment variables for credentials. Saving an LLM response is optional; retrieval writes its full paper bundle to the caller's chosen output file.
 
-### 3. Configure the external review model
+## Example
 
-Mechanist cross-validates its own ideas, experiment designs, and conclusions with an external reviewer at every stage — a second model, independent of Claude, so the same model never grades itself. **Do not use a Claude-series model for this role.** GPT-5.4 via [platform.openai.com](https://platform.openai.com) is recommended — with a standard OpenAI key the defaults below are already correct. For Azure, DeepSeek, Qwen, or a third-party proxy, set all three variables to an OpenAI-compatible endpoint.
+“Investigate why this model enters repetitive reasoning. Choose methods that distinguish a specific internal signal from generic generation suppression. Use available resources within my compute budget and explain what the evidence supports.”
 
-| Variable | Required | Default / example | Purpose |
-|:---|:---|:---|:---|
-| `LLM_API_KEY` | **Yes** | `sk-…` | API key for the external review model (cross-validation). |
-| `LLM_MODEL` | No | `gpt-5.4` | External review model name. |
-| `LLM_BASE_URL` | No | `https://api.openai.com/v1` | Base URL for the LLM provider. Set this to your proxy URL if you use one. |
+The model chooses the investigation, method combinations, external consultations, experiments, and notes.
 
-To set the variables above, add the following lines to `~/.bashrc` (or `~/.zshrc`):
-
-```bash
-# --- Mechanist (add to ~/.bashrc or ~/.zshrc) ---
-export LLM_API_KEY="sk-..."                       # required: external review model key
-export LLM_MODEL="<your_model_name>"              # optional, default: gpt-5.4
-export LLM_BASE_URL="<your_base_url>"             # optional, default: official endpoint
-```
-
-Load the new variables, then confirm the key is set:
-
-```bash
-source ~/.bashrc            # or open a brand-new terminal
-echo "$LLM_API_KEY"         # should print your key, not an empty line
-```
-
-> [!NOTE]
-> **Variables are read only when Claude Code starts.** Exporting them inside an already-running session changes nothing. Edit `~/.bashrc` → `source` it (or open a new terminal) → restart Claude Code.
-
-### 4. Prepare the Python environment where experiments run (Optional)
-
-Mechanist runs experiments in the Python environment the Claude session was started in. If you do not yet have the basic packages for running experiments (PyTorch, NumPy, scikit-learn, etc.), use the commands below to create a conda environment. The `scientist` environment we provide covers the common tools Mechanist may need while running experiments.
-
-```bash
-# Example: a dedicated conda env named scientist
-conda create -n scientist python=3.11 -y
-conda activate scientist
-pip install -r <(curl -sSL https://raw.githubusercontent.com/zjunlp/Mechanist/main/requirements.txt)
-```
-
-Once the steps above are done, proceed to [Quick Start](#-quick-start).
 
 ---
 
-## 🚀 Quick Start
+## 中文
 
-Create a folder as working directory, start Claude Code inside it, and tell `/mguide` what you want in plain language. It works out your research requirements with you and writes `task.md` — the task spec everything downstream builds on — then starts the autonomous pipeline once you confirm. Here are the details:
+**为自主机理研究提供工具、人类经验和完整方法库。**
 
-```
- /mguide "what you want"
-     │   it works out your research requirements with you
-     ▼
- task.md
-     │   the task spec it writes for you — the run starts once you confirm
-     ▼
- claim ──▶ experiment ──▶ verify ──▶ iteration
-     │   the autonomous pipeline: hypothesize → run → validate → refine
-     ▼
- CLAIMS_LEDGER.md + AUTO_PIPELINE_REPORT.md
-     (the findings)
-```
+Mechanist Light 不规定科研流水线。基模自主决定研究路线、任务拆分、方法组合，以及是否和如何记录信息；不要求 Stage、Step、全局记忆格式或实验记录文件。
 
-### 1. Create a working directory
+### 使用
 
-Create a new empty folder for your research task. Mechanist will work inside this folder and write all outputs here.
+在 Claude Code 中安装插件后，通过 `/mechanist:mechanist` 交付自然语言目标。使用本地 Light 分支时，以 `claude --plugin-dir /仓库绝对路径` 加载当前仓库；市场版本不一定包含本分支修改。工具直接调用所属 Skill 的 Python 脚本，按需在宿主终端所用的 Python 环境安装对应依赖。
 
-```bash
-mkdir my-experiment && cd my-experiment   # one research question per directory
-```
+其他宿主可将 [Mechanist Skill](skills/mechanist/SKILL.md) 用作科学家提示和资源入口，提供需要的工具并开放资料访问。它是提示词与资源库，不是独立科研服务。
 
-### 2. Start Claude Code
+### 脚本调用
 
-> [!NOTE]
-> **Use an Opus-series model.** We recommend `claude-opus-4-8` for good performance — inside a running session you can switch with `/model claude-opus-4-8`. Weaker models degrade the whole pipeline.
+从对应 Skill 目录定位脚本，用宿主终端执行上面的 Python 命令即可。两个脚本返回 JSON，失败时以非零状态退出，凭证从环境变量读取。LLM 回答按需保存，数据库检索的完整结果写入调用者指定的文件。
 
-Start Claude Code in the project root (i.e. the folder you created in step 1):
+### 能力
 
-```bash
-claude --model claude-opus-4-8
-```
+- 完整保留机理方法选择与路由、11 个家族、32 个具体方法、论文、API 资料与代码模板，按需读取。
+- 保留 [Model consultation](skills/model-consultation/SKILL.md)，通过附属脚本自主咨询外部模型。接口无会话记忆，也不能读取本地路径，需要发送实际文本。
+- 外部信息检索与获取统一为 [Information retrieval](skills/information-retrieval/SKILL.md) 一个入口，覆盖论文、博客、GitHub 项目、文档和其他网页；按需使用宿主检索/浏览能力或内置来源脚本，提供信息获取与综合指导。
+- [Human expertise](skills/human-expertise/SKILL.md) 作为可发现的 Skill，提供情境索引和八份经验资料；按需读取正文，不一次性注入，也不规定科研阶段。
 
-### 3. Tell `/mguide` what you want
+按需在脚本继承的执行环境中设置上表变量。未配置外部模型不影响方法库；文献服务支持较低限额的匿名检索。方法脚本是需核对依赖、模型和数据后适配的参考模板，不代表对所有环境验证。通用文件、终端、网络及委派能力由宿主提供。
 
-`/mguide` is Mechanist's entry point. Type it at the Claude Code prompt and describe your task in plain language — it works out the rest with you from there.
+例：“研究这个模型为什么陷入重复推理，区分特定内部信号和普遍生成抑制。在授权预算内自主选择方法，并说明证据支持什么。”
 
-Here is what you can ask it to do:
 
-#### Research runs *(runs the full research pipeline)*
+## Credits / 致谢
 
-- **Explore a mechanism**  
-  A known model behavior — find which internal component causes it.
+Mechanist contributors include Mengru Wang, Zhenqian Xu, and Haoxiong Wang. This project incorporates work from ARIS and the method libraries cited alongside the retained examples. Thanks to the community for its contributions and technical support.
 
-- **Reproduce a paper**  
-  Both the finding and the method are already known — re-run them faithfully at the stated scale.
+感谢 Mechanist 贡献者、ARIS、方法库原作者及社区支持；各方法的论文与来源保留在对应目录。
 
-  ```text
-  /mguide Reproduce this paper: LLMs encode harmfulness and refusal separately
-  ```
-
-- **Validate a suspected phenomenon**  
-  You have a concrete hypothesis, but no paper (or prior run) has confirmed it yet.
-
-- **Open-ended discovery**  
-  Only a research direction — let Mechanist mine a new phenomenon, then investigate it.
-
-#### Literature *(answers only — no pipeline run)*
-
-- **Find literature**  
-  Search the 14k-paper interpretability corpus, the 157M-node citation graph, and the web.
-
-  ```text
-  /mguide find me papers on sparse autoencoder feature absorption in large language models
-  ```
-
-- **See how a field developed**  
-  A timeline of the key papers, turning points, debates, and open problems.
-
-  ```text
-  /mguide I'd like to know how circuit-level interpretability got to where it is today
-  ```
-
-### 4. Follow the run, then read the results
-
-If what Mechanist takes on is a **research run**, it enters the full research pipeline below. Literature requests return an answer directly and stop there.
-
-Mechanist executes the four stages in order: **claim → experiment → verify → iteration**, and writes each stage's relevant documents to disk before the next stage begins. Reading these documents lets you track what has been completed, what is planned next, and what has been discovered:
-
-| Stage | Artifact | What's inside |
-|:---|:---|:---|
-| **claim** | `idea-stage/IDEA_REPORT.md` | Ranked candidate ideas, or the behavior and claims captured from your task.md. |
-| | `refine-logs/FINAL_PROPOSAL.md` | The refined method proposal — how the claims will be tested. |
-| | `refine-logs/EXPERIMENT_PLAN.md` | Per-claim milestones: models, data, sample sizes, and success criteria. |
-| **experiment** | `refine-logs/MECHANISM_ROUTING.md` | Which interpretability method was chosen, the candidates considered, and why. |
-| | `refine-logs/EXPERIMENT_RESULTS.md` | Per-claim results, one-line headlines, and baseline verdicts (supported / not-supported). |
-| | `runs/` | Per-run code, logs, and GPU cost records for each experiment job. |
-| **verify** | `verify/VERIFY_REPORT.md` | Per-claim robustness verdicts and a cross-claim summary. |
-| | `verify/INTEGRITY_AUDIT.md` | What the honesty audits found on the original results and each swap run. |
-| **iteration** | `review-stage/AUTO_REVIEW.md` | Round-by-round review log: scores, flagged problems, and the fixes taken. |
-| | `review-stage/AUTO_ITERATION_FINAL_REPORT.md` | What changed per claim across the fix loops, with unresolved items at the end. |
-
-When it finishes, read these two files at the project root:
-
-| File | What's inside |
-|:---|:---|
-| `CLAIMS_LEDGER.md` | Per-claim scoreboard: final verdicts, robustness, and caveats. |
-| `AUTO_PIPELINE_REPORT.md` | The run's journey, an index of every artifact, and any Open Items still needing your action. |
-
----
-
-## 📖 Further Reading
-
-**Want to know more about Mechanist?** Read Mechanist documentation to learn: how to archive the current results and start the next round, explore advanced usage of Mechanist, learn how to write a good `task.md`, or see how the pipeline is designed.
-
-**[Read Mechanist documentation →](http://mechanist.openkg.cn/docs/index.html)**
-
----
-
-## 🏆 Contributors
-
-<table>
-  <tr>
-    <td align="center" width="140">
-      <a href="https://github.com/mengrusun">
-        <img src="https://avatars.githubusercontent.com/mengrusun?v=4" width="80" style="border-radius:50%" alt="mengru wang"/>
-        <br />
-        <sub><b>mengru wang</b></sub>
-      </a>
-      <br />
-      <sub>Organizer</sub>
-    </td>
-    <td align="center" width="140">
-      <a href="https://github.com/luguoxiguazhuang">
-        <img src="https://avatars.githubusercontent.com/luguoxiguazhuang?v=4" width="80" style="border-radius:50%" alt="Zhenqian Xu"/>
-        <br />
-        <sub><b>Zhenqian Xu</b></sub>
-      </a>
-    </td>
-    <td align="center" width="140">
-      <a href="https://github.com/WangHX2024">
-        <img src="https://avatars.githubusercontent.com/WangHX2024?v=4" width="80" style="border-radius:50%" alt="Haoxiong Wang"/>
-        <br />
-        <sub><b>Haoxiong Wang</b></sub>
-      </a>
-    </td>
-  </tr>
-</table>
-
-We welcome contributions from the community! If you'd like to contribute, please fork the repository and submit a pull request. For major changes, please open an issue first to discuss what you would like to change.
-
----
-
-## 🙏 Acknowledgements
-
-We would like to express our heartfelt gratitude for the contribution of ARIS to our project, as we have utilized portions of their source code in our project. 
-Many thanks to all the colleagues in the community for submitting issues and providing technical support. 
-
----
-
-## 📄 Citation
-
-If you use Mechanist, please cite:
+## Citation / 引用
 
 ```bibtex
 @article{wang2026mechanist,
@@ -334,3 +109,7 @@ If you use Mechanist, please cite:
   year={2026}
 }
 ```
+
+## License / 许可证
+
+[MIT](LICENSE)

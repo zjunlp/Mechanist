@@ -5,21 +5,28 @@
     "url": "https://github.com/zjunlp"
   },
   "metadata": {
-    "description": "Mechanist — AI Systems as Scientific Instruments for Understanding the Mechanisms of Intelligence.",
+    "description": "Mechanist Light: tools and human expertise for autonomous mechanistic research.",
     "version": "0.1.0"
   },
   "plugins": [
     {
       "name": "mechanist",
       "source": "./",
-      "description": "Mechanist — AI Systems as Scientific Instruments for Understanding the Mechanisms of Intelligence.",
+      "description": "Mechanist Light: tools and human expertise for autonomous mechanistic research.",
       "version": "0.1.0",
-      "author": { "name": "zjunlp" },
+      "author": {
+        "name": "zjunlp"
+      },
       "homepage": "https://github.com/zjunlp/Mechanist",
       "repository": "https://github.com/zjunlp/Mechanist",
       "license": "MIT",
       "category": "research",
-      "keywords": ["research", "experiments", "literature-review", "auto-pipeline", "mcp"]
+      "keywords": [
+        "research",
+        "mechanistic-interpretability",
+        "tools",
+        "expertise"
+      ]
     }
   ]
 }
